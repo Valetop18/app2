@@ -13,6 +13,8 @@ import { Splash } from "../screens/Splash";
 import { TopicosInteres } from "../screens/TopicosInteres";
 import { PartidoUsuario } from "../screens/PartidoUsuario";
 import SelectDistrito from "../screens/selectDistrito";
+import { Maqueta } from "../screens/Maqueta";
+import { DescripcionDiputado } from "../screens/detallesDipu";
 
 const MainNavigation = () => {
   const userID = useSelector((state) => state.auth.token);

@@ -5,11 +5,12 @@ import Ionicons from "@react-native-vector-icons/ionicons";
 export const Partido = ({item, selected}) => {
 
     const color = selected ? COLORS.verdeclaro : COLORS.back;
-    const fontFamily = selected ? 'NotoSansMyanmar_600SemiBold' : "NotoSansMyanmar_400Regular";
+    const colorIcon = selected ? COLORS.back : COLORS.grey;
+    const fontFamily = selected ? 'NotoSansMyanmar_800ExtraBold' : "NotoSansMyanmar_400Regular";
 
     return(
         <View style={styles.container}>
-                <Ionicons name="checkmark-circle" size={20} color={color}/>
+                <Ionicons name="checkmark-circle" size={20} color={colorIcon}/>
                 <Text style={ [styles.topico, { color, fontFamily  }] }>{item.partido}</Text>
         </View>
     )

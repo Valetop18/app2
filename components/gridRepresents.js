@@ -1,12 +1,12 @@
 import React from "react";
 import { View, Text, Image, StyleSheet, TouchableOpacity } from "react-native";
-import { FontAwesome } from "@expo/vector-icons";
 import { MaterialIcons } from "@react-native-vector-icons/material-icons";
-import { Entypo } from "@expo/vector-icons";
 import { COLORS } from "../constants/colors";
 import { useState, useEffect } from "react";
 import { ref, set, update, onValue, remove } from "firebase/database";
 import { db } from "../constants/config";
+import { msPersonRaisedHand } from "@material-symbols-react-native/outlined-400";
+import { MsIcon } from "material-symbols-react-native";
 
 const coloresPorPartido = {
   DES: COLORS.DES,
@@ -35,11 +35,11 @@ const coloresPorPartido = {
 const GridRepresent = ({ item, onSelected }) => {
   const borderColor = coloresPorPartido[item.partido] || "#000";
 
-  const [asistencia, setAsistencia] = useState('90');
-  const [votacion, setVotacion] = useState('80');
-  const [comision, setComision] = useState('5');
-  const [mocion, setMocion] = useState('15');
-  const [proyectos, setProyectos] = useState('3/5');
+  const [asistencia, setAsistencia] = useState("90");
+  const [votacion, setVotacion] = useState("80");
+  const [comision, setComision] = useState("5");
+  const [mocion, setMocion] = useState("15");
+  const [proyectos, setProyectos] = useState("3/5");
 
   useEffect(() => {
     const starCountRef = ref(db, "diputados/asistencia/" + item.id);
@@ -75,73 +75,82 @@ const GridRepresent = ({ item, onSelected }) => {
           <Image
             style={{
               borderColor,
-              width: 82,
-              height: 82,
+              width: 76,
+              height: 76,
               borderRadius: 100,
-              borderWidth: 3.8,
+              borderWidth: 3,
             }}
             source={item.foto}
           />
           <Text style={styles.partido}>{item.partido}</Text>
         </View>
         <View style={styles.infoEscrita}>
-            <View flexDirection={"row"} alignItems={"center"}>
-                <Text style={styles.name}>{item.nombre}</Text>
-                <View style={styles.icono} marginTop={'-1%'} >
-                    <MaterialIcons name="favorite" size={34} color={COLORS.grey} />
-                        <View position={'absolute'} marginTop={'-10%'}> 
-                            <Text style={styles.porcentaje}>30%</Text>
-                        </View>
-                </View>
+          <View flexDirection={"row"} alignItems={"center"}>
+            <Text style={styles.name}>{item.nombre}</Text>
+            <View style={styles.icono} marginTop={"-1%"}>
+              <MaterialIcons name="favorite" size={22} color={COLORS.grey} />
             </View>
+          </View>
           <View style={styles.containerInfo}>
             <View>
-              <View flexDirection={"row"} alignItems={"center"} >
+              <View flexDirection={"row"} alignItems={"center"}>
                 <MaterialIcons
                   name="event-available"
                   size={17}
-                  color={COLORS.black}
+                  color={COLORS.greenM}
                 />
-                <Text style={styles.informacion}>{asistencia}% de asistencia </Text>
+                <Text style={styles.informacion}>
+                  {asistencia}% Asistencia{" "}
+                </Text>
               </View>
-              <View flexDirection={"row"} alignItems={"center"} >
-                <MaterialIcons
-                  name="how-to-vote"
-                  size={17}
-                  color={COLORS.black}
+              <View
+                flexDirection={"row"}
+                alignItems={"center"}
+                marginTop={"2.5%"}
+              >
+                <MsIcon
+                  icon={msPersonRaisedHand}
+                  size={18}
+                  color={COLORS.greenM}
                 />
-                <Text style={styles.informacion}>{votacion}% de votaciones </Text>
+                <Text style={styles.informacion}>{votacion}% Votaciones </Text>
               </View>
             </View>
             <View style={styles.info}>
               <View>
-                <View flexDirection={"row"} alignItems={"center"} >
+                <View flexDirection={"row"} alignItems={"center"}>
                   <MaterialIcons
                     name="diversity-2"
                     size={17}
-                    color={COLORS.black}
+                    color={COLORS.greenM}
                   />
-                  <Text style={styles.informacion} marginLeft={'1%'}>{comision} comisiones</Text>
+                  <Text style={styles.informacion} marginLeft={"1%"}>
+                    {comision} comisiones
+                  </Text>
                 </View>
-                <View flexDirection={"row"} alignItems={"center"} >
+                <View
+                  flexDirection={"row"}
+                  alignItems={"center"}
+                  marginTop={"2.5%"}
+                >
                   <MaterialIcons
-                    name="addchart"
+                    name="assignment-turned-in"
                     size={17}
-                    color={COLORS.black}
+                    color={COLORS.greenM}
                   />
-                  <Text style={styles.informacion}>{mocion} mociones </Text>
+                  <Text style={styles.informacion}>{mocion}% efectividad </Text>
                 </View>
               </View>
             </View>
-          </View>
-          <View flexDirection={"row"} alignItems={"center"} marginHorizontal= {"1%"} marginLeft={'2%'}> 
-            <MaterialIcons
-              name="assignment-turned-in"
-              size={17}
-              color={COLORS.black}
-            />
-            <Text style={styles.informacionProyectos}>{proyectos} Proyectos aprobados vs presentados
-            </Text>
+            <View style={styles.dataUsage}>
+              <MaterialIcons
+                name="data-usage"
+                size={40}
+                color={COLORS.verdeclaro}
+                position={'absolute'}
+              />
+              <Text style={styles.data2}>36%</Text>
+            </View>
           </View>
         </View>
       </TouchableOpacity>
@@ -160,7 +169,7 @@ const styles = StyleSheet.create({
     alignContent: "center",
     flexDirection: "row",
     borderRadius: 10,
-    width: "95%",
+    width: "96%",
     backgroundColor: COLORS.back,
     elevation: 3,
     shadowColor: COLORS.black,
@@ -169,28 +178,29 @@ const styles = StyleSheet.create({
     alignContent: "center",
     justifyContent: "center",
     alignItems: "center",
-    marginHorizontal: "2%",
-    marginTop: '2%'
+    marginHorizontal: "1.5%",
+    marginTop: "4.5%",
   },
   infoEscrita: {
     marginVertical: "2.5%",
+    width: "74%",
   },
   info: {
-    marginLeft: "5%",
+    marginLeft: "4%",
   },
   name: {
     fontFamily: "NotoSansMyanmar_700Bold",
     fontSize: 20,
-    marginLeft: '1%',
+    marginLeft: "1%",
     flex: 1,
     maxWidth: "87%",
     color: COLORS.black,
-    marginTop: '-2%'
+    marginTop: "-1.5%",
   },
   icono: {
-    position: 'relative', 
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
+    marginLeft: "5%",
   },
   porcentaje: {
     fontFamily: "NotoSansMyanmar_700Bold",
@@ -202,7 +212,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     color: COLORS.black,
     fontSize: 14,
-    marginTop: '4%'
+    marginTop: "2%",
   },
   parametros: {
     fontFamily: "NotoSansMyanmar_400Regular",
@@ -211,7 +221,7 @@ const styles = StyleSheet.create({
     fontFamily: "NotoSansMyanmar_400Regular",
     fontSize: 14,
     color: COLORS.black,
-    marginLeft: "4%",
+    marginLeft: "2%",
   },
   informacionProyectos: {
     fontFamily: "NotoSansMyanmar_400Regular",
@@ -220,11 +230,21 @@ const styles = StyleSheet.create({
     marginLeft: "2%",
   },
   containerInfo: {
-    marginTop: '-0.5%',
-    marginVertical: "0.5%",
-    marginHorizontal: "1%",
+    marginVertical: "2%",
+    marginHorizontal: "3%",
     flexDirection: "row",
-    marginLeft: '2%'
+    marginLeft: "2%",
+  },
+  dataUsage: {
+    alignItems: "center",
+    width: 42,
+    height: 42,
+    justifyContent: "center",
+  },
+  data2: {
+    fontSize: 12,
+    fontFamily: "NotoSansMyanmar_700Bold",
+    color: COLORS.greenM,
   },
 });
 

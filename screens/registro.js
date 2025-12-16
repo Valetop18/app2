@@ -22,7 +22,7 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import { useNavigation } from "@react-navigation/native";
 import { Picker } from "@react-native-picker/picker";
 import { dbFirestore, auth } from "../constants/config";
-import { collection, getDocs, doc, setDoc } from "firebase/firestore";
+import { collection, getDocs, doc, setDoc, query, where } from "firebase/firestore";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 
 
@@ -214,12 +214,25 @@ const Registro = () => {
     
 
     try {
+
+      //validar duplicacion de rut
+      const q = query(
+        collection(dbFirestore, "usuarios"),
+        where("rut", "==", rut)
+      );
+
+      const userQuery = await getDocs(q);
+
+      if ( !userQuery.empty ) {
+        Alert.alert("rut ya registrado")
+        return;
+      }
+
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         email,
         pass
       );
-      //validar duplicacion de rut
       const user = userCredential.user;
 
       await updateProfile(user, { displayName: nombre });
@@ -294,13 +307,14 @@ const Registro = () => {
                 keyboardType="default"
                 textAlign="left"
                 paddingHorizontal="1%"
+                fontFamily="NotoSansMyanmar_400Regular"
               />
             </View>
             <FontAwesome
               name="check"
               size={14}
               fill={true}
-              color={errores.nombre ? COLORS.verdeclaro : COLORS.greenM}
+              color={errores.nombre ? COLORS.greenM : COLORS.verdeclaro}
               marginRight={"4%"}
             />
           </View>
@@ -340,7 +354,7 @@ const Registro = () => {
               name="check"
               size={14}
               fill={true}
-              color={errores.fechaNacimiento ? COLORS.verdeclaro : COLORS.greenM}
+              color={errores.fechaNacimiento ? COLORS.greenM : COLORS.verdeclaro}
               marginRight={"4%"}
             />
             {errores.fechaNacimiento ? (
@@ -368,7 +382,7 @@ const Registro = () => {
               name="check"
               size={14}
               fill={true}
-              color={errores.genero ? COLORS.verdeclaro : COLORS.greenM}
+              color={errores.genero ? COLORS.greenM : COLORS.verdeclaro}
               marginRight={"4%"}
             />
           </View>
@@ -395,7 +409,7 @@ const Registro = () => {
               name="check"
               size={14}
               fill={true}
-              color={errores.nacionalidad ? COLORS.verdeclaro : COLORS.greenM}
+              color={errores.nacionalidad ? COLORS.greenM : COLORS.verdeclaro}
               marginRight={"4%"}
             />
           </View>
@@ -421,7 +435,7 @@ const Registro = () => {
               name="check"
               size={14}
               fill={true}
-              color={errores.rut ? COLORS.verdeclaro : COLORS.greenM}
+              color={errores.rut ? COLORS.greenM : COLORS.verdeclaro}
               marginRight={"4%"}
             />
           </View>
@@ -447,7 +461,7 @@ const Registro = () => {
               name="check"
               size={14}
               fill={true}
-              color={errores.email ? COLORS.verdeclaro : COLORS.greenM}
+              color={errores.email ? COLORS.greenM : COLORS.verdeclaro}
               marginRight={"4%"}
             />
           </View>
@@ -508,7 +522,7 @@ const Registro = () => {
               name="check"
               size={14}
               fill={true}
-              color={errores.confirmPass ? COLORS.verdeclaro : COLORS.greenM}
+              color={errores.confirmPass ? COLORS.greenM : COLORS.verdeclaro}
               marginRight={"4%"}
             />
             </View>
@@ -580,7 +594,6 @@ const styles = StyleSheet.create({
   },
   textoCorreo: {
     width: "90%",
-    marginTop: "5%",
   },
   containercorreo: {
     flexDirection: "column",
@@ -595,6 +608,8 @@ const styles = StyleSheet.create({
     height: "54%",
     borderRadius: 10,
     marginTop: "1%",
+    marginLeft: 12,
+    fontFamily: "NotoSansMyanmar_400Regular"
   },
   inputcorreo: {
     backgroundColor: COLORS.verdeclaro,

@@ -7,6 +7,9 @@ import {
   Alert,
   TextInput,
   Image,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView
 } from "react-native";
 import Input from "../components/input";
 import { useDispatch, useSelector } from "react-redux";
@@ -183,7 +186,18 @@ const Login = () => {
   }, [pass]);
 
   return (
-    <View style={styles.container}>
+      <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? "padding" : "height"}
+      style={{flex: 1}}
+    >
+
+    {/* <View style={styles.container}> */}
+
+    <ScrollView
+      contentContainerStyle={styles.scrollContainer}
+      keyboardShouldPersistTaps="handled"
+    >
+
       <View style={styles.containerTitle}>
         <Text style={styles.title}>Bienvenido</Text>
         <Text style={styles.subtitle}>Ingresa a tu cuenta</Text>
@@ -282,13 +296,21 @@ const Login = () => {
           />
         </View>
       </View>
-    </View>
+
+    </ScrollView>
+    {/* </View> */}
+    </KeyboardAvoidingView>
+
   );
 };
 
 export default Login;
 
 const styles = StyleSheet.create({
+  scrollContainer:{
+      flexGrow: 1,
+      paddingTop: 100
+  },
   container: {
     flex: 1,
     paddingVertical: "30%",
@@ -299,9 +321,8 @@ const styles = StyleSheet.create({
   containerTitle: {
     alignItems: "center",
     top: "7%",
-    margintop: "10%",
+    margintop: 600,
     paddingVertical: 15,
-    position: "relative",
     justifyContent: "center",
   },
   title: {
@@ -319,13 +340,13 @@ const styles = StyleSheet.create({
     fontFamily: "NotoSansMyanmar_700Bold",
   },
   containerlogin: {
-    marginTop: "35%",
-    height: "31%",
+    marginTop: "48%",
+    height: "24%",
     alignSelf: "center",
     width: "100%",
   },
   textoCorreo: {
-    width: "90%",
+    width: "85%",
   },
   containercorreo: {
     flexDirection: "column",
@@ -336,8 +357,8 @@ const styles = StyleSheet.create({
   inputcorreo: {
     backgroundColor: COLORS.verdeclaro,
     textAlign: "center",
-    width: "93%",
-    height: "46%",
+    width: "90%",
+    height: 50,
     borderRadius: 10,
     flexDirection: 'row',
     alignSelf: 'center',
@@ -351,7 +372,7 @@ const styles = StyleSheet.create({
     height: "50%",
   },
   textoPass: {
-    width: "90%",
+    width: "85%",
   },
   inputErrors: {
     color: COLORS.falso,
@@ -362,9 +383,9 @@ const styles = StyleSheet.create({
   inputpass: {
     backgroundColor: COLORS.verdeclaro,
     textAlign: "center",
-    width: "93%",
+    width: "90%",
     fontSize: 13,
-    height: "46%",
+    height: 50,
     borderRadius: 10,
   },
   label: {
@@ -377,16 +398,16 @@ const styles = StyleSheet.create({
   Ingresar: {
     justifyContent: "space-around",
     alignItems: "center",
-    top: "10%",
+    marginTop: 115,
     justifyContent: "center",
   },
   buttonIngresar: {
     backgroundColor: COLORS.greenM,
-    width: "65%",
+    width: "60%",
     justifyContent: "center",
     alignItems: "center",
     borderRadius: 20,
-    height: "25%",
+    height: 50,
   },
   IngresarText: {
     color: "#ffffff",
@@ -396,11 +417,10 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   Registro: {
-    marginTop: "2%",
     flexDirection: "row",
     justifyContent: "space-between",
     alignSelf: "center",
-    width: "57%",
+    width: "55%",
   },
   buttonRegistro: {
     justifyContent: "center",
@@ -426,7 +446,7 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     textAlign: "center",
     flexDirection: "row",
-    width: "90%",
+    width: "86%",
   },
   labelforget: {
     color: COLORS.black,
@@ -443,16 +463,18 @@ const styles = StyleSheet.create({
   },
   remember: {
     flexDirection: "row",
+    alignItems: 'center'
   },
   forget: {
     flex: 1,
     alignItems: "flex-end",
+    alignSelf: 'center'
   },
   RegistroGoogle: {
     alignItems: "center",
-    top: "6%",
+    top: "2%",
     flexDirection: "row",
-    width: "48%",
+    width: "43%",
     justifyContent: "center",
     alignSelf: "center",
   },

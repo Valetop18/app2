@@ -21,6 +21,7 @@ const Input = (props) => {
                 style={styles.input}
                 onChangeText={text => onHandleChangeText(text, id)}
                 value={value}
+                cursorColor={COLORS.black}
             />
             
         </View>
@@ -34,7 +35,7 @@ const styles = StyleSheet.create({
         color: COLORS.black,
         fontFamily: 'NotoSansMyanmar_500Medium',
         fontSize: 16,
-        marginLeft: '5%',
+        marginLeft: '2%',
         height: '100%',
         paddingVertical: 0,
         paddingBottom: 0,

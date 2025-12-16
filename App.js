@@ -18,7 +18,7 @@ import {
   NotoSansMyanmar_900Black,
 } from "@expo-google-fonts/noto-sans-myanmar";
 import { ActivityIndicator } from "react-native";
-
+import { BuscadorProvider } from "./context/BuscadorContext";
 
 init()
   .then(() => console.log("database initialized"))
@@ -58,7 +58,9 @@ export default function App() {
 
   return (
     <Provider store={store}>
-      <MainNavigation />
+      <BuscadorProvider>
+        <MainNavigation />
+      </BuscadorProvider>
     </Provider>
   );
 }

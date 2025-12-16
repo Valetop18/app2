@@ -18,7 +18,9 @@ const SelectDistrito = () => {
     const [comunaSelect, setComunaSelect] = useState();
     const [distritoSelect, setDistritoSelect] = useState(null);
 
-    const COMUNASSELECTED = COMUNAS.filter(comunas => comunas.key === regionSelect)
+    const COMUNASSELECTED = COMUNAS
+      .filter(comunas => comunas.key === regionSelect)
+      .sort((a, b) => a.label.localeCompare(b.label));
 
     // const userData = useSelector(state => state.login.user);
     // console.log("userdata: ", userData);
@@ -85,8 +87,10 @@ const SelectDistrito = () => {
       <View style={styles.container}>
         {comunaSelect ? (
           <View style={styles.containerDistrito}>
-            <Text style={styles.distritoTitulo}>DISTRITO</Text>
-            <Text style={styles.distrito}>
+            <View style={styles.distritoLabel}>
+              <Text style={[styles.distritoTitulo, {textAlign: distritoSelect < 10 ? "right" : "center"} ]}>DISTRITO</Text>
+            </View>
+            <Text style={[styles.distrito, {paddingRight: distritoSelect < 10 ? 15 : 0} ]}>
                 {distritoSelect}
             </Text>
           </View>
@@ -98,7 +102,6 @@ const SelectDistrito = () => {
           <Text style={styles.label}>Región:</Text>
           <View style={styles.input}>
             <Picker
-
               selectedValue={regionSelect}
               onValueChange={(itemValue) =>
                 setRegionSelect(itemValue)
@@ -117,7 +120,6 @@ const SelectDistrito = () => {
           <Text style={styles.label} marginTop={'8%'}>Comuna:</Text>
           <View style={styles.input}>
             <Picker
-
               selectedValue={comunaSelect}
               onValueChange={handlerSelectDistrito}
             >
@@ -217,20 +219,24 @@ const styles = StyleSheet.create({
       marginTop: '-40%'
     },
     containerDistrito: {
-      width: '74%',
+      paddingRight: 10,
+      width: '76%',
       height: '36%',
       alignSelf: 'flex-end',
-      alignItems: 'center',
+      alignItems: 'flex-end',
       alignContent: 'stretch',
       top: '5%',
       position: 'absolute',
+    },
+    distritoLabel: {
+      width: "100%"
     },
     distritoTitulo: {
       color: COLORS.verdeclaro,
       fontSize: 60,
       fontWeight: 'bold',
       letterSpacing: -2,
-      marginTop: '3%'
+      marginTop: '3%',
     }
 })
 export default SelectDistrito;
