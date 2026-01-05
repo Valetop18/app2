@@ -48,7 +48,7 @@ const coloresPorPartido = {
   PD: COLORS.PD,
 };
 
-export const DescripcionDiputado = ({ route }) => {
+export const DescripcionSenador = ({ route }) => {
   const [asistencia, setAsistencia] = useState();
   const [votacion, setVotacion] = useState();
 
@@ -106,12 +106,12 @@ export const DescripcionDiputado = ({ route }) => {
     filtrarLeyes(search);
   }, [search]);
 
-  const { diputado } = route.params;
-  const item = diputado.id;
+  const { senador } = route.params;
+  const item = senador.id;
 
-  console.log("diputado: ", diputado);
+  console.log("senador: ", senador);
 
-  const borderColor = coloresPorPartido[diputado.partido] || "#000";
+  const borderColor = coloresPorPartido[senador.partido] || "#000";
 
   const filtrarLeyes = (texto) => {
     const leyesFiltradas = LEYES.filter((ley) => {
@@ -134,7 +134,7 @@ export const DescripcionDiputado = ({ route }) => {
       <ScrollView contentContainerStyle={styles.back}>
         <View style={styles.principal}>
           <View style={styles.container1}>
-            <Text style={styles.title}>{diputado.nombre}</Text>
+            <Text style={styles.title}>{senador.nombre}</Text>
             <View style={styles.favorite}>
               <MaterialIcons
                 name="favorite"
@@ -155,9 +155,9 @@ export const DescripcionDiputado = ({ route }) => {
                   borderRadius: 100,
                   borderWidth: 4,
                 }}
-                source={diputado.foto}
+                source={senador.foto}
               />
-              <Text style={styles.partido}>{diputado.partido}</Text>
+              <Text style={styles.partido}>{senador.partido}</Text>
             </View>
             <View style={styles.estadistica}>
               <View flexDirection={"row"} alignItems={"center"}>
@@ -203,7 +203,7 @@ export const DescripcionDiputado = ({ route }) => {
               <Text style={styles.data2}>36%</Text>
             </View>
           </View>
-          <Text style={styles.descripcion}>{diputado.descripcion}</Text>
+          <Text style={styles.descripcion}>{senador.descripcion}</Text>
           <View style={styles.container3}>
             <Text style={styles.title2}>Estadísticas de la gestión.</Text>
           </View>
@@ -357,7 +357,7 @@ export const DescripcionDiputado = ({ route }) => {
           <SearchResults
             data={leyesChilenas}
             onSelect={() => console.log("click")}
-            representante={diputado.id}
+            representante={senador.id}
           />
         </View>
       </ScrollView>

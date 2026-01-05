@@ -35,7 +35,7 @@ const styles = StyleSheet.create({
     },
     input: {
         fontFamily: "NotoSansMyanmar_400Regular",
-        fontSize: 12,
+        fontSize: 12.5,
         color: COLORS.black,
         height: 32,
         alignSelf: 'center', 

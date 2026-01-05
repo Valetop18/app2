@@ -3,7 +3,7 @@ import { Platform } from "react-native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
 import { Senadores } from "../screens/sena";
-import { DescripcionSenador } from "../screens/detallesSena";
+import { DescripcionSenador } from "../screens/detallesSenadores";
 
 const Stack = createNativeStackNavigator()
 

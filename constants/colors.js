@@ -7,7 +7,7 @@ export const COLORS = {
     grisfondo: '#637f8d',
     DES : '#F7D9C0',
     AM : '#739AE7',
-    PDG: '#5F93FC',
+    PDG: '#F7D9C0',
     IND: '#ECA96F',
     PEV: '#E79146',
     FA : '#F2293A',
@@ -25,7 +25,7 @@ export const COLORS = {
     PREP: '#0337A0',
     PNL: '#022873',
     PSC: '#0442BF',
-    PD: '#3275FB',
+    DEM: '#3275FB',
     greenM: '#02733E',
     verdeclaro: '#DAF1DE',
 }

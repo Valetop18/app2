@@ -1,5 +1,5 @@
 import React from "react";
-import GridSenadores from "../components/gridSenadores";
+import GridRepresent from "../components/gridRepresents";
 import { useSelector } from "react-redux";
 import { FlatList, StyleSheet, SafeAreaView, StatusBar, View} from "react-native";
 import { COLORS } from "../constants/colors";
@@ -15,7 +15,7 @@ export const Senadores = ({navigation}) => {
     }
 
         const renderGridItem = ({item}) => (
-            <GridSenadores item={item} onSelected={handleSelected}/>
+            <GridRepresent item={item} onSelected={handleSelected}/>
         )
     
         return (

@@ -9,7 +9,7 @@ import {
   Pressable,
 } from "react-native";
 import { COLORS } from "../constants/colors";
-import { Desk } from "../components/desk";
+import { DeskSena } from "../components/deskSena";
 import { InfoPartido } from "../components/infoPartido";
 import { BuscadorContext } from "../context/BuscadorContext";
 import { SearchResults } from "../components/SearchResults";
@@ -23,13 +23,14 @@ import MaterialIcons from "@react-native-vector-icons/material-icons";
 import { LEYES } from "../data/leyes";
 import Ionicons from "@react-native-vector-icons/ionicons";
 import { FlatList } from "react-native-gesture-handler";
-import { representantePorPartido } from "../store/actions/representante.action";
+
 import RepresentantePartido from "../components/representantePartido";
 import { useNavigation } from "@react-navigation/native";
-import { seleccionPartido, filteredDiputadosPartido } from "../store/actions/partido.action";
+import { seleccionPartidoSenado, filteredSenadoresPartido } from "../store/actions/partidoSenado.action";
 import { TouchableWithoutFeedback } from "react-native";
+import { senadoresPorPartido } from "../store/actions/senadores.action";
 
-export const CamaraDipu = () => {
+export const CamaraSena = () => {
   const { search, setSearch } = useContext(BuscadorContext);
   const [leyActual, setLeyActual] = useState({ fecha: "", nombre: "" });
   const [botonActivo, setBotonActivo] = useState(0);
@@ -86,216 +87,88 @@ export const CamaraDipu = () => {
     id: 6,
     partido: "PDC",
     id: 7,
-    partido: "PDG",
-    id: 8,
-    partido: "PL",
-    id: 9,
     partido: "PNL",
-    id: 10,
+    id: 8,
     partido: "PPD",
-    id: 11,
-    partido: "PR",
-    id: 12,
+    id: 9,
     partido: "PREP",
-    id: 13,
+    id: 10,
     partido: "PS",
-    id: 14,
+    id: 11,
     partido: "PSC",
-    id: 15,
+    id: 12,
     partido: "RN",
-    id: 16,
+    id: 13,
     partido: "UDI",
-    id: 17,
+    id: 14,
     partido: "IND",
   };
 
-  const diputados = [
-    {
-      radio: 95,
-      cantidad: [
-        { id: 0, partido: "PL" },
-        { id: 1, partido: "PL" },
-        { id: 2, partido: "PC" },
-        { id: 3, partido: "PC" },
-        { id: 4, partido: "PC" },
-        { id: 5, partido: "FA" },
-        { id: 6, partido: "FA" },
-        { id: 7, partido: "IND" },
-        { id: 8, partido: "RN" },
-        { id: 9, partido: "RN" },
-        { id: 10, partido: "RN" },
-        { id: 11, partido: "RN" },
-        { id: 12, partido: "PREP" },
-        { id: 13, partido: "PREP" },
-        { id: 14, partido: "PREP" },
-        { id: 15, partido: "PREP" },
-      ],
-    },
-    {
-      radio: 120,
-      cantidad: [
-        { id: 16, partido: "PL" },
-        { id: 17, partido: "PPD" },
-        { id: 18, partido: "PC" },
-        { id: 19, partido: "PC" },
-        { id: 20, partido: "PC" },
-        { id: 21, partido: "PC" },
-        { id: 22, partido: "FA" },
-        { id: 23, partido: "FA" },
-        { id: 24, partido: "PDG" },
-        { id: 25, partido: "PDG" },
-        { id: 26, partido: "RN" },
-        { id: 27, partido: "RN" },
-        { id: 28, partido: "RN" },
-        { id: 29, partido: "RN" },
-        { id: 30, partido: "RN" },
-        { id: 31, partido: "PREP" },
-        { id: 32, partido: "PREP" },
-        { id: 33, partido: "PREP" },
-        { id: 34, partido: "PREP" },
-        { id: 35, partido: "PREP" },
-      ],
-    },
-    {
-      radio: 145,
-      cantidad: [
-        { id: 36, partido: "PPD" },
-        { id: 37, partido: "PPD" },
-        { id: 38, partido: "PC" },
-        { id: 39, partido: "PC" },
-        { id: 40, partido: "PC" },
-        { id: 41, partido: "PC" },
-        { id: 42, partido: "FA" },
-        { id: 43, partido: "FA" },
-        { id: 44, partido: "FA" },
-        { id: 45, partido: "FA" },
-        { id: 46, partido: "PDG" },
-        { id: 47, partido: "PDG" },
-        { id: 48, partido: "PDG" },
-        { id: 49, partido: "UDI" },
-        { id: 50, partido: "RN" },
-        { id: 51, partido: "RN" },
-        { id: 52, partido: "RN" },
-        { id: 53, partido: "RN" },
-        { id: 54, partido: "PREP" },
-        { id: 55, partido: "PREP" },
-        { id: 56, partido: "PREP" },
-        { id: 57, partido: "PREP" },
-        { id: 58, partido: "PREP" },
-        { id: 59, partido: "PREP" },
-      ],
-    },
-    {
-      radio: 170,
-      cantidad: [
-        { id: 60, partido: "PPD" },
-        { id: 61, partido: "PPD" },
-        { id: 62, partido: "PS" },
-        { id: 63, partido: "PS" },
-        { id: 64, partido: "PS" },
-        { id: 65, partido: "PDC" },
-        { id: 66, partido: "PDC" },
-        { id: 67, partido: "FA" },
-        { id: 68, partido: "FA" },
-        { id: 69, partido: "FA" },
-        { id: 70, partido: "FA" },
-        { id: 71, partido: "PDG" },
-        { id: 73, partido: "PDG" },
-        { id: 74, partido: "PDG" },
-        { id: 75, partido: "PDG" },
-        { id: 76, partido: "UDI" },
-        { id: 77, partido: "UDI" },
-        { id: 78, partido: "UDI" },
-        { id: 79, partido: "UDI" },
-        { id: 80, partido: "UDI" },
-        { id: 81, partido: "PNL" },
-        { id: 82, partido: "PNL" },
-        { id: 83, partido: "PREP" },
-        { id: 84, partido: "PREP" },
-        { id: 85, partido: "PREP" },
-        { id: 86, partido: "PREP" },
-        { id: 87, partido: "PREP" },
-        { id: 88, partido: "PREP" },
-      ],
-    },
-    {
-      radio: 195,
-      cantidad: [
-        { id: 89, partido: "PPD" },
-        { id: 90, partido: "PPD" },
-        { id: 91, partido: "PS" },
-        { id: 92, partido: "PS" },
-        { id: 93, partido: "PS" },
-        { id: 94, partido: "PS" },
-        { id: 95, partido: "PDC" },
-        { id: 96, partido: "PDC" },
-        { id: 97, partido: "PDC" },
-        { id: 98, partido: "FA" },
-        { id: 99, partido: "FA" },
-        { id: 100, partido: "FA" },
-        { id: 101, partido: "FRVS" },
-        { id: 102, partido: "PDG" },
-        { id: 103, partido: "PDG" },
-        { id: 104, partido: "PDG" },
-        { id: 105, partido: "UDI" },
-        { id: 106, partido: "UDI" },
-        { id: 107, partido: "UDI" },
-        { id: 108, partido: "UDI" },
-        { id: 109, partido: "UDI" },
-        { id: 110, partido: "UDI" },
-        { id: 111, partido: "UDI" },
-        { id: 112, partido: "PNL" },
-        { id: 113, partido: "PNL" },
-        { id: 114, partido: "PNL" },
-        { id: 115, partido: "PREP" },
-        { id: 116, partido: "PREP" },
-        { id: 117, partido: "PREP" },
-        { id: 118, partido: "PREP" },
-        { id: 119, partido: "PREP" },
-        { id: 120, partido: "PSC" },
-      ],
-    },
-    {
-      radio: 220,
-      cantidad: [
-        { id: 121, partido: "PPD" },
-        { id: 123, partido: "PPD" },
-        { id: 124, partido: "PS" },
-        { id: 125, partido: "PS" },
-        { id: 126, partido: "PS" },
-        { id: 127, partido: "PS" },
-        { id: 128, partido: "PDC" },
-        { id: 129, partido: "PDC" },
-        { id: 130, partido: "PDC" },
-        { id: 131, partido: "PR" },
-        { id: 132, partido: "PR" },
-        { id: 133, partido: "FA" },
-        { id: 134, partido: "FA" },
-        { id: 135, partido: "FRVS" },
-        { id: 136, partido: "FRVS" },
-        { id: 137, partido: "PDG" },
-        { id: 138, partido: "PDG" },
-        { id: 139, partido: "DEM" },
-        { id: 140, partido: "UDI" },
-        { id: 141, partido: "UDI" },
-        { id: 142, partido: "UDI" },
-        { id: 143, partido: "UDI" },
-        { id: 144, partido: "UDI" },
-        { id: 145, partido: "EVOPOLI" },
-        { id: 146, partido: "EVOPOLI" },
-        { id: 147, partido: "PNL" },
-        { id: 148, partido: "PNL" },
-        { id: 149, partido: "PNL" },
-        { id: 150, partido: "PREP" },
-        { id: 151, partido: "PREP" },
-        { id: 152, partido: "PREP" },
-        { id: 153, partido: "PREP" },
-        { id: 154, partido: "PREP" },
-        { id: 155, partido: "PSC" },
-        { id: 156, partido: "PSC" },
-      ],
-    },
-  ];
+  const senadores = [
+        { radio: 80, 
+        cantidad: [
+            {id: 0, partido: 'PSC'},
+            {id: 1, partido: 'RN'},
+            {id: 2, partido: 'PREP'},
+            {id: 3, partido: 'PREP'},
+            {id: 4, partido: 'IND'},
+            {id: 5, partido: 'FRVS'},
+            {id: 6, partido: 'PC'},
+            {id: 7, partido: 'PC'},
+            {id: 8, partido: 'PC'},
+        ], 
+        },
+        { radio: 110, cantidad: [
+            {id: 9, partido: 'RN'},
+            {id: 10, partido: 'RN'},
+            {id: 11, partido: 'PREP'},
+            {id: 12, partido: 'PREP'},
+            {id: 13, partido: 'UDI'},
+            {id: 14, partido: 'IND'},
+            {id: 15, partido: 'FRVS'},
+            {id: 16, partido: 'FRVS'},
+            {id: 17, partido: 'PS'},
+            {id: 18, partido: 'PS'},
+            {id: 19, partido: 'PS'},
+        ] 
+        },
+        { radio: 140, cantidad: [
+            {id: 20, partido: 'RN'},
+            {id: 21, partido: 'RN'},
+            {id: 22, partido: 'RN'},
+            {id: 23, partido: 'RN'},
+            {id: 24, partido: 'PREP'},
+            {id: 25, partido: 'UDI'},
+            {id: 26, partido: 'UDI'},
+            {id: 27, partido: 'DEM'},
+            {id: 28, partido: 'PPD'},
+            {id: 29, partido: 'PPD'},
+            {id: 30, partido: 'PDC'},
+            {id: 31, partido: 'PS'},
+            {id: 32, partido: 'PS'},
+            {id: 33, partido: 'FA'},
+        ] 
+        },
+        { radio: 170, cantidad: [
+            {id: 34, partido: 'PNL'},
+            {id: 35, partido: 'RN'},
+            {id: 36, partido: 'RN'},
+            {id: 38, partido: 'RN'},
+            {id: 39, partido: 'EVOPOLI'},
+            {id: 40, partido: 'EVOPOLI'},
+            {id: 41, partido: 'UDI'},
+            {id: 42, partido: 'UDI'},
+            {id: 43, partido: 'DEM'},
+            {id: 44, partido: 'PPD'},
+            {id: 45, partido: 'PPD'},
+            {id: 46, partido: 'PDC'},
+            {id: 47, partido: 'PDC'},
+            {id: 48, partido: 'PS'},
+            {id: 49, partido: 'PS'},
+            {id: 50, partido: 'FA'},
+        ] 
+        },
+    ];
 
   const [leyesChilenas, setLeyesChilenas] = useState(LEYES);
   const pelotas = [];
@@ -304,7 +177,7 @@ export const CamaraDipu = () => {
   const dispatch = useDispatch();
 
   {
-    diputados.map((fila, index) => {
+    senadores.map((fila, index) => {
       for (let i = 0; i < fila.cantidad.length; i++) {
         //calcular angulo de cada pelota
         const anguloEnRadianes =
@@ -313,8 +186,8 @@ export const CamaraDipu = () => {
         const cartX = fila.radio * Math.cos(anguloEnRadianes);
         const cartY = fila.radio * Math.sin(anguloEnRadianes);
 
-        const posicionX = 250 + cartX - 10;
-        const posicionY = 250 - cartY - 10;
+        const posicionX = 230 + cartX - 12;
+        const posicionY = 230 - cartY - 12;
 
         const partido = fila.cantidad[i].partido;
 
@@ -326,7 +199,7 @@ export const CamaraDipu = () => {
         partidosCoordenadas.push(dataPartido);
 
         const pelota = (
-          <Desk
+          <DeskSena
             partido={partido}
             left={posicionX}
             top={posicionY}
@@ -398,7 +271,7 @@ export const CamaraDipu = () => {
                 porcentaje: "60%",
                 tiempo: "Hoy",
               }));
-              dispatch(representantePorPartido(partido));
+              dispatch(senadoresPorPartido(partido));
             }}
           />
         );
@@ -421,7 +294,7 @@ export const CamaraDipu = () => {
                 porcentaje: "60%",
                 tiempo: "Hoy",
               }));
-              dispatch(representantePorPartido(partido));
+              dispatch(senadoresPorPartido(partido));
             }}
           />
         );
@@ -444,7 +317,7 @@ export const CamaraDipu = () => {
                 porcentaje: "60%",
                 tiempo: "Hoy",
               }));
-              dispatch(representantePorPartido(partido));
+              dispatch(senadoresPorPartido(partido));
             }}
           />
         );
@@ -456,8 +329,8 @@ export const CamaraDipu = () => {
     infoPartidos.push(infoPartido);
   }
 
-  const representantes = useSelector(
-    (store) => store.selectRepresentante.representantePorPartido
+  const senadoresSeleccionados = useSelector(
+    (store) => store.selecccionSenadores.senadoresPorPartido
   );
 
   const handleResultPress = (item) => {
@@ -489,15 +362,15 @@ export const CamaraDipu = () => {
       setHoyActivo(false);
       setBotonActivo(1);
       setHabilitarTransicion(false);
-
     }
 
+    const timeout = setTimeout(
+      () => {
+        setBotonActivo((prev) => prev + 1);
+      },
 
-    const timeout = setTimeout(() => {
-      setBotonActivo((prev) => prev + 1);
-    }
-    
-    , 2000);
+      2000
+    );
 
     return () => clearTimeout(timeout);
   }, [botonActivo, habilitarTransicion]);
@@ -507,7 +380,7 @@ export const CamaraDipu = () => {
   const handlePress = (botonActivo) => {
     setHabilitarTransicion(false);
     setBotonActivo(botonActivo);
-    if(botonActivo === 3){
+    if (botonActivo === 3) {
       setLeyActual({ fecha: "", nombre: "" });
     }
   };
@@ -523,10 +396,10 @@ export const CamaraDipu = () => {
   const navigation = useNavigation();
 
   const handlePressNavigate = (partidoEstadistica) => {
-    dispatch(seleccionPartido(partidoEstadistica));
-    dispatch(filteredDiputadosPartido(partidoEstadistica));
-    navigation.navigate("EstadisticaPartido");
-    console.log('partido seleccionado: ',partidoEstadistica)
+    dispatch(seleccionPartidoSenado(partidoEstadistica));
+    dispatch(filteredSenadoresPartido(partidoEstadistica));
+    navigation.navigate("EstadisticaPartidoSenado");
+    console.log("partido seleccionado: ", partidoEstadistica);
   };
 
   return (
@@ -659,72 +532,71 @@ export const CamaraDipu = () => {
           </View>
 
           <Modal visible={modalVisible} transparent animationType="fade">
-            <View style={styles.overlay}> 
-              <Pressable 
-                style={StyleSheet.absoluteFill} 
-                onPress={() => setModalVisible(false)} 
+            <View style={styles.overlay}>
+              <Pressable
+                style={StyleSheet.absoluteFill}
+                onPress={() => setModalVisible(false)}
               />
 
-                  <View style={styles.modalContainer}>
-                    <View style={styles.tituloContainer}>
-                      <View>
-                        <Text style={styles.tituloText}>{infoModal.tipo}</Text>
-                        <Text style={styles.tituloText}>{infoModal.tiempo}</Text>
-                      </View>
-                      <MaterialIcons
-                        name="event-available"
-                        size={50}
-                        color={COLORS.back}
-                      />
-                    </View>
-                    <View style={styles.conteiner2}>
-                      <TouchableOpacity
-                        style={styles.botonPartido}
-                        onPress={() => handlePressNavigate(infoModal.partido)}
-                      >
-                        <View
-                          style={{
-                            width: 55,
-                            height: 55,
-                            backgroundColor: COLORS.back,
-                            borderRadius: 100,
-                            borderColor,
-                            borderWidth: 3,
-                            justifyContent: "center",
-                            alignItems: "center",
-                          }}
-                        >
-                          <Text style={styles.infopartido}>
-                            {infoModal.partido}
-                          </Text>
-                          <Text style={styles.infoPorcentaje}>
-                            {infoModal.porcentaje}
-                          </Text>
-                        </View>
-                        <View>
-                          <Text style={styles.textBoton}>
-                            Estadísticas del Partido
-                          </Text>
-                        </View>
-                        <Ionicons
-                          name="chevron-forward-circle"
-                          size={20}
-                          color={COLORS.greenM}
-                        />
-                      </TouchableOpacity>
-                      <FlatList
-                        data={representantes}
-                        renderItem={renderGridItem}
-                        numColumns={1}
-                        scrollEnabled={true}
-                        style={{flexGrow: 0, marginTop: 5, marginVertical: 15}}
-                        keyboardShouldPersistTaps="handled"
-                      />
-                    </View>
+              <View style={styles.modalContainer}>
+                <View style={styles.tituloContainer}>
+                  <View>
+                    <Text style={styles.tituloText}>{infoModal.tipo}</Text>
+                    <Text style={styles.tituloText}>{infoModal.tiempo}</Text>
                   </View>
+                  <MaterialIcons
+                    name="event-available"
+                    size={50}
+                    color={COLORS.back}
+                  />
+                </View>
+                <View style={styles.conteiner2}>
+                  <TouchableOpacity
+                    style={styles.botonPartido}
+                    onPress={() => handlePressNavigate(infoModal.partido)}
+                  >
+                    <View
+                      style={{
+                        width: 55,
+                        height: 55,
+                        backgroundColor: COLORS.back,
+                        borderRadius: 100,
+                        borderColor,
+                        borderWidth: 3,
+                        justifyContent: "center",
+                        alignItems: "center",
+                      }}
+                    >
+                      <Text style={styles.infopartido}>
+                        {infoModal.partido}
+                      </Text>
+                      <Text style={styles.infoPorcentaje}>
+                        {infoModal.porcentaje}
+                      </Text>
+                    </View>
+                    <View>
+                      <Text style={styles.textBoton}>
+                        Estadísticas del Partido
+                      </Text>
+                    </View>
+                    <Ionicons
+                      name="chevron-forward-circle"
+                      size={20}
+                      color={COLORS.greenM}
+                    />
+                  </TouchableOpacity>
+                  <FlatList
+                    data={senadoresSeleccionados}
+                    renderItem={renderGridItem}
+                    numColumns={1}
+                    scrollEnabled={true}
+                    style={{ flexGrow: 0, marginTop: 5, marginVertical: 15 }}
+                    keyboardShouldPersistTaps="handled"
+                  />
+                </View>
+              </View>
             </View>
           </Modal>
-
         </>
       )}
     </View>

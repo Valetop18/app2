@@ -23,7 +23,7 @@ const coloresPorPartido = {
         'PREP': COLORS.PREP,
         'PNL': COLORS.PNL,
         'PSC': COLORS.PSC,
-        'PD': COLORS.PD
+        'DEM': COLORS.DEM
 }
 
 export const DeskSena = ({partido, left, top}) => {

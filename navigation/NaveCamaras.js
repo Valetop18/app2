@@ -2,11 +2,14 @@ import React from "react";
 import { Platform } from "react-native";
 import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
 import { COLORS } from "../constants/colors";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
 import { CamaraDipu } from "../screens/Camaras";
-import { CamaraSena } from "../screens/CamaraSena";
+import { CamaraSena } from "../screens/Senado";
+import { EstadisticaPartido } from "../screens/EstadisticaPartido";
 
 const Stack = createMaterialTopTabNavigator();
+const StackNative = createNativeStackNavigator();
 
 const NaveCamaras = () => {
   return (
@@ -15,7 +18,7 @@ const NaveCamaras = () => {
       screenOptions={{
         headerShown: false,
         tabBarLabelStyle: {
-          fontSize: 15,
+          fontSize: 16,
           fontFamily: "NotoSansMyanmar_700Bold",
         },
         tabBarInactiveTintColor: COLORS.greyM,
@@ -39,12 +42,12 @@ const NaveCamaras = () => {
       }}
     >
       <Stack.Screen
-        name="CamaraDipu"
+        name="CámaraDipu"
         component={CamaraDipu}
         options={{ title: "Cámara de Diputados" }}
       />
       <Stack.Screen
-        name="CamaraSena"
+        name="CámaraSena"
         component={CamaraSena}
         options={{ title: "Cámara de Senadores" }}
       />

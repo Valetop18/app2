@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+import React, { useContext, useLayoutEffect } from "react";
 import {
   View,
   Text,
@@ -8,21 +8,24 @@ import {
   KeyboardAvoidingView,
   Platform,
   TextInput,
+  FlatList,
 } from "react-native";
-import { FontAwesome } from "@expo/vector-icons";
-import { Entypo } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
 import { COLORS } from "../constants/colors";
 import { useState, useEffect } from "react";
 import { ref, set, update, onValue, remove } from "firebase/database";
 import { db } from "../constants/config";
 import { MaterialIcons } from "@react-native-vector-icons/material-icons";
 import { PieChart, LineChart } from "react-native-gifted-charts";
-import Buscador from "../components/Buscador";
-import { SearchResults } from "../components/SearchResults";
+import GridRepresentPartido from "../components/gridRepresentsPartido";
 import { LEYES } from "../data/leyes";
 import { BuscadorContext } from "../context/BuscadorContext";
-import { msPersonRaisedHand } from "@material-symbols-react-native/outlined-400";
+import {
+  msPersonRaisedHand,
+  msCloudUpload,
+} from "@material-symbols-react-native/outlined-400";
 import { MsIcon } from "material-symbols-react-native";
+import { useSelector } from "react-redux";
 
 const coloresPorPartido = {
   DES: COLORS.DES,
@@ -45,10 +48,18 @@ const coloresPorPartido = {
   PREP: COLORS.PREP,
   PNL: COLORS.PNL,
   PSC: COLORS.PSC,
-  PD: COLORS.PD,
+  DEM: COLORS.DEM,
 };
 
-export const DescripcionDiputado = ({ route }) => {
+export const EstadisticaPartidoSenado = ({}) => {
+  const navigation = useNavigation();
+
+  useLayoutEffect(() => {
+    // navigation.getParent()?.getParent()?.setOptions({
+    //   headerTitle: "Diputadoss",
+    // })
+  }, [navigation]);
+
   const [asistencia, setAsistencia] = useState();
   const [votacion, setVotacion] = useState();
 
@@ -77,53 +88,21 @@ export const DescripcionDiputado = ({ route }) => {
     { value: 60, label: "JUN" },
   ];
 
-  useEffect(() => {
-    const starCountRef = ref(db, "diputados/asistencia/" + item);
-    onValue(starCountRef, (snapshot) => {
-      console.log(snapshot.val(item));
-      setAsistencia(snapshot.val(item));
-    });
-  }, [item]);
+  const senadores = useSelector(
+    (store) => store.selectSenadorPartido.filteredSenadoresPartido
+  );
 
-  useEffect(() => {
-    const starCountRef = ref(db, "diputados/votaciones/" + item);
-    onValue(starCountRef, (snapshot) => {
-      console.log(snapshot.val(route.params.id));
-      setVotacion(snapshot.val(item));
-    });
-  }, [item]);
+  console.log("senadores: ", senadores);
 
-  useEffect(() => {
-    const starCountRef = ref(db, "diputados/proyectos/" + item);
-    onValue(starCountRef, (snapshot) => {
-      console.log(snapshot.val(route.params.id));
-      setProyectos(snapshot.val(item));
-    });
-  }, [item]);
+  const renderGridItem = ({ item }) => <GridRepresentPartido item={item} />;
 
-  useEffect(() => {
-    console.log("query busqueda: ", search);
-    filtrarLeyes(search);
-  }, [search]);
+  const partidoSeleccionadoSenado = useSelector(
+    (store) => store.selectSenadorPartido.seleccionPartidoSenado
+  );
 
-  const { diputado } = route.params;
-  const item = diputado.id;
+  console.log("partido llegada: ", partidoSeleccionadoSenado);
 
-  console.log("diputado: ", diputado);
-
-  const borderColor = coloresPorPartido[diputado.partido] || "#000";
-
-  const filtrarLeyes = (texto) => {
-    const leyesFiltradas = LEYES.filter((ley) => {
-      const nombreLey = ley.nombre ? ley.nombre.toUpperCase() : "";
-      const descLey = ley.descripcion ? ley.descripcion.toUpperCase() : "";
-      const textUpper = texto.toUpperCase();
-      return nombreLey.includes(textUpper) || descLey.includes(textUpper);
-    });
-    console.log(leyesFiltradas);
-    setLeyesChilenas(leyesFiltradas);
-    return leyesFiltradas;
-  };
+  const borderColor = coloresPorPartido[partidoSeleccionadoSenado.partido] || "#000";
 
   return (
     <KeyboardAvoidingView
@@ -134,16 +113,7 @@ export const DescripcionDiputado = ({ route }) => {
       <ScrollView contentContainerStyle={styles.back}>
         <View style={styles.principal}>
           <View style={styles.container1}>
-            <Text style={styles.title}>{diputado.nombre}</Text>
-            <View style={styles.favorite}>
-              <MaterialIcons
-                name="favorite"
-                size={42}
-                color={COLORS.greenM}
-                position={"absolute"}
-              />
-              <Text style={styles.interes}>36%</Text>
-            </View>
+            <Text style={styles.title}>{partidoSeleccionadoSenado.nombre}</Text>
           </View>
           <View style={styles.container2}>
             <View>
@@ -155,15 +125,15 @@ export const DescripcionDiputado = ({ route }) => {
                   borderRadius: 100,
                   borderWidth: 4,
                 }}
-                source={diputado.foto}
+                source={partidoSeleccionadoSenado.foto}
               />
-              <Text style={styles.partido}>{diputado.partido}</Text>
+              <Text style={styles.partido}>{partidoSeleccionadoSenado.partido}</Text>
             </View>
             <View style={styles.estadistica}>
               <View flexDirection={"row"} alignItems={"center"}>
                 <MaterialIcons
                   name="event-available"
-                  size={17}
+                  size={20}
                   color={COLORS.black}
                 />
                 <Text style={styles.informacion}>{asistencia}% Asistencia</Text>
@@ -171,45 +141,43 @@ export const DescripcionDiputado = ({ route }) => {
               <View flexDirection={"row"} alignItems={"center"}>
                 <MsIcon
                   icon={msPersonRaisedHand}
-                  size={18}
+                  size={20}
                   color={COLORS.black}
                 />
                 <Text style={styles.informacion}>{votacion}% Votaciones</Text>
               </View>
               <View flexDirection={"row"} alignItems={"center"}>
-                <MaterialIcons
-                  name="diversity-2"
-                  size={17}
-                  color={COLORS.black}
-                />
-                <Text style={styles.informacion} marginLeft={"1%"}>
-                  Conforma {comision} comisiones
-                </Text>
-              </View>
-              <View flexDirection={"row"} alignItems={"center"}>
-                <MaterialIcons name="addchart" size={17} color={COLORS.black} />
-                <Text style={styles.informacion}>
-                  {mocion} mociones presentadas
-                </Text>
+                <MsIcon icon={msCloudUpload} size={20} color={COLORS.black} />
+                <Text style={styles.informacion}>{votacion}% Efectividad</Text>
               </View>
             </View>
-            <View style={styles.datausage}>
-              <MaterialIcons
-                name="data-usage"
-                size={50}
-                color={COLORS.verdeclaro}
-                position={"absolute"}
-              />
-              <Text style={styles.data2}>36%</Text>
+            <View marginRight={10}>
+              <View style={styles.favorite}>
+                <MaterialIcons
+                  name="favorite"
+                  size={42}
+                  color={COLORS.greenM}
+                  position={"absolute"}
+                />
+                <Text style={styles.interes}>36%</Text>
+              </View>
+              <View style={styles.datausage}>
+                <MaterialIcons
+                  name="data-usage"
+                  size={50}
+                  color={COLORS.verdeclaro}
+                  position={"absolute"}
+                />
+                <Text style={styles.data2}>36%</Text>
+              </View>
             </View>
           </View>
-          <Text style={styles.descripcion}>{diputado.descripcion}</Text>
           <View style={styles.container3}>
             <Text style={styles.title2}>Estadísticas de la gestión.</Text>
           </View>
           <View style={styles.container4}>
             <View width={90} marginVertical={"5%"} alignSelf={"center"}>
-              <Text style={styles.label}>Avances del programa presentado.</Text>
+              <Text style={styles.label}>Proyectos aprobados/presentados</Text>
             </View>
             <View marginVertical={"1%"}>
               <PieChart
@@ -305,7 +273,7 @@ export const DescripcionDiputado = ({ route }) => {
                 </View>
                 <View width={130} marginVertical={"3%"}>
                   <Text style={styles.label2}>
-                    Proyectos aprobados/presentados
+                    Porcentaje de votos recibidos
                   </Text>
                 </View>
               </View>
@@ -320,9 +288,7 @@ export const DescripcionDiputado = ({ route }) => {
                   <Text style={styles.data2}>50%</Text>
                 </View>
                 <View width={130}>
-                  <Text style={styles.label2}>
-                    Adherencia al partido político
-                  </Text>
+                  <Text style={styles.label2}>Índice de cohesión</Text>
                 </View>
               </View>
             </View>
@@ -333,7 +299,7 @@ export const DescripcionDiputado = ({ route }) => {
                 </View>
                 <View width={140} marginVertical={"3%"} marginLeft={5}>
                   <Text style={styles.label2}>
-                    Compatibilidad con el representante
+                    Compatibilidad con el partido
                   </Text>
                 </View>
               </View>
@@ -343,23 +309,19 @@ export const DescripcionDiputado = ({ route }) => {
                 </View>
                 <View width={145} marginVertical={"3%"} marginLeft={5}>
                   <Text style={styles.label2}>
-                    Lugar estadístico de todos los representantes 
+                    Lugar estadístico entre los partidos
                   </Text>
                 </View>
               </View>
             </View>
           </View>
         </View>
-        <View style={styles.buscador}>
-          <Buscador />
-        </View>
-        <View>
-          <SearchResults
-            data={leyesChilenas}
-            onSelect={() => console.log("click")}
-            representante={diputado.id}
-          />
-        </View>
+        <FlatList
+          data={senadores}
+          renderItem={renderGridItem}
+          numColumns={1}
+          keyExtractor={(item) => item.id}
+        />
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -380,9 +342,8 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   container1: {
-    marginLeft: "12%",
+    marginLeft: "4%",
     marginTop: "1%",
-    flexDirection: "row",
     justifyContent: "space-between",
   },
   image: {
@@ -397,10 +358,8 @@ const styles = StyleSheet.create({
     color: COLORS.black,
   },
   favorite: {
-    marginTop: "5%",
-    marginRight: "5%",
+    marginVertical: "12%",
     alignItems: "center",
-    width: 42,
     justifyContent: "center",
   },
   interes: {
@@ -416,7 +375,7 @@ const styles = StyleSheet.create({
   },
   container3: {
     marginLeft: "5%",
-    marginTop: "2%",
+
   },
   container4: {
     flexDirection: "row",
@@ -430,23 +389,15 @@ const styles = StyleSheet.create({
   container6: {
     flexDirection: "row",
   },
-  descripcion: {
-    fontFamily: "NotoSansMyanmar_400Regular",
-    fontSize: 12,
-    textAlign: "justify",
-    marginHorizontal: "2%",
-    lineHeight: 18,
-    top: "1%",
-  },
   label: {
     fontFamily: "NotoSansMyanmar_400Regular",
-    fontSize: 12.5,
+    fontSize: 13,
     textAlign: "center",
     lineHeight: 16,
   },
   label2: {
     fontFamily: "NotoSansMyanmar_400Regular",
-    fontSize: 12.5,
+    fontSize: 13,
     textAlign: "auto",
     lineHeight: 16,
   },
@@ -454,20 +405,19 @@ const styles = StyleSheet.create({
     flexDirection: "row",
   },
   estadistica: {
-    marginTop: "2%",
-    marginLeft: "-5%",
+    marginTop: "4%",
+    marginLeft: "-16%",
   },
   info: {},
   informacion: {
     fontFamily: "NotoSansMyanmar_400Regular",
-    fontSize: 13,
+    fontSize: 14,
     color: COLORS.black,
     maxWidth: "98%",
     marginLeft: "2%",
   },
   datausage: {
     marginTop: "2%",
-    marginRight: "1%",
     alignItems: "center",
     width: 52,
     height: 52,
@@ -498,15 +448,12 @@ const styles = StyleSheet.create({
   },
   partido: {
     fontFamily: "NotoSansMyanmar_700Bold",
-    fontSize: 14,
+    fontSize: 16,
+    color: COLORS.black,
     alignSelf: "center",
     marginTop: "2%",
   },
   keyboardView: {
     flex: 1,
-  },
-  buscador: {
-    width: "96%",
-    alignSelf: "center",
   },
 });

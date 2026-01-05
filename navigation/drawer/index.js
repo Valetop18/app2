@@ -1,5 +1,5 @@
 import "react-native-gesture-handler";
-import React from "react";
+import { React, useEffect, useContext, useState } from "react";
 import {
   StyleSheet,
   View,
@@ -35,14 +35,18 @@ import SelectDistrito from "../../screens/selectDistrito";
 import { Presentacion } from "../../screens/presentacion";
 
 import NaveCamaras from "../NaveCamaras";
+import CamarasStack from "../CamarasStack";
 import NaveDiputados from "../NaveDiputados";
 import NaveSenadores from "../NaveSenadores";
+import NaveLeyes from "../NaveLeyes";
 
 import { logout } from "../../store/actions/login.actions";
 import { changeDistrit } from "../../store/actions/diputado.action";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigationState } from "@react-navigation/native";
 import Buscador from "../../components/Buscador";
+import { BuscadorContext } from "../../context/BuscadorContext";
+import { LEYES } from "../../data/leyes";
 
 const BottomsTabs = createBottomTabNavigator();
 const Drawer = createDrawerNavigator();
@@ -63,6 +67,8 @@ function CustomDrawerContent(props) {
     dispatch(changeDistrit());
   };
 
+
+
   return (
     <DrawerContentScrollView
       {...props}
@@ -81,7 +87,7 @@ function CustomDrawerContent(props) {
           fontSize: 14,
           margin: 0,
         }}
-        style={{ marginLeft: "-5%", borderRadius: 0, width: 500, height: 48 }}
+        style={{ marginLeft: "-6%", borderRadius: 0, width: 500, height: 48 }}
         activeBackgroundColor={COLORS.verdeclaro}
         activeTintColor={COLORS.greenM}
         inactiveBackgroundColor={COLORS.greenM}
@@ -90,7 +96,7 @@ function CustomDrawerContent(props) {
       />
       <DrawerItem
         icon={({ focused, color, size }) => (
-          <MsIcon icon={msLogout} size={16} color={COLORS.back}/>
+          <MsIcon icon={msLogout} size={16} color={COLORS.back} />
         )}
         label="Cerrar Sesión"
         onPress={submit}
@@ -99,7 +105,7 @@ function CustomDrawerContent(props) {
           fontSize: 14,
           margin: 0,
         }}
-        style={{ marginLeft: "-5%", borderRadius: 0, width: 500, height: 48 }}
+        style={{ marginLeft: "-6%", borderRadius: 0, width: 500, height: 48 }}
         activeBackgroundColor={COLORS.verdeclaro}
         activeTintColor={COLORS.greenM}
         inactiveBackgroundColor={COLORS.greenM}
@@ -124,7 +130,7 @@ const MyDrawer = () => {
       route = route.state.routes[route.state.index];
     }
 
-    console.log("nombre: ", route.name);
+    console.log("------nombre: ", route.name);
     return route.name;
   });
 
@@ -162,7 +168,7 @@ const MyDrawer = () => {
             headerStyle: { backgroundColor: COLORS.back, elevation: 0 },
             drawerStyle: {
               backgroundColor: COLORS.greenM,
-              width: "55%",
+              width: "50%",
               height: "100%",
               borderRadius: 0,
             },
@@ -171,7 +177,7 @@ const MyDrawer = () => {
             drawerInactiveBackgroundColor: COLORS.greenM,
             drawerInactiveTintColor: COLORS.back,
             drawerItemStyle: {
-              marginLeft: "-5%",
+              marginLeft: "-6%",
               borderRadius: 0,
               width: 500,
               height: 48,
@@ -192,7 +198,7 @@ const MyDrawer = () => {
                 elevation: 0,
               },
               headerTitle: () =>
-                rutaActiva.includes("Camara") ? (
+                rutaActiva.includes("Cámara") ? (
                   <Buscador />
                 ) : (
                   <Text style={styles.header}>Distrito {distritoID}</Text>
@@ -219,7 +225,7 @@ const MyDrawer = () => {
                     Platform.OS === "android" ? COLORS.greenM : COLORS.grey,
                   tabBarStyle: styles.tabBar,
                   tabBarLabelStyle: {
-                    fontSize: 12,
+                    fontSize: 12.5,
                     fontFamily: "NotoSansMyanmar_400Regular",
                     color: COLORS.black,
                   },
@@ -264,8 +270,8 @@ const MyDrawer = () => {
                   }}
                 />
                 <BottomsTabs.Screen
-                  name="Camaras"
-                  component={NaveCamaras}
+                  name="Cámaras"
+                  component={CamarasStack}
                   options={{
                     tabBarIcon: ({ focused }) => (
                       <View style={styles.item}>
@@ -288,6 +294,19 @@ const MyDrawer = () => {
               drawerIcon: ({ focused, size }) => (
                 <MsIcon
                   icon={msFavorite}
+                  size={16}
+                  color={focused ? COLORS.greenM : COLORS.back}
+                />
+              ),
+            }}
+          />
+          <Drawer.Screen
+            name="Legislatura"
+            component={NaveLeyes}
+            options={{
+              drawerIcon: ({ focused, size }) => (
+                <MaterialIcons
+                  name="how-to-vote"
                   size={16}
                   color={focused ? COLORS.greenM : COLORS.back}
                 />
@@ -332,7 +351,7 @@ const styles = StyleSheet.create({
   icon: {},
   header: {
     fontFamily: "NotoSansMyanmar_700Bold",
-    fontSize: 25,
+    fontSize: 26,
     letterSpacing: 2,
     color: COLORS.greenM,
   },

@@ -1,5 +1,5 @@
 import React from "react";
-import { View, StyleSheet, Text } from "react-native";
+import { View, StyleSheet, Text, TouchableOpacity } from "react-native";
 import { COLORS } from "../constants/colors";
 
 const coloresPorPartido = {
@@ -23,13 +23,29 @@ const coloresPorPartido = {
         'PREP': COLORS.PREP,
         'PNL': COLORS.PNL,
         'PSC': COLORS.PSC,
-        'PD': COLORS.PD
+        'DEM': COLORS.DEM
 }
 
-export const InfoPartido = ({partido, porcentaje, left, top}) => {
+export const InfoPartido = ({partido, porcentajeAsistencia, porcentajeVotacion, numeroProyectos, left, top, onPress}) => {
     const borderColor = coloresPorPartido[partido] || '#000';
+
+    const TextoDinamico = () => {
+
+        if (porcentajeAsistencia) {
+            return <Text style={styles.infoPorcentaje}>{porcentajeAsistencia}</Text>  
+        }
+
+        if (porcentajeVotacion) {
+            return <Text style={styles.infoPorcentaje}>{porcentajeVotacion}</Text>  
+        }
+        if (numeroProyectos) {
+            return <Text style={styles.infoPorcentaje}>{numeroProyectos}</Text>  
+        }
+    }
+
     return (
-        <View
+        <TouchableOpacity
+            onPress={onPress}
             style={{
                 width: 55,
                 height: 55,
@@ -45,8 +61,9 @@ export const InfoPartido = ({partido, porcentaje, left, top}) => {
             }}
         >
             <Text style={styles.infopartido}>{partido}</Text>  
-            <Text style={styles.infoPorcentaje}>{porcentaje}</Text>  
-        </View>
+
+            {TextoDinamico()}
+        </TouchableOpacity>
     )
 }
 
@@ -55,7 +72,8 @@ infopartido: {
         fontFamily: 'NotoSansMyanmar_700Bold',
         fontSize: 10,
         color: COLORS.greenM,
-        top: 5,
+        top: 9,
+        lineHeight: 15,
     },
     infoPorcentaje: {
         fontFamily: 'NotoSansMyanmar_700Bold',

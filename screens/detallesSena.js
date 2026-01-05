@@ -7,7 +7,7 @@ import { useState, useEffect } from "react";
 import { ref, set, update, onValue, remove } from "firebase/database";
 import { db } from "../constants/config";
 
-export const DescripcionSenador = ({ route }) => {
+export const Descripcion = ({ route }) => {
 
     const [asistencia, setAsistencia] = useState();
     const [votacion, setVotacion] = useState();
