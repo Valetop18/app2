@@ -5,11 +5,12 @@ import {
   TouchableOpacity,
   StyleSheet,
   Alert,
+  Button,
   TextInput,
   Image,
   KeyboardAvoidingView,
   Platform,
-  ScrollView
+  ScrollView,
 } from "react-native";
 import Input from "../components/input";
 import { useDispatch, useSelector } from "react-redux";
@@ -25,7 +26,11 @@ import { useNavigation } from "@react-navigation/native";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth, dbFirestore } from "../constants/config";
 import { doc, getDoc } from "firebase/firestore";
-
+import { useAuth } from "../context/AuthContext";
+import Modal from "react-native-modal";
+import { msGppMaybe } from "@material-symbols-react-native/outlined-400";
+import { MsIcon } from "material-symbols-react-native";
+import MaterialIcons from "@react-native-vector-icons/material-icons";
 
 const INITIAL_STATE = {
   user: "",
@@ -34,6 +39,8 @@ const INITIAL_STATE = {
 
 const Login = () => {
   const dispatch = useDispatch();
+  const { authError, login } = useAuth();
+  const [modalVisible, setModalVisible] = useState(false);
 
   const [regionSelect, setRegionSelect] = useState();
   const [distritoSelect, setDistritoSelect] = useState(null);
@@ -112,13 +119,17 @@ const Login = () => {
 
   const handleLoginFirebase = async (email, pass) => {
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, pass );
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        email,
+        pass,
+      );
       const uid = userCredential.user.uid;
       const userRef = doc(dbFirestore, "usuarios", uid);
       const userInfo = await getDoc(userRef);
 
-      if ( !userInfo.exists() ) {
-        Alert.alert("Error", "Usuario no registrado")
+      if (!userInfo.exists()) {
+        Alert.alert("Error", "Usuario no registrado");
       }
 
       const data = userInfo.data();
@@ -126,32 +137,17 @@ const Login = () => {
       //dispatch({ type: 'LOGIN_FIREBASE', userData: uid })
       navigation.navigate("SelectDistrito");
 
-
       console.log(data);
     } catch (error) {
-      console.error(error)
+      console.error(error);
     }
-  }
+  };
 
   const onLogInHandler = async (emailParam, passParam) => {
-
     const currentEmail = typeof emailParam === "string" ? emailParam : email;
     const currentPass = typeof passParam === "string" ? passParam : pass;
 
-
-    const emailValid = onHandleValidationEmail(currentEmail);
-    const passValid = onHandleValidationPassword(currentPass);
-
-    if (!emailValid.isValid || !passValid.isValid) {
-      Alert.alert(
-        "No ha completado sus datos",
-        "Por favor introduzca correo y contraseña",
-        [{ text: "Ok" }]
-      );
-      return;
-    }
     try {
-
       //await handleLoginFirebase(currentEmail, currentPass);
 
       if (recuerdame) {
@@ -160,10 +156,17 @@ const Login = () => {
       }
 
       fetchDistrito();
+
+      await login({ email: currentEmail, password: currentPass });
+
+      if (authError) {
+        setModalVisible(true);
+      }
+
       dispatch(
-        login(currentEmail, currentPass),
+        //login(currentEmail, currentPass),
         filteredDiputados(distritoSelect),
-        filteredSenadores(regionSelect)
+        filteredSenadores(regionSelect),
       );
       //validar respuesta de login, si es exitosa hacer navigate a MyDrawer
     } catch (error) {
@@ -186,130 +189,148 @@ const Login = () => {
   }, [pass]);
 
   return (
-      <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? "padding" : "height"}
-      style={{flex: 1}}
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      style={{ flex: 1 }}
     >
-
-    {/* <View style={styles.container}> */}
-
-    <ScrollView
-      contentContainerStyle={styles.scrollContainer}
-      keyboardShouldPersistTaps="handled"
-    >
-
-      <View style={styles.containerTitle}>
-        <Text style={styles.title}>Bienvenido</Text>
-        <Text style={styles.subtitle}>Ingresa a tu cuenta</Text>
-      </View>
-      <View style={styles.containerlogin}>
-        <View style={styles.containercorreo}>
-          <View style={styles.textoCorreo}>
-            <Text style={styles.label}>Correo electrónico:</Text>
+      <Modal
+        isVisible={modalVisible}
+        onBackdropPress={() => setModalVisible(false)}
+        style={{ margin: 0, justifyContent: "flex-end" }}
+      >
+        <View
+          style={{
+            height: "16%",
+            width: "100%",
+            backgroundColor: COLORS.back,
+            justifyContent: "center",
+            alignItems: "center",
+            borderTopRightRadius: 5,
+            borderTopLeftRadius: 5,
+            paddingHorizontal: 25,
+          }}
+        >
+          <View style={{ alignSelf: "flex-end" }}>
+            <TouchableOpacity onPress={() => setModalVisible(false)}>
+              <MaterialIcons
+                name="cancel"
+                size={20}
+                color={COLORS.grey}
+              />
+            </TouchableOpacity>
           </View>
-          <View style={styles.inputcorreo}>
-            <View width={'90%'}> 
-                <Input
-                id="user"
-                label="Usuario"
-                setInput={setEmailChange}
-                value={email}
-                keyboardType="email-address"
-                />
+          <View style={{ alignItems: "center", justifyContent: "center" }}>
+            <MsIcon icon={msGppMaybe} size={45} color={COLORS.greenM} />
+            <Text style={styles.textModal}>Credenciales incorrectas</Text>
+          </View>
+        </View>
+      </Modal>
+
+      {/* <View style={styles.container}> */}
+
+      <ScrollView
+        contentContainerStyle={styles.scrollContainer}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={styles.containerTitle}>
+          <Text style={styles.title}>Bienvenido</Text>
+          <Text style={styles.subtitle}>Ingresa a tu cuenta</Text>
+        </View>
+        <View style={styles.containerlogin}>
+          <View style={styles.containercorreo}>
+            <View style={styles.textoCorreo}>
+              <Text style={styles.label}>Correo electrónico:</Text>
             </View>
-            <FontAwesome name="check" size={16} fill={true} color={COLORS.grey} marginRight={'4%'} style={
-              isEmailValid.isValid && {
-                color: COLORS.greenM,
-              }
-            }/>
+            <View style={styles.inputcorreo}>
+              <View width={"90%"}>
+                <Input
+                  id="user"
+                  label="Usuario"
+                  setInput={setEmailChange}
+                  value={email}
+                  keyboardType="email-address"
+                />
+              </View>
+              <FontAwesome
+                name="check"
+                size={16}
+                fill={true}
+                color={COLORS.grey}
+                marginRight={"4%"}
+                style={
+                  isEmailValid.isValid && {
+                    color: COLORS.greenM,
+                  }
+                }
+              />
+            </View>
           </View>
-          {isEmailValid.touched && !isEmailValid.isValid && (
-            <Text style={styles.inputErrors}>Introduce un email válido</Text>
-          )}
+          <View style={styles.conteinerpass}>
+            <View style={styles.textoPass}>
+              <Text style={styles.label}>Contraseña:</Text>
+            </View>
+            <View style={styles.inputpass}>
+              <Input
+                id="pass"
+                label="Clave"
+                minLength={8}
+                secureTextEntry
+                setInput={setPass}
+                value={pass}
+                // onSelectionChange={onHandleValidationPassword}
+              />
+            </View>
+          </View>
+          <View style={styles.rememberForget}>
+            <TouchableOpacity
+              style={styles.remember}
+              onPress={() => setRecuerdame(!recuerdame)}
+            >
+              <Ionicons
+                name="checkmark-circle"
+                size={20}
+                color={recuerdame ? COLORS.greenM : COLORS.grey}
+              />
+              <Text style={styles.labelforget}>Recordarme</Text>
+            </TouchableOpacity>
+            <View style={styles.forget}>
+              <Text style={styles.forgetText}>Olvidaste la contraseña?</Text>
+            </View>
+          </View>
         </View>
-        <View style={styles.conteinerpass}>
-          <View style={styles.textoPass}>
-            <Text style={styles.label}>Contraseña:</Text>
-          </View>
-          <View
-            style={styles.inputpass}>
-            <Input
-              id="pass"
-              label="Clave"
-              minLength={8}
-              secureTextEntry
-              setInput={setPass}
-              value={pass}
-              // onSelectionChange={onHandleValidationPassword}
-            />
-            {isPassValid.touched && !isPassValid.isValid && (
-              <Text style={styles.inputErrors}>
-                Mínimo 8 caracteres
-              </Text>
-            )}
-          </View>
-        </View>
-        <View style={styles.rememberForget}>
+        <View style={styles.Ingresar}>
           <TouchableOpacity
-            style={styles.remember}
-            onPress={() => setRecuerdame(!recuerdame)}
+            style={styles.buttonIngresar}
+            activeOpacity={0.8}
+            onPress={onLogInHandler}
           >
-            <Ionicons
-              name="checkmark-circle"
-              size={20}
-              color={recuerdame ? COLORS.greenM : COLORS.grey}
-            />
-            <Text style={styles.labelforget}>Recordarme</Text>
+            <Text style={styles.IngresarText}>INGRESAR</Text>
           </TouchableOpacity>
-          <View style={styles.forget}>
-            <Text style={styles.forgetText}>Olvidaste la contraseña?</Text>
+        </View>
+        <View style={styles.Registro}>
+          <View style={styles.crearCuenta}>
+            <Text style={styles.labelcuenta}>No tienes cuenta?</Text>
           </View>
+          <TouchableOpacity
+            style={styles.buttonRegistro}
+            activeOpacity={0.8}
+            onPress={onSignUpHandler}
+          >
+            <Text style={styles.RegistroText}>Regístrate Aquí</Text>
+          </TouchableOpacity>
         </View>
-      </View>
-      <View style={styles.Ingresar}>
-        <TouchableOpacity
-          style={styles.buttonIngresar}
-          activeOpacity={0.8}
-          onPress={onLogInHandler}
-        >
-          <Text style={styles.IngresarText}>INGRESAR</Text>
-        </TouchableOpacity>
-      </View>
-      <View style={styles.Registro}>
-        <View style={styles.crearCuenta}>
-          <Text style={styles.labelcuenta}>No tienes cuenta?</Text>
-        </View>
-        <TouchableOpacity
-          style={styles.buttonRegistro}
-          activeOpacity={0.8}
-          onPress={onSignUpHandler}
-        >
-          <Text style={styles.RegistroText}>Regístrate Aquí</Text>
-        </TouchableOpacity>
-      </View>
-      <View style={styles.RegistroGoogle}>
-        <Text style={styles.labelgoogle}>O continuar con</Text>
-        <View style={styles.logoGloboGoogle}>
-          <Image
-            style={styles.logoGoogle}
-            source={require("../assets/otros/Google__G__logo.svg.png")}
-          />
-        </View>
-      </View>
-
-    </ScrollView>
-    {/* </View> */}
+      </ScrollView>
+      {/* </View> */}
     </KeyboardAvoidingView>
-
   );
 };
 
 export default Login;
 
 const styles = StyleSheet.create({
-  scrollContainer:{
-      flexGrow: 1,
-      paddingTop: 100
+  scrollContainer: {
+    flexGrow: 1,
+    paddingTop: 100,
   },
   container: {
     flex: 1,
@@ -360,10 +381,10 @@ const styles = StyleSheet.create({
     width: "90%",
     height: 50,
     borderRadius: 10,
-    flexDirection: 'row',
-    alignSelf: 'center',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignSelf: "center",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   conteinerpass: {
     flexDirection: "column",
@@ -416,6 +437,11 @@ const styles = StyleSheet.create({
     letterSpacing: 1.5,
     fontWeight: "bold",
   },
+  textModal: {
+    fontFamily: "NotoSansMyanmar_700Bold",
+    color: COLORS.black,
+    fontSize: 15,
+  },
   Registro: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -463,39 +489,11 @@ const styles = StyleSheet.create({
   },
   remember: {
     flexDirection: "row",
-    alignItems: 'center'
+    alignItems: "center",
   },
   forget: {
     flex: 1,
     alignItems: "flex-end",
-    alignSelf: 'center'
-  },
-  RegistroGoogle: {
-    alignItems: "center",
-    top: "2%",
-    flexDirection: "row",
-    width: "43%",
-    justifyContent: "center",
     alignSelf: "center",
-  },
-  labelgoogle: {
-    color: COLORS.black,
-    fontSize: 14,
-    fontFamily: "NotoSansMyanmar_400Regular",
-    fontWeight: "bold",
-    flex: 1,
-  },
-  logoGoogle: {
-    width: 35,
-    height: 35,
-  },
-  logoGloboGoogle: {
-    width: 58,
-    height: 58,
-    borderColor: COLORS.grey,
-    borderRadius: 100,
-    borderWidth: 3,
-    alignItems: "center",
-    justifyContent: "center",
   },
 });

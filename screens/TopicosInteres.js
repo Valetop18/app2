@@ -12,65 +12,47 @@ import { updateDoc, doc } from "firebase/firestore";
 import { dbFirestore } from "../constants/config";
 import Ionicons from "@react-native-vector-icons/ionicons";
 import { useNavigation } from "@react-navigation/native";
+import { useState, useEffect } from "react";
+import { useAuth } from "../context/AuthContext";
+import { topicosRepository } from "../infrastructure/TopicosRepository";
 
-import { useState } from "react";
+export const TopicosInteres = () => {
 
-export const TopicosInteres = ({ route }) => {
+  const { user } = useAuth();
+
+  const uid = user.id;
 
   const navigation = useNavigation();
-  const { uid } = route.params;
-  console.log("uid: ", uid);
 
+  const [topicos, setTopicos] = useState([]);
   const [seleccionados, setSeleccionados] = useState([]);
 
-  const topico = [
-    { id: 1, nombre: "Economía" },
-    { id: 2, nombre: "Política" },
-    { id: 3, nombre: "Recursos Naturales" },
-    { id: 4, nombre: "Pesca" },
-    { id: 5, nombre: "Medios de comunicación" },
-    { id: 6, nombre: "Salud" },
-    { id: 7, nombre: "Inmigración" },
-    { id: 8, nombre: "Infancia" },
-    { id: 9, nombre: "Seguridad" },
-    { id: 10, nombre: "Feminismo" },
-    { id: 11, nombre: "Minería" },
-    { id: 12, nombre: "Medio Ambiente" },
-    { id: 13, nombre: "Educación" },
-    { id: 14, nombre: "Patrimonio" },
-    { id: 15, nombre: "Derechos humanos" },
-    { id: 16, nombre: "Tecnología" },
-    { id: 17, nombre: "Agricultura" },
-    { id: 18, nombre: "Sistema Judicial" },
-    { id: 19, nombre: "Vivienda" },
-    { id: 20, nombre: "Cultura" },
-    { id: 21, nombre: "Sistema Previsional" },
-    { id: 22, nombre: "Deporte" },
-    { id: 23, nombre: "Familia" },
-    { id: 24, nombre: "Sustancias psicoactivas" },
-    { id: 25, nombre: "Energía" },
-    { id: 26, nombre: "Ganadería" },
-    { id: 27, nombre: "Leyes laborales" },
-    { id: 28, nombre: "Urbanismo" },
-    { id: 29, nombre: "Política Internacional" },
-    { id: 30, nombre: "Turismo" },
-    { id: 31, nombre: "Defensa nacional" },
-    { id: 32, nombre: "Impuestos" },
-    { id: 33, nombre: "Gobierno" },
-    { id: 34, nombre: "Infancia" },
-    { id: 35, nombre: "Adolescencia" },
-    { id: 36, nombre: "Narcotráfico" },
-    { id: 37, nombre: "Municipalidades" },
-    { id: 37, nombre: "Gobiernos Regionales" },
-  ];
 
-  const toggleSelection = (nombre) => {
-    console.log(nombre);
+  useEffect(() => {
+    cargarTopicos();
+  }, []);
+
+  const cargarTopicos = async () => {
+
+    try {
+
+      const data = await topicosRepository.getTopicos();
+      setTopicos(data); 
+    } catch (error) {
+      
+    }finally {
+
+    }
+
+
+  }
+
+  const toggleSelection = (id) => {
 
     setSeleccionados((prev) =>
-      prev.includes(nombre)
-        ? prev.filter((el) => el !== nombre)
-        : [...prev, nombre]
+      prev.includes(id)
+        ? prev.filter((el) => el !== id)
+        : [...prev, id]
     );
   };
 
@@ -80,8 +62,7 @@ export const TopicosInteres = ({ route }) => {
         Alert.alert("Selecciona al menos uno")
         return;
       }
-      const docRef = doc(dbFirestore, "usuarios", uid);
-      await updateDoc(docRef, { topicos: seleccionados });
+      await topicosRepository.saveUserTopicos(uid, seleccionados );
       navigation.navigate("PartidoUsuario")
     } catch (error) {
       console.error(error);
@@ -89,10 +70,10 @@ export const TopicosInteres = ({ route }) => {
   };
 
   const renderGridItem = ({ item }) => {
-    const isSelect = seleccionados.includes(item.nombre);
+    const isSelect = seleccionados.includes(item.id);
 
     return (
-      <TouchableOpacity onPress={() => toggleSelection(item.nombre)} style={styles.topicoContainer}>
+      <TouchableOpacity onPress={() => toggleSelection(item.id)} style={styles.topicoContainer}>
         <Topicos item={item} selected={isSelect} />
       </TouchableOpacity>
     );
@@ -110,7 +91,7 @@ export const TopicosInteres = ({ route }) => {
       </View>
       <View style={styles.containerFlatlist}>
         <FlatList
-          data={topico}
+          data={topicos}
           numColumns={3}
           style={styles.flatlist}
           columnWrapperStyle={styles.columnWrapper}

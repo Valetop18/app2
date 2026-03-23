@@ -9,39 +9,36 @@ import { COLORS } from "../constants/colors";
 import { useNavigation } from "@react-navigation/native";
 import { Partido } from "../components/partido";
 import Ionicons from "@react-native-vector-icons/ionicons";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { updateDoc, doc } from "firebase/firestore";
 import { dbFirestore } from "../constants/config";
+import { partidosRepository } from "../infrastructure/partidosRepository";
+import { useAuth } from "../context/AuthContext";
 
 export const PartidoUsuario = () => {
   const navigation = useNavigation();
-
+  const { user, setTipoAuth } = useAuth();
   const [partidoSeleccionado, setPartidoSeleccionado] = useState("");
+  const [partidos, setPartidos] = useState([])
 
-  const partidos = [
-    { id: 1, partido: "Partido Liberal (PL)" },
-    { id: 2, partido: "Partido Socialista (PS)" },
-    { id: 3, partido: "Partido Comunista (PC)" },
-    { id: 4, partido: "Partido Unión Demócrata Independiente (UDI)" },
-    { id: 5, partido: "Renovación Nacional (RN)" },
-    { id: 6, partido: "Revolución Democrática (RD)" },
-    { id: 7, partido: "Federación Regionalista Verde Social (FRVS)" },
-    { id: 8, partido: "Partido Demócrata Cristiano (PDC)" },
-    { id: 9, partido: "Partido de la Gente (PDG)" },
-    { id: 10, partido: "Partido Convergencia Social (PCS)" },
-    { id: 11, partido: "Partido Republicano (PR)" },
-    { id: 12, partido: "Partido Por la Democracia (PPD)" },
-    { id: 13, partido: "Partido Comunes" },
-    { id: 14, partido: "Partido Ecologista Verde (PEV)" },
-    { id: 15, partido: "Partido Evolución Política (EVOPOLI)" },
-    { id: 16, partido: "Partido Humanista (PH)" },
-    { id: 17, partido: "Partido Radical Socialdemócrata (PRSD)" },
-  ];
+  useEffect(() => {
+    cargarPartidos();
+  }, [])
+
+  const cargarPartidos = async () => { 
+    try {
+      const data = await partidosRepository.getPartidos();
+      console.log(data);
+      setPartidos(data);
+    } catch (error) {
+      console.error(error);
+    }
+  }
 
   const renderGridItem = ({ item }) => {
 
-  const onPress = () => setPartidoSeleccionado(item.partido);
-  const isSelected = item.partido === partidoSeleccionado;
+  const onPress = () => setPartidoSeleccionado(item.id);
+  const isSelected = item.id === partidoSeleccionado;
 
   return(
   <TouchableOpacity onPress={onPress}>
@@ -53,9 +50,10 @@ export const PartidoUsuario = () => {
   const handleContinuar = async () => {
     try {
 
-      const docRef = doc(dbFirestore, "usuarios", "ixqqyDrxLXa8lk7FyareoyCWHts2");
-      await updateDoc(docRef, { partido: partidoSeleccionado});
-      navigation.navigate("SelectDistrito");
+
+      await partidosRepository.savePartidoUsuario(user.id, partidoSeleccionado);
+      setTipoAuth("");
+      //navigation.navigate("SelectDistrito");
       
     } catch (error) {
       console.error(error);

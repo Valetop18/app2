@@ -7,6 +7,7 @@ import { ref, set, update, onValue, remove } from "firebase/database";
 import { db } from "../constants/config";
 import { msPersonRaisedHand } from "@material-symbols-react-native/outlined-400";
 import { MsIcon } from "material-symbols-react-native";
+import { useNavigation } from "@react-navigation/native";
 
 const coloresPorPartido = {
   DES: COLORS.DES,
@@ -32,8 +33,9 @@ const coloresPorPartido = {
   PD: COLORS.PD,
 };
 
-const GridRepresentPartido = ({ item, onSelected }) => {
+const GridRepresentPartido = ({ item }) => {
   const borderColor = coloresPorPartido[item.partido] || "#000";
+  const navigation = useNavigation();
 
   const [asistencia, setAsistencia] = useState("90");
   const [votacion, setVotacion] = useState("80");
@@ -65,10 +67,17 @@ const GridRepresentPartido = ({ item, onSelected }) => {
     });
   }, [item.id]);
 
+  const onSelected = () => {
+    navigation.navigate('Descripcion', { 
+      idDiputado: item.id,
+      from: "EstadistaPartidoDiputado" 
+    })
+  }
+
   return (
     <View style={styles.card}>
       <TouchableOpacity
-        onPress={() => onSelected(item)}
+        onPress={onSelected}
         style={{ ...styles.container }}
       >
         <View style={styles.containImage}>
@@ -80,7 +89,7 @@ const GridRepresentPartido = ({ item, onSelected }) => {
               borderRadius: 100,
               borderWidth: 3,
             }}
-            source={item.foto}
+            source={{uri: item.foto}}
           />
           <Text style={styles.partido}>{item.partido}</Text>
         </View>

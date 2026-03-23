@@ -40,31 +40,42 @@ import NaveDiputados from "../NaveDiputados";
 import NaveSenadores from "../NaveSenadores";
 import NaveLeyes from "../NaveLeyes";
 
-import { logout } from "../../store/actions/login.actions";
+
 import { changeDistrit } from "../../store/actions/diputado.action";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigationState } from "@react-navigation/native";
 import Buscador from "../../components/Buscador";
 import { BuscadorContext } from "../../context/BuscadorContext";
 import { LEYES } from "../../data/leyes";
+import { useAuth } from "../../context/AuthContext";
+import { useNavigation } from "@react-navigation/native";
 
 const BottomsTabs = createBottomTabNavigator();
 const Drawer = createDrawerNavigator();
 const Stack = createNativeStackNavigator();
 
 function CustomDrawerContent(props) {
+
+  const { logout } = useAuth();
+
   const dispatch = useDispatch();
+  const navigation = useNavigation();
+
+
 
   const submit = async () => {
-    dispatch(logout());
-    dispatch(changeDistrit());
+
+    logout();
     await AsyncStorage.removeItem("email");
     await AsyncStorage.removeItem("pass");
+    dispatch(changeDistrit());
+
     console.log("logout");
   };
 
   const cambioDistrito = () => {
-    dispatch(changeDistrit());
+    navigation.navigate('SelectDistrito');
+    //dispatch(changeDistrit());
   };
 
 
@@ -117,11 +128,13 @@ function CustomDrawerContent(props) {
 }
 
 const MyDrawer = () => {
+
+
+    const { distrito } = useAuth();
+
   const filteredDiputados = useSelector(
     (state) => state.selectDiputado.filteredDiputados
   );
-  const distritoID = useSelector((state) => state.selectDiputado.distrito);
-
   const rutaActiva = useNavigationState((state) => {
     const index = state.index;
     let route = state.routes[index];
@@ -130,15 +143,20 @@ const MyDrawer = () => {
       route = route.state.routes[route.state.index];
     }
 
-    console.log("------nombre: ", route.name);
-    return route.name;
+    return route;
   });
 
-  console.log(distritoID);
+  const fromEstadisticaPartido = (rutaActiva, from ) => {
+    return (
+      rutaActiva?.name === "Descripcion" &&
+      rutaActiva?.params?.from === from
+    )
+  }
+
 
   return (
     <>
-      {filteredDiputados != 0 ? (
+        <>
         <Drawer.Navigator
           useLegacyImplementation
           screenOptions={({ navigation }) => ({
@@ -197,22 +215,35 @@ const MyDrawer = () => {
                 backgroundColor: COLORS.back,
                 elevation: 0,
               },
-              headerTitle: () =>
-                rutaActiva.includes("Cámara") ? (
-                  <Buscador />
-                ) : (
-                  <Text style={styles.header}>Distrito {distritoID}</Text>
-                ),
+              headerTitle: () => {
+                if (rutaActiva.name.includes("Cámara")) {
+                  return <Buscador />
+                }
+                if (rutaActiva.name === "EstadisticaPartido") {
+                  return <Text style={styles.header}>Cámara de diputados</Text>
+                }
+                if (rutaActiva.name === "EstadisticaPartidoSenado") {
+                  return <Text style={styles.header}>Cámara de senadores</Text>
+                }
+                if(fromEstadisticaPartido(rutaActiva, "EstadistaPartidoDiputado")){
+                  return <Text style={styles.header}>Cámara de diputados</Text>
+                }
+                if(fromEstadisticaPartido(rutaActiva, "EstadistaPartidoSenador")){
+                  return <Text style={styles.header}>Cámara de senadores</Text>
+                }
+                return <Text style={styles.header}>Distrito {distrito}</Text>
+              },
               drawerIcon: ({ focused, size }) => (
                 <Ionicons
                   name="home-sharp"
                   size={16}
                   color={focused ? COLORS.greenM : COLORS.back}
-                  style={styles.icon}
+                  style={styles.icon} 
                 />
               ),
             }}
           >
+
             {() => (
               <BottomsTabs.Navigator
                 screenOptions={{
@@ -313,21 +344,11 @@ const MyDrawer = () => {
               ),
             }}
           />
+
         </Drawer.Navigator>
-      ) : (
-        <Stack.Navigator
-          name="SelectDistrito"
-          screenOptions={{
-            headerShown: false,
-          }}
-        >
-          <Stack.Screen
-            name="SelectDistrito"
-            component={SelectDistrito}
-            options={{ headerBackVisible: false }}
-          />
-        </Stack.Navigator>
-      )}
+
+</>
+      
     </>
   );
 };

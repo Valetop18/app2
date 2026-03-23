@@ -11,12 +11,20 @@ import { COLORS } from '../constants/colors';
 import { FontAwesome } from '@expo/vector-icons'; 
 import { updateDoc, doc } from "firebase/firestore";
 import { dbFirestore } from "../constants/config";
+import { useNavigation } from "@react-navigation/native";
+import { useAuth } from "../context/AuthContext";
+import { profilesRepository } from "../infrastructure/profilesRepository";
 
 const SelectDistrito = () => {
 
     const [regionSelect, setRegionSelect] = useState();
     const [comunaSelect, setComunaSelect] = useState();
     const [distritoSelect, setDistritoSelect] = useState(null);
+    const { user, setDistrito } = useAuth();
+
+
+    const navigation = useNavigation();
+
 
     const COMUNASSELECTED = COMUNAS
       .filter(comunas => comunas.key === regionSelect)
@@ -38,13 +46,38 @@ const SelectDistrito = () => {
 
 
     }
-    const onChangeDistrito = () => {
-        dispatch(filteredDiputados(distritoSelect));
-        dispatch(filteredSenadores(regionSelect));
-        insertDistrito(distritoSelect, regionSelect);
+    const onChangeDistrito = async () => {
 
+
+      if(!regionSelect || !distritoSelect) return;
+
+      try {
         
+        const data = await profilesRepository.updateCircunscripcionAndDistrito(user.id, regionSelect, distritoSelect );
+        setDistrito(distritoSelect)    
+          
+        navigation.replace("MyDrawer" , {
+          screen: "Principal",
+          params: {
+            screen: "Diputados",
+            params: {
+              screen: "ListaDiputados",
+              params: {
+                distrito: distritoSelect
+              }
+            }
+          }
+        })
 
+      } catch (error) {
+        
+      }
+
+
+
+      // dispatch(filteredDiputados(distritoSelect));
+      // dispatch(filteredSenadores(regionSelect));
+        // insertDistrito(distritoSelect, regionSelect);
 
     }
 

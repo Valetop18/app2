@@ -11,7 +11,7 @@ export const Partido = ({item, selected}) => {
     return(
         <View style={styles.container}>
                 <Ionicons name="checkmark-circle" size={20} color={colorIcon}/>
-                <Text style={ [styles.topico, { color, fontFamily  }] }>{item.partido}</Text>
+                <Text style={ [styles.topico, { color, fontFamily  }] }>{`${item.nombre} (${item.sigla})`}</Text>
         </View>
     )
 }

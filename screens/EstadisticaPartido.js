@@ -26,6 +26,9 @@ import {
 } from "@material-symbols-react-native/outlined-400";
 import { MsIcon } from "material-symbols-react-native";
 import { useSelector } from "react-redux";
+import { partidosRepository } from "../infrastructure/partidosRepository";
+import { useAuth } from "../context/AuthContext";
+import { legisladoresRepository } from "../infrastructure/legisladoresRepository";
 
 const coloresPorPartido = {
   DES: COLORS.DES,
@@ -51,14 +54,47 @@ const coloresPorPartido = {
   DEM: COLORS.DEM,
 };
 
-export const EstadisticaPartido = ({}) => {
+export const EstadisticaPartido = ({ route }) => {
   const navigation = useNavigation();
+  const { user } = useAuth();
+  const [isSaved, setIsSaved] = useState(false);
+  const [diputados, setDiputados] = useState([]);
+  const partidoId = route.params?.partidoId;
+
+
+  console.log(route.params);
+
 
   useLayoutEffect(() => {
     // navigation.getParent()?.getParent()?.setOptions({
     //   headerTitle: "Diputadoss",
     // })
   }, [navigation]);
+
+  useEffect(() => {
+    checkIfIsSaved();
+    obtenerLegisladoresPorPartido();
+  }, []);
+
+  const checkIfIsSaved = async () => {
+
+      try {
+        const data = await partidosRepository.isSaved(user.id, partidoId );
+        setIsSaved(data);
+      } catch (error) {
+        console.error(error);
+      }
+  }
+
+  const obtenerLegisladoresPorPartido = async () => {
+    try {
+      const data = await legisladoresRepository.getDiputadosByPartido(partidoId);
+      setDiputados(data);
+    } catch (error) {
+      console.error(error);
+    }
+
+  }
 
   const [asistencia, setAsistencia] = useState();
   const [votacion, setVotacion] = useState();
@@ -87,12 +123,6 @@ export const EstadisticaPartido = ({}) => {
     { value: 80, label: "MAY" },
     { value: 60, label: "JUN" },
   ];
-
-  const diputados = useSelector(
-    (store) => store.selectPartido.filteredDiputadosPartido
-  );
-
-  console.log("diputados: ", diputados);
 
   const renderGridItem = ({ item }) => <GridRepresentPartido item={item} />;
 
@@ -156,7 +186,7 @@ export const EstadisticaPartido = ({}) => {
                 <MaterialIcons
                   name="favorite"
                   size={42}
-                  color={COLORS.greenM}
+                  color={ isSaved ? COLORS.greenM : COLORS.greyM}
                   position={"absolute"}
                 />
                 <Text style={styles.interes}>36%</Text>

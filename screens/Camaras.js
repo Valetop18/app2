@@ -26,8 +26,12 @@ import { FlatList } from "react-native-gesture-handler";
 import { representantePorPartido } from "../store/actions/representante.action";
 import RepresentantePartido from "../components/representantePartido";
 import { useNavigation } from "@react-navigation/native";
-import { seleccionPartido, filteredDiputadosPartido } from "../store/actions/partido.action";
+import {
+  seleccionPartido,
+  filteredDiputadosPartido,
+} from "../store/actions/partido.action";
 import { TouchableWithoutFeedback } from "react-native";
+import { legisladoresRepository } from "../infrastructure/legisladoresRepository";
 
 export const CamaraDipu = () => {
   const { search, setSearch } = useContext(BuscadorContext);
@@ -39,14 +43,13 @@ export const CamaraDipu = () => {
   const [infoModal, setInfoModal] = useState({
     tipo: "",
     partido: "",
+    partidoId: "",
     porcentaje: "",
     tiempo: "",
     representantes: [],
   });
+  const [legisladores, setLegisladores] = useState([]);
 
-  useEffect(() => {
-    console.log("mostrar modal: ", modalVisible);
-  }, [modalVisible]);
 
   const coloresPorPartido = {
     DES: COLORS.DES,
@@ -72,42 +75,27 @@ export const CamaraDipu = () => {
     DEM: COLORS.DEM,
   };
 
-  const partidos = {
-    id: 1,
-    partido: "DEM",
-    id: 2,
-    partido: "EVOPOLI",
-    id: 3,
-    partido: "FA",
-    id: 4,
-    partido: "FRVS",
-    id: 5,
-    partido: "PC",
-    id: 6,
-    partido: "PDC",
-    id: 7,
-    partido: "PDG",
-    id: 8,
-    partido: "PL",
-    id: 9,
-    partido: "PNL",
-    id: 10,
-    partido: "PPD",
-    id: 11,
-    partido: "PR",
-    id: 12,
-    partido: "PREP",
-    id: 13,
-    partido: "PS",
-    id: 14,
-    partido: "PSC",
-    id: 15,
-    partido: "RN",
-    id: 16,
-    partido: "UDI",
-    id: 17,
-    partido: "IND",
-  };
+
+  const partidos = [
+  { id: 1, partido: "DEM" },
+  { id: 2, partido: "EVOPOLI" },
+  { id: 3, partido: "FA" },
+  { id: 4, partido: "FRVS" },
+  { id: 5, partido: "PC" },
+  { id: 6, partido: "PDC" },
+  { id: 7, partido: "PDG" },
+  { id: 8, partido: "PL" },
+  { id: 9, partido: "PNL" },
+  { id: 10, partido: "PPD" },
+  { id: 11, partido: "PR" },
+  { id: 12, partido: "PREP" },
+  { id: 13, partido: "PS" },
+  { id: 14, partido: "PSC" },
+  { id: 15, partido: "RN" },
+  { id: 16, partido: "UDI" },
+  { id: 17, partido: "IND" }
+];
+
 
   const diputados = [
     {
@@ -373,9 +361,24 @@ export const CamaraDipu = () => {
     }
   }
 
+  const obtenerLegisladoresPorPartido = async (partidoId) => {
+
+    try {
+      const data = await legisladoresRepository.getDiputadosByPartido(partidoId);
+      setLegisladores(data);
+    } catch (error) {
+      console.error(error);
+    }
+
+  }
+
   for (const partido in promediosPartidos) {
     const [posicionX, posicionY] = promediosPartidos[partido];
     const id = `${partido}-${posicionX}-${posicionY}`;
+
+
+    const partidoId = partidos.find( p => p.partido === partido ).id;
+    
 
     let infoPartido;
 
@@ -390,15 +393,16 @@ export const CamaraDipu = () => {
             top={posicionY - 18}
             key={id}
             onPress={() => {
+              obtenerLegisladoresPorPartido(partidoId);
               setModalVisible(true);
               setInfoModal((prevState) => ({
                 ...prevState,
                 tipo: "Asistencia",
                 partido,
+                partidoId,
                 porcentaje: "60%",
                 tiempo: "Hoy",
               }));
-              dispatch(representantePorPartido(partido));
             }}
           />
         );
@@ -413,15 +417,16 @@ export const CamaraDipu = () => {
             top={posicionY - 18}
             key={id}
             onPress={() => {
+              obtenerLegisladoresPorPartido(partidoId);
               setModalVisible(true);
               setInfoModal((prevState) => ({
                 ...prevState,
                 tipo: "Votación",
                 partido,
+                partidoId,
                 porcentaje: "60%",
                 tiempo: "Hoy",
               }));
-              dispatch(representantePorPartido(partido));
             }}
           />
         );
@@ -436,15 +441,16 @@ export const CamaraDipu = () => {
             top={posicionY - 18}
             key={id}
             onPress={() => {
+              obtenerLegisladoresPorPartido(partidoId);
               setModalVisible(true);
               setInfoModal((prevState) => ({
                 ...prevState,
                 tipo: "Proyectos",
                 partido,
+                partidoId,
                 porcentaje: "60%",
                 tiempo: "Hoy",
               }));
-              dispatch(representantePorPartido(partido));
             }}
           />
         );
@@ -455,10 +461,6 @@ export const CamaraDipu = () => {
     }
     infoPartidos.push(infoPartido);
   }
-
-  const representantes = useSelector(
-    (store) => store.selectRepresentante.representantePorPartido
-  );
 
   const handleResultPress = (item) => {
     setSearch("");
@@ -489,15 +491,15 @@ export const CamaraDipu = () => {
       setHoyActivo(false);
       setBotonActivo(1);
       setHabilitarTransicion(false);
-
     }
 
+    const timeout = setTimeout(
+      () => {
+        setBotonActivo((prev) => prev + 1);
+      },
 
-    const timeout = setTimeout(() => {
-      setBotonActivo((prev) => prev + 1);
-    }
-    
-    , 2000);
+      2000,
+    );
 
     return () => clearTimeout(timeout);
   }, [botonActivo, habilitarTransicion]);
@@ -507,7 +509,7 @@ export const CamaraDipu = () => {
   const handlePress = (botonActivo) => {
     setHabilitarTransicion(false);
     setBotonActivo(botonActivo);
-    if(botonActivo === 3){
+    if (botonActivo === 3) {
       setLeyActual({ fecha: "", nombre: "" });
     }
   };
@@ -522,11 +524,11 @@ export const CamaraDipu = () => {
 
   const navigation = useNavigation();
 
-  const handlePressNavigate = (partidoEstadistica) => {
+  const handlePressNavigate = (partidoEstadistica, partidoId) => {
     dispatch(seleccionPartido(partidoEstadistica));
     dispatch(filteredDiputadosPartido(partidoEstadistica));
-    navigation.navigate("EstadisticaPartido");
-    console.log('partido seleccionado: ',partidoEstadistica)
+    navigation.navigate("EstadisticaPartido", {partidoId} );
+
   };
 
   return (
@@ -659,72 +661,71 @@ export const CamaraDipu = () => {
           </View>
 
           <Modal visible={modalVisible} transparent animationType="fade">
-            <View style={styles.overlay}> 
-              <Pressable 
-                style={StyleSheet.absoluteFill} 
-                onPress={() => setModalVisible(false)} 
+            <View style={styles.overlay}>
+              <Pressable
+                style={StyleSheet.absoluteFill}
+                onPress={() => setModalVisible(false)}
               />
 
-                  <View style={styles.modalContainer}>
-                    <View style={styles.tituloContainer}>
-                      <View>
-                        <Text style={styles.tituloText}>{infoModal.tipo}</Text>
-                        <Text style={styles.tituloText}>{infoModal.tiempo}</Text>
-                      </View>
-                      <MaterialIcons
-                        name="event-available"
-                        size={50}
-                        color={COLORS.back}
-                      />
-                    </View>
-                    <View style={styles.conteiner2}>
-                      <TouchableOpacity
-                        style={styles.botonPartido}
-                        onPress={() => handlePressNavigate(infoModal.partido)}
-                      >
-                        <View
-                          style={{
-                            width: 55,
-                            height: 55,
-                            backgroundColor: COLORS.back,
-                            borderRadius: 100,
-                            borderColor,
-                            borderWidth: 3,
-                            justifyContent: "center",
-                            alignItems: "center",
-                          }}
-                        >
-                          <Text style={styles.infopartido}>
-                            {infoModal.partido}
-                          </Text>
-                          <Text style={styles.infoPorcentaje}>
-                            {infoModal.porcentaje}
-                          </Text>
-                        </View>
-                        <View>
-                          <Text style={styles.textBoton}>
-                            Estadísticas del Partido
-                          </Text>
-                        </View>
-                        <Ionicons
-                          name="chevron-forward-circle"
-                          size={20}
-                          color={COLORS.greenM}
-                        />
-                      </TouchableOpacity>
-                      <FlatList
-                        data={representantes}
-                        renderItem={renderGridItem}
-                        numColumns={1}
-                        scrollEnabled={true}
-                        style={{flexGrow: 0, marginTop: 5, marginVertical: 15}}
-                        keyboardShouldPersistTaps="handled"
-                      />
-                    </View>
+              <View style={styles.modalContainer}>
+                <View style={styles.tituloContainer}>
+                  <View>
+                    <Text style={styles.tituloText}>{infoModal.tipo}</Text>
+                    <Text style={styles.tituloText}>{infoModal.tiempo}</Text>
                   </View>
+                  <MaterialIcons
+                    name="event-available"
+                    size={50}
+                    color={COLORS.back}
+                  />
+                </View>
+                <View style={styles.conteiner2}>
+                  <TouchableOpacity
+                    style={styles.botonPartido}
+                    onPress={() => handlePressNavigate(infoModal.partido, infoModal.partidoId)}
+                  >
+                    <View
+                      style={{
+                        width: 55,
+                        height: 55,
+                        backgroundColor: COLORS.back,
+                        borderRadius: 100,
+                        borderColor,
+                        borderWidth: 3,
+                        justifyContent: "center",
+                        alignItems: "center",
+                      }}
+                    >
+                      <Text style={styles.infopartido}>
+                        {infoModal.partido}
+                      </Text>
+                      <Text style={styles.infoPorcentaje}>
+                        {infoModal.porcentaje}
+                      </Text>
+                    </View>
+                    <View>
+                      <Text style={styles.textBoton}>
+                        Estadísticas del Partido
+                      </Text>
+                    </View>
+                    <Ionicons
+                      name="chevron-forward-circle"
+                      size={20}
+                      color={COLORS.greenM}
+                    />
+                  </TouchableOpacity>
+                  <FlatList
+                    data={legisladores}
+                    renderItem={renderGridItem}
+                    numColumns={1}
+                    scrollEnabled={true}
+                    style={{ flexGrow: 0, marginTop: 5, marginVertical: 15 }}
+                    keyboardShouldPersistTaps="handled"
+                  />
+                </View>
+              </View>
             </View>
           </Modal>
-
         </>
       )}
     </View>

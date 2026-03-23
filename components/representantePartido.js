@@ -12,7 +12,7 @@ const RepresentantePartido = ({ item }) => {
             height: 28,
             borderRadius: 100,
           }}
-          source={item.foto}
+          source={{uri: item.foto}}
         />
       </View>
       <Text style={styles.nombre}>{item.nombre}</Text>

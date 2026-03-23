@@ -19,6 +19,7 @@ import {
 } from "@expo-google-fonts/noto-sans-myanmar";
 import { ActivityIndicator } from "react-native";
 import { BuscadorProvider } from "./context/BuscadorContext";
+import { AuthProvider } from "./context/AuthContext";
 
 init()
   .then(() => console.log("database initialized"))
@@ -57,10 +58,12 @@ export default function App() {
 
 
   return (
-    <Provider store={store}>
-      <BuscadorProvider>
-        <MainNavigation />
-      </BuscadorProvider>
-    </Provider>
+    <AuthProvider>
+      <Provider store={store}>
+        <BuscadorProvider>
+          <MainNavigation />
+        </BuscadorProvider>
+      </Provider>
+    </AuthProvider>
   );
 }

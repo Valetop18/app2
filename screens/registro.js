@@ -24,6 +24,8 @@ import { Picker } from "@react-native-picker/picker";
 import { dbFirestore, auth } from "../constants/config";
 import { collection, getDocs, doc, setDoc, query, where } from "firebase/firestore";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+import { supabase } from "../constants/supabase";
+import { useAuth } from "../context/AuthContext";
 
 
 const INITIAL_STATE = {
@@ -33,19 +35,20 @@ const INITIAL_STATE = {
 
 const Registro = () => {
   const dispatch = useDispatch();
+  const { register } = useAuth();
 
   const [input, setInput] = useState(INITIAL_STATE);
 
   const [date, setDate] = useState(new Date());
   const [mode, setMode] = useState("date");
   const [show, setShow] = useState(false);
-  const [email, setEmail] = useState("");
-  const [pass, setPass] = useState("");
-  const [confirmPass, setConfirmPass] = useState("");
-  const [nombre, setNombre] = useState("");
+  const [email, setEmail] = useState("juan123@gmail.com");
+  const [pass, setPass] = useState("12345678");
+  const [confirmPass, setConfirmPass] = useState("12345678");
+  const [nombre, setNombre] = useState("juan");
   const [genero, setGenero] = useState("");
-  const [pais, setPais] = useState("");
-  const [rut, setRut] = useState("");
+  const [pais, setPais] = useState("Chile");
+  const [rut, setRut] = useState("11.111.111-1");
   const [minLengthPass, setMinLengthPass] = useState(false);
 
   const onChangeDate = (event, selectedDate) => {
@@ -254,11 +257,29 @@ const Registro = () => {
     
   };
 
+  const handleSignUp = async () => {
+
+    const fechaFormateada = date.toISOString().split('T')[0];
+
+    const payload = {
+      email,
+      password: pass,
+      nombre,
+      email,
+      fecha_nacimiento: fechaFormateada,
+      genero,
+      pais,
+      rut
+    }
+   
+    register(payload);
+
+  }
+
   const onLogInHandler = () => {
-    navigation.navigate("TopicosInteres", { uid: "HLTGZTb1kJbOMWqttx1ufsZXu9r1"});
+    navigation.navigate("TopicosInteres");
   };
 
-  //, { uid: "HLTGZTb1kJbOMWqttx1ufsZXu9r1"}
   
   useEffect(() => {
     if (email !== "") {
@@ -537,7 +558,7 @@ const Registro = () => {
           <TouchableOpacity
             style={styles.buttonIngresar}
             activeOpacity={0.8}
-            onPress={onSignUpHandler}
+            onPress={handleSignUp}
           >
             <Text style={styles.IngresarText}>REGISTRAR</Text>
           </TouchableOpacity>

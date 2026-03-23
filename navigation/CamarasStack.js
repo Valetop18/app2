@@ -3,6 +3,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import NaveCamaras from "./NaveCamaras";
 import { EstadisticaPartido } from "../screens/EstadisticaPartido";
 import { EstadisticaPartidoSenado } from "../screens/EstadisticaPartidoSenado";
+import { DescripcionDiputado } from "../screens/detallesDipu";
 
 const Stack = createNativeStackNavigator();
 
@@ -24,6 +25,9 @@ const CamarasStack = () => {
             name="EstadisticaPartidoSenado"
             component={EstadisticaPartidoSenado}
         />
+
+        <Stack.Screen name='Descripcion' component={DescripcionDiputado}   />
+
 
     </Stack.Navigator>)
 

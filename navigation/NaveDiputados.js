@@ -9,10 +9,10 @@ const Stack = createNativeStackNavigator()
 
 const NaveDiputados = () => {
     return (
-        <Stack.Navigator initialRouteName='Diputados' screenOptions={{
+        <Stack.Navigator initialRouteName='ListaDiputados' screenOptions={{
             headerShown: false,
         }}>
-            <Stack.Screen name='Diputados' component={Diputados} options={{title: 'Diputados'}} />
+            <Stack.Screen name='ListaDiputados' component={Diputados} options={{title: 'Diputados'}} />
             <Stack.Screen name='Descripcion' component={DescripcionDiputado} options={({route}) => ({title: route.params.nombre})} />
         </Stack.Navigator>
     )

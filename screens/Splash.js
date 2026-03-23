@@ -44,7 +44,8 @@ export const Splash = ( { navigation } ) => {
             console.log(passGuardado)
 
             if (emailGuardado && passGuardado ) {
-                dispatch( login(emailGuardado, passGuardado) )
+               // dispatch( login(emailGuardado, passGuardado) )
+               
 
             }else{
                 //navigation.replace('Login')

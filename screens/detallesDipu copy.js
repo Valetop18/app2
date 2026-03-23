@@ -32,8 +32,6 @@ import { reaccionesRepository } from "../infrastructure/ReaccionesRepository";
 import { useAuth } from "../context/AuthContext";
 import { compromisosRepository } from "../infrastructure/compromisosRepository";
 import Ionicons from "@react-native-vector-icons/ionicons";
-import { legisladoresRepository } from "../infrastructure/legisladoresRepository";
-import { useReacciones } from "../hooks/useReacciones";
 
 const coloresPorPartido = {
   DES: COLORS.DES,
@@ -62,12 +60,8 @@ const coloresPorPartido = {
 const MODAL_HEIGHT = Dimensions.get("window").height * 0.9;
 
 export const DescripcionDiputado = ({ route }) => {
-  const { user, distrito } = useAuth();
-  const [reacciones, setReacciones] = useState({});
-  const { handleLike } = useReacciones(user.id, reacciones, setReacciones  );
+  const { user } = useAuth();
 
-
-  const [diputado, setDiputado] = useState({});
   const [asistencia, setAsistencia] = useState();
   const [votacion, setVotacion] = useState();
 
@@ -102,26 +96,40 @@ export const DescripcionDiputado = ({ route }) => {
   ];
 
   useEffect(() => {
+    const starCountRef = ref(db, "diputados/asistencia/" + item);
+    onValue(starCountRef, (snapshot) => {
+      console.log(snapshot.val(item));
+      setAsistencia(snapshot.val(item));
+    });
+  }, [item]);
+
+  useEffect(() => {
+    const starCountRef = ref(db, "diputados/votaciones/" + item);
+    onValue(starCountRef, (snapshot) => {
+      console.log(snapshot.val(route.params.id));
+      setVotacion(snapshot.val(item));
+    });
+  }, [item]);
+
+  useEffect(() => {
+    const starCountRef = ref(db, "diputados/proyectos/" + item);
+    onValue(starCountRef, (snapshot) => {
+      console.log(snapshot.val(route.params.id));
+      setProyectos(snapshot.val(item));
+    });
+  }, [item]);
+
+  useEffect(() => {
     console.log("query busqueda: ", search);
     filtrarLeyes(search);
   }, [search]);
 
-  useEffect(() => {
-     getDiputado(); 
-  }, []);
-
-  const idDiputado = route.params?.idDiputado;
-  const reaccionActual = reacciones[idDiputado];
-
-  const getDiputado = async () => {
-    const data = await legisladoresRepository.getLegisladorById(idDiputado);
-    console.log('distrito diputado actual: ', data.diputado?.distrito);
-    setDiputado(data);
-  }
+  const { diputado } = route.params;
+  const item = diputado.id;
 
   const getCompromisos = async () => {
     const compromisos =
-      await compromisosRepository.getCompromisosByLegislador(idDiputado);
+      await compromisosRepository.getCompromisosByLegislador(item);
     const compromisosAgrupados = {};
 
     compromisos.forEach((compromiso) => {
@@ -143,6 +151,7 @@ export const DescripcionDiputado = ({ route }) => {
       color: item.cumplimiento ? COLORS.greenM : COLORS.verdeclaro,
     }));
 
+    console.log("******formateados: ");
     formateados.forEach((f) => console.log(f.data));
     setDataGrafico(mapDataGrafico);
     setCompromisos(formateados);
@@ -152,10 +161,10 @@ export const DescripcionDiputado = ({ route }) => {
     const getReaccion = async () => {
       const reaccion = await reaccionesRepository.getReaccion(
         user.id,
-        idDiputado,
+        diputado.id,
         "representante",
       );
-      setReacciones({[idDiputado]: reaccion});
+      setReaccion(reaccion);
     };
 
     getReaccion();
@@ -248,18 +257,15 @@ export const DescripcionDiputado = ({ route }) => {
         <View style={styles.principal}>
           <View style={styles.container1}>
             <Text style={styles.title}>{diputado.nombre}</Text>
-            <TouchableOpacity style={styles.favorite} onPress={() => {
-                if(distrito !== diputado.diputado?.distrito) return;
-                handleLike( idDiputado, 'like')
-            }}>
+            <View style={styles.favorite}>
               <MaterialIcons
                 name="favorite"
                 size={42}
-                color={reaccionActual === "like" ? COLORS.greenM : COLORS.grey}
+                color={reaccion === "like" ? COLORS.greenM : COLORS.grey}
                 position={"absolute"}
               />
               <Text style={styles.interes}>36%</Text>
-            </TouchableOpacity>
+            </View>
           </View>
           <View style={styles.container2}>
             <View>

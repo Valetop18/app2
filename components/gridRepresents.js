@@ -32,7 +32,8 @@ const coloresPorPartido = {
   PD: COLORS.PD,
 };
 
-const GridRepresent = ({ item, onSelected }) => {
+const GridRepresent = ({ item, reaccion, onSelected, handleLike }) => {
+  //const isLiked = item
   const borderColor = coloresPorPartido[item.partido] || "#000";
 
   const [asistencia, setAsistencia] = useState("90");
@@ -80,16 +81,16 @@ const GridRepresent = ({ item, onSelected }) => {
               borderRadius: 100,
               borderWidth: 3,
             }}
-            source={item.foto}
+            source={{uri: item.foto}}
           />
           <Text style={styles.partido}>{item.partido}</Text>
         </View>
         <View style={styles.infoEscrita}>
           <View flexDirection={"row"} alignItems={"center"}>
             <Text style={styles.name}>{item.nombre}</Text>
-            <View style={styles.icono} marginTop={"-1%"}>
-              <MaterialIcons name="favorite" size={22} color={COLORS.grey} />
-            </View>
+            <TouchableOpacity style={styles.icono} marginTop={"-1%"} onPress={() => handleLike(item.id, 'like')}>
+              <MaterialIcons name="favorite" size={22} color={ reaccion === "like" ? COLORS.greenM : COLORS.grey} />
+            </TouchableOpacity>
           </View>
           <View style={styles.containerInfo}>
             <View>
