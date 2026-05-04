@@ -4,9 +4,7 @@ import { View, Text, StyleSheet, Alert, TouchableOpacity} from 'react-native';
 import {Picker} from '@react-native-picker/picker';
 import { REGIONES } from "../data/regiones";
 import { COMUNAS } from "../data/comunas";
-import { filteredDiputados } from "../store/actions/diputado.action";
 import { filteredSenadores } from "../store/actions/senador.action";
-import { insertDistrito } from "../db";
 import { COLORS } from '../constants/colors';
 import { FontAwesome } from '@expo/vector-icons'; 
 import { updateDoc, doc } from "firebase/firestore";
@@ -20,7 +18,7 @@ const SelectDistrito = () => {
     const [regionSelect, setRegionSelect] = useState();
     const [comunaSelect, setComunaSelect] = useState();
     const [distritoSelect, setDistritoSelect] = useState(null);
-    const { user, setDistrito } = useAuth();
+    const { user, setDistrito, setUser } = useAuth();
 
 
     const navigation = useNavigation();
@@ -54,6 +52,11 @@ const SelectDistrito = () => {
       try {
         
         const data = await profilesRepository.updateCircunscripcionAndDistrito(user.id, regionSelect, distritoSelect );
+        setUser(prev => ({
+          ...prev,
+          distrito: distritoSelect,
+          circunscripcion : regionSelect
+        }))
         setDistrito(distritoSelect)    
           
         navigation.replace("MyDrawer" , {

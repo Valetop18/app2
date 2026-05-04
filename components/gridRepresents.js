@@ -10,10 +10,8 @@ import { MsIcon } from "material-symbols-react-native";
 
 const coloresPorPartido = {
   DES: COLORS.DES,
-  AM: COLORS.AM,
   PDG: COLORS.PDG,
   IND: COLORS.IND,
-  PEV: COLORS.PEV,
   FA: COLORS.FA,
   PS: COLORS.PS,
   PC: COLORS.PC,
@@ -22,14 +20,14 @@ const coloresPorPartido = {
   PR: COLORS.PR,
   AH: COLORS.AH,
   FRVS: COLORS.FRVS,
-  DC: COLORS.PDC,
+  PDC: COLORS.PDC,
   UDI: COLORS.UDI,
   RN: COLORS.RN,
   EVOPOLI: COLORS.EVOPOLI,
-  PREP: COLORS.PREP,
+  REP: COLORS.PREP,
   PNL: COLORS.PNL,
   PSC: COLORS.PSC,
-  PD: COLORS.PD,
+  DEM: COLORS.DEM,
 };
 
 const GridRepresent = ({ item, reaccion, onSelected, handleLike }) => {
@@ -81,15 +79,26 @@ const GridRepresent = ({ item, reaccion, onSelected, handleLike }) => {
               borderRadius: 100,
               borderWidth: 3,
             }}
-            source={{uri: item.foto}}
+            source={{ uri: item.foto }}
           />
-          <Text style={styles.partido}>{item.partido}</Text>
+          <Text style={styles.partido}>
+            {item.partido}
+            {item.estado && <Text> - {item.estado}</Text>}
+          </Text>
         </View>
         <View style={styles.infoEscrita}>
           <View flexDirection={"row"} alignItems={"center"}>
             <Text style={styles.name}>{item.nombre}</Text>
-            <TouchableOpacity style={styles.icono} marginTop={"-1%"} onPress={() => handleLike(item.id, 'like')}>
-              <MaterialIcons name="favorite" size={22} color={ reaccion === "like" ? COLORS.greenM : COLORS.grey} />
+            <TouchableOpacity
+              style={styles.icono}
+              marginTop={"-1%"}
+              onPress={() => handleLike(item.id, "like")}
+            >
+              <MaterialIcons
+                name="favorite"
+                size={22}
+                color={reaccion === "like" ? COLORS.greenM : COLORS.grey}
+              />
             </TouchableOpacity>
           </View>
           <View style={styles.containerInfo}>
@@ -148,7 +157,7 @@ const GridRepresent = ({ item, reaccion, onSelected, handleLike }) => {
                 name="data-usage"
                 size={40}
                 color={COLORS.verdeclaro}
-                position={'absolute'}
+                position={"absolute"}
               />
               <Text style={styles.data2}>36%</Text>
             </View>

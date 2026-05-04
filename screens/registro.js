@@ -22,11 +22,17 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import { useNavigation } from "@react-navigation/native";
 import { Picker } from "@react-native-picker/picker";
 import { dbFirestore, auth } from "../constants/config";
-import { collection, getDocs, doc, setDoc, query, where } from "firebase/firestore";
+import {
+  collection,
+  getDocs,
+  doc,
+  setDoc,
+  query,
+  where,
+} from "firebase/firestore";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { supabase } from "../constants/supabase";
 import { useAuth } from "../context/AuthContext";
-
 
 const INITIAL_STATE = {
   user: "",
@@ -197,44 +203,39 @@ const Registro = () => {
 
     setErrores(nuevosErrores);
 
-    if ( Object.keys(nuevosErrores).length === 0    ) {
+    if (Object.keys(nuevosErrores).length === 0) {
       return true;
-    }else{
+    } else {
       return false;
     }
-
   };
 
   const onSignUpHandler = async () => {
-
-
     //to-do: validaciones
     const camposValidos = validarCampos();
 
-    if ( !camposValidos ) {
+    if (!camposValidos) {
       return;
     }
-    
 
     try {
-
       //validar duplicacion de rut
       const q = query(
         collection(dbFirestore, "usuarios"),
-        where("rut", "==", rut)
+        where("rut", "==", rut),
       );
 
       const userQuery = await getDocs(q);
 
-      if ( !userQuery.empty ) {
-        Alert.alert("rut ya registrado")
+      if (!userQuery.empty) {
+        Alert.alert("rut ya registrado");
         return;
       }
 
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         email,
-        pass
+        pass,
       );
       const user = userCredential.user;
 
@@ -254,12 +255,10 @@ const Registro = () => {
     } catch (error) {
       console.error(error);
     }
-    
   };
 
   const handleSignUp = async () => {
-
-    const fechaFormateada = date.toISOString().split('T')[0];
+    const fechaFormateada = date.toISOString().split("T")[0];
 
     const payload = {
       email,
@@ -269,18 +268,16 @@ const Registro = () => {
       fecha_nacimiento: fechaFormateada,
       genero,
       pais,
-      rut
-    }
-   
-    register(payload);
+      rut,
+    };
 
-  }
+    register(payload);
+  };
 
   const onLogInHandler = () => {
     navigation.navigate("TopicosInteres");
   };
 
-  
   useEffect(() => {
     if (email !== "") {
       onHandleValidationEmail(email);
@@ -296,16 +293,14 @@ const Registro = () => {
   }, [pass]);
 
   const displayDate = () => {
-
     const opciones = {
       year: "numeric",
       month: "2-digit",
       day: "2-digit",
     };
 
-    return date.toLocaleDateString( 'es-ES', opciones );
-
-  }
+    return date.toLocaleDateString("es-ES", opciones);
+  };
 
   return (
     <View style={styles.container}>
@@ -319,24 +314,15 @@ const Registro = () => {
             <Text style={styles.label}>Nombre:</Text>
           </View>
           <View style={styles.inputcorreo}>
-            <View width={"90%"}>
-              <Input
-                id="user"
-                label="Usuario"
-                setInput={setNombre}
-                value={nombre}
-                keyboardType="default"
-                textAlign="left"
-                paddingHorizontal="1%"
-                fontFamily="NotoSansMyanmar_400Regular"
-              />
-            </View>
-            <FontAwesome
-              name="check"
-              size={14}
-              fill={true}
-              color={errores.nombre ? COLORS.greenM : COLORS.verdeclaro}
-              marginRight={"4%"}
+            <Input
+              id="user"
+              label="Usuario"
+              setInput={setNombre}
+              value={nombre}
+              keyboardType="default"
+              textAlign="left"
+              paddingHorizontal={12}
+              fontFamily="NotoSansMyanmar_400Regular"
             />
           </View>
           {errores.nombre ? (
@@ -348,36 +334,24 @@ const Registro = () => {
             <Text style={styles.label}>Fecha de Nacimiento:</Text>
           </View>
           <View style={styles.inputcorreo}>
-            <View width={"90%"}>
-              <TouchableOpacity
-                style={styles.butonFecha}
-                color={COLORS.verdeclaro}
-                onPress={showDatepicker}
-              >
-
+            <TouchableOpacity
+              style={styles.butonFecha}
+              color={COLORS.verdeclaro}
+              onPress={showDatepicker}
+            >
               <Text>{displayDate()}</Text>
+            </TouchableOpacity>
 
-              </TouchableOpacity>
-
-              {show && (
-                <DateTimePicker
-                  testID="dateTimePicker"
-                  value={date}
-                  mode={mode}
-                  is24Hour={true}
-                  onChange={onChangeDate}
-                  style={styles.butonFecha}
-                />
-
-              )}
-            </View>
-            <FontAwesome
-              name="check"
-              size={14}
-              fill={true}
-              color={errores.fechaNacimiento ? COLORS.greenM : COLORS.verdeclaro}
-              marginRight={"4%"}
-            />
+            {show && (
+              <DateTimePicker
+                testID="dateTimePicker"
+                value={date}
+                mode={mode}
+                is24Hour={true}
+                onChange={onChangeDate}
+                style={styles.butonFecha}
+              />
+            )}
             {errores.fechaNacimiento ? (
               <Text style={styles.inputErrors}>Introduce un fecha válida</Text>
             ) : null}
@@ -388,7 +362,7 @@ const Registro = () => {
             <Text style={styles.label}>Género:</Text>
           </View>
           <View style={styles.inputcorreo}>
-            <View width={"90%"}>
+            <View flex={1}>
               <Picker
                 selectedValue={genero}
                 onValueChange={(itemValue, itemIndex) => setGenero(itemValue)}
@@ -399,13 +373,6 @@ const Registro = () => {
                 <Picker.Item label="LGTBIQ+" value="LGTBIQ+" />
               </Picker>
             </View>
-            <FontAwesome
-              name="check"
-              size={14}
-              fill={true}
-              color={errores.genero ? COLORS.greenM : COLORS.verdeclaro}
-              marginRight={"4%"}
-            />
           </View>
           {errores.genero ? (
             <Text style={styles.inputErrors}>Selecciona un género</Text>
@@ -416,7 +383,7 @@ const Registro = () => {
             <Text style={styles.label}>Nacionalidad:</Text>
           </View>
           <View style={styles.inputcorreo}>
-            <View width={"90%"}>
+            <View flex={1}>
               <Picker
                 selectedValue={pais}
                 onValueChange={(itemValue, itemIndex) => setPais(itemValue)}
@@ -426,13 +393,6 @@ const Registro = () => {
                 <Picker.Item label="Extranjero" value="Extranjero" />
               </Picker>
             </View>
-            <FontAwesome
-              name="check"
-              size={14}
-              fill={true}
-              color={errores.nacionalidad ? COLORS.greenM : COLORS.verdeclaro}
-              marginRight={"4%"}
-            />
           </View>
           {errores.nacionalidad ? (
             <Text style={styles.inputErrors}>Introduce una nacionalidad</Text>
@@ -450,15 +410,9 @@ const Registro = () => {
                 setInput={setRutNuevo}
                 value={rut}
                 keyboardType="default"
+                paddingHorizontal={12}
               />
             </View>
-            <FontAwesome
-              name="check"
-              size={14}
-              fill={true}
-              color={errores.rut ? COLORS.greenM : COLORS.verdeclaro}
-              marginRight={"4%"}
-            />
           </View>
           {errores.rut ? (
             <Text style={styles.inputErrors}>Introduce un rut válido</Text>
@@ -476,21 +430,15 @@ const Registro = () => {
                 setInput={setEmailChange}
                 value={email}
                 keyboardType="email-address"
+                paddingHorizontal={12}
               />
             </View>
-            <FontAwesome
-              name="check"
-              size={14}
-              fill={true}
-              color={errores.email ? COLORS.greenM : COLORS.verdeclaro}
-              marginRight={"4%"}
-            />
           </View>
           {errores.email ? (
             <Text style={styles.inputErrors}>Introduce un email válido</Text>
           ) : null}
         </View>
-        <View style={styles.conteinerpass}>
+        <View style={styles.containercorreo}>
           <View style={styles.textoPass}>
             <Text style={styles.label}>Contraseña:</Text>
           </View>
@@ -503,20 +451,10 @@ const Registro = () => {
                 secureTextEntry
                 setInput={setPass}
                 value={pass}
+                paddingHorizontal={12}
                 // onSelectionChange={onHandleValidationPassword}
               />
             </View>
-            <FontAwesome
-              name="check"
-              size={14}
-              fill={true}
-              color={
-                isPassValid.touched && !isPassValid.isValid
-                  ? COLORS.greenM
-                  : COLORS.verdeclaro
-              }
-              marginRight={"4%"}
-            />
             {isPassValid.touched && !isPassValid.isValid && (
               <Text style={styles.inputErrors}>
                 Mínimo 8 caracteres, mayúsculas y minúsculas
@@ -524,7 +462,7 @@ const Registro = () => {
             )}
           </View>
         </View>
-        <View style={styles.conteinerpass}>
+        <View style={styles.containercorreo}>
           <View style={styles.textoPass}>
             <Text style={styles.label}>Confirmación Contraseña:</Text>
           </View>
@@ -537,20 +475,13 @@ const Registro = () => {
                 secureTextEntry
                 setInput={setConfirmPass}
                 value={confirmPass}
+                paddingHorizontal={12}
               />
             </View>
-            <FontAwesome
-              name="check"
-              size={14}
-              fill={true}
-              color={errores.confirmPass ? COLORS.greenM : COLORS.verdeclaro}
-              marginRight={"4%"}
-            />
-            </View>
-            {errores.confirmPass && (
-              <Text style={styles.inputErrors}>Contraseñas no coinciden</Text>
-            )}
-          
+          </View>
+          {errores.confirmPass && (
+            <Text style={styles.inputErrors}>Contraseñas no coinciden</Text>
+          )}
         </View>
       </View>
       <View style={styles.boton}>
@@ -585,10 +516,11 @@ export default Registro;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingVertical: "15%",
+    paddingVertical: "10%",
     paddingHorizontal: "5%",
     backgroundColor: COLORS.back,
     alignContent: "center",
+    justifyContent: 'center'
   },
   containerTitle: {
     alignItems: "center",
@@ -608,37 +540,38 @@ const styles = StyleSheet.create({
     fontFamily: "NotoSansMyanmar_400Regular",
   },
   containerlogin: {
-    marginTop: "2%",
-    height: "80%",
     alignSelf: "center",
     width: "100%",
+    paddingTop: '3%'
   },
   textoCorreo: {
-    width: "90%",
+    width: "85%",
   },
   containercorreo: {
     flexDirection: "column",
     textAlign: "center",
     alignItems: "center",
-    height: "12%",
+    justifyContent: "center",
+    alignSelf: "center",
+    height: 80,
+    width: "95%",
   },
   butonFecha: {
     backgroundColor: COLORS.verdeclaro,
     textAlign: "center",
-    width: "93%",
-    height: "54%",
+    width: "90%",
     borderRadius: 10,
-    marginTop: "1%",
-    marginLeft: 12,
-    fontFamily: "NotoSansMyanmar_400Regular"
+    marginLeft: 20,
+    fontFamily: "NotoSansMyanmar_600SemiBold",
+    fontWeight: "bold",
   },
   inputcorreo: {
     backgroundColor: COLORS.verdeclaro,
     textAlign: "center",
-    width: "93%",
-    height: 40,
+    width: "92%",
+    height: 42,
     borderRadius: 10,
-    marginTop: "1%",
+    marginTop: 4,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
@@ -648,11 +581,9 @@ const styles = StyleSheet.create({
     textAlign: "center",
     alignItems: "center",
     height: "12%",
-
   },
   textoPass: {
-    width: "90%",
-    marginTop: "5%",
+    width: "85%",
   },
   inputErrors: {
     color: COLORS.falso,
@@ -664,10 +595,10 @@ const styles = StyleSheet.create({
   inputpass: {
     backgroundColor: COLORS.verdeclaro,
     textAlign: "center",
-    width: "93%",
-    height: "52%",
+    width: "92%",
+    height: 42,
     borderRadius: 10,
-    marginTop: "1%",
+    marginTop: 4,
     flexDirection: "row",
     alignSelf: "center",
     justifyContent: "space-between",
@@ -680,8 +611,8 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   boton: {
-    marginTop: "2%",
-    height: "11%",
+    paddingTop: '10%',
+    height: "10%",
     alignSelf: "center",
     width: "100%",
   },
@@ -692,17 +623,17 @@ const styles = StyleSheet.create({
   },
   buttonIngresar: {
     backgroundColor: COLORS.greenM,
-    width: "65%",
+    width: "60%",
     justifyContent: "center",
     alignItems: "center",
-    borderRadius: 20,
-    height: "70%",
+    borderRadius: 15,
+    height: 46,
   },
   IngresarText: {
     color: "#ffffff",
-    fontFamily: "NotoSansMyanmar_400Regular",
+    fontFamily: "NotoSansMyanmar_600SemiBold",
     fontSize: 16,
-    letterSpacing: 1.5,
+    letterSpacing: 1.6,
     fontWeight: "bold",
   },
   Registro: {
@@ -710,6 +641,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignSelf: "center",
     width: "52%",
+    marginTop: -2, 
   },
   buttonRegistro: {
     justifyContent: "center",

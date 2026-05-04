@@ -23,12 +23,11 @@ import MaterialIcons from "@react-native-vector-icons/material-icons";
 import { LEYES } from "../data/leyes";
 import Ionicons from "@react-native-vector-icons/ionicons";
 import { FlatList } from "react-native-gesture-handler";
-
 import RepresentantePartido from "../components/representantePartido";
 import { useNavigation } from "@react-navigation/native";
-import { seleccionPartidoSenado, filteredSenadoresPartido } from "../store/actions/partidoSenado.action";
 import { TouchableWithoutFeedback } from "react-native";
-import { senadoresPorPartido } from "../store/actions/senadores.action";
+import { legisladoresRepository } from "../infrastructure/legisladoresRepository";
+import { Skeleton } from "../components/Skeleton";
 
 export const CamaraSena = () => {
   const { search, setSearch } = useContext(BuscadorContext);
@@ -37,24 +36,21 @@ export const CamaraSena = () => {
   const [hoyActivo, setHoyActivo] = useState(true);
   const [habilitarTransicion, setHabilitarTransicion] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [infoModal, setInfoModal] = useState({
     tipo: "",
     partido: "",
+    partidoId: "",
     porcentaje: "",
     tiempo: "",
     representantes: [],
   });
-
-  useEffect(() => {
-    console.log("mostrar modal: ", modalVisible);
-  }, [modalVisible]);
+  const [legisladores, setLegisladores] = useState([]);
 
   const coloresPorPartido = {
     DES: COLORS.DES,
-    AM: COLORS.AM,
     PDG: COLORS.PDG,
     IND: COLORS.IND,
-    PEV: COLORS.PEV,
     FA: COLORS.FA,
     PS: COLORS.PS,
     PC: COLORS.PC,
@@ -63,118 +59,114 @@ export const CamaraSena = () => {
     PR: COLORS.PR,
     AH: COLORS.AH,
     FRVS: COLORS.FRVS,
-    DC: COLORS.PDC,
+    PDC: COLORS.PDC,
     UDI: COLORS.UDI,
     RN: COLORS.RN,
     EVOPOLI: COLORS.EVOPOLI,
-    PREP: COLORS.PREP,
+    REP: COLORS.PREP,
     PNL: COLORS.PNL,
     PSC: COLORS.PSC,
     DEM: COLORS.DEM,
   };
 
-  const partidos = {
-    id: 1,
-    partido: "DEM",
-    id: 2,
-    partido: "EVOPOLI",
-    id: 3,
-    partido: "FA",
-    id: 4,
-    partido: "FRVS",
-    id: 5,
-    partido: "PC",
-    id: 6,
-    partido: "PDC",
-    id: 7,
-    partido: "PNL",
-    id: 8,
-    partido: "PPD",
-    id: 9,
-    partido: "PREP",
-    id: 10,
-    partido: "PS",
-    id: 11,
-    partido: "PSC",
-    id: 12,
-    partido: "RN",
-    id: 13,
-    partido: "UDI",
-    id: 14,
-    partido: "IND",
-  };
+  const partidos = [
+    { id: 1, partido: "DEM" },
+    { id: 2, partido: "EVOPOLI" },
+    { id: 3, partido: "FA" },
+    { id: 4, partido: "FRVS" },
+    { id: 5, partido: "PC" },
+    { id: 6, partido: "PDC" },
+    { id: 7, partido: "PDG" },
+    { id: 8, partido: "PL" },
+    { id: 9, partido: "PNL" },
+    { id: 10, partido: "PPD" },
+    { id: 11, partido: "PR" },
+    { id: 12, partido: "REP" },
+    { id: 13, partido: "PS" },
+    { id: 14, partido: "PSC" },
+    { id: 15, partido: "RN" },
+    { id: 16, partido: "UDI" },
+    { id: 17, partido: "IND" },
+    { id: 18, partido: "AH" },
+  ];
 
   const senadores = [
-        { radio: 80, 
-        cantidad: [
-            {id: 0, partido: 'PSC'},
-            {id: 1, partido: 'RN'},
-            {id: 2, partido: 'PREP'},
-            {id: 3, partido: 'PREP'},
-            {id: 4, partido: 'IND'},
-            {id: 5, partido: 'FRVS'},
-            {id: 6, partido: 'PC'},
-            {id: 7, partido: 'PC'},
-            {id: 8, partido: 'PC'},
-        ], 
-        },
-        { radio: 110, cantidad: [
-            {id: 9, partido: 'RN'},
-            {id: 10, partido: 'RN'},
-            {id: 11, partido: 'PREP'},
-            {id: 12, partido: 'PREP'},
-            {id: 13, partido: 'UDI'},
-            {id: 14, partido: 'IND'},
-            {id: 15, partido: 'FRVS'},
-            {id: 16, partido: 'FRVS'},
-            {id: 17, partido: 'PS'},
-            {id: 18, partido: 'PS'},
-            {id: 19, partido: 'PS'},
-        ] 
-        },
-        { radio: 140, cantidad: [
-            {id: 20, partido: 'RN'},
-            {id: 21, partido: 'RN'},
-            {id: 22, partido: 'RN'},
-            {id: 23, partido: 'RN'},
-            {id: 24, partido: 'PREP'},
-            {id: 25, partido: 'UDI'},
-            {id: 26, partido: 'UDI'},
-            {id: 27, partido: 'DEM'},
-            {id: 28, partido: 'PPD'},
-            {id: 29, partido: 'PPD'},
-            {id: 30, partido: 'PDC'},
-            {id: 31, partido: 'PS'},
-            {id: 32, partido: 'PS'},
-            {id: 33, partido: 'FA'},
-        ] 
-        },
-        { radio: 170, cantidad: [
-            {id: 34, partido: 'PNL'},
-            {id: 35, partido: 'RN'},
-            {id: 36, partido: 'RN'},
-            {id: 38, partido: 'RN'},
-            {id: 39, partido: 'EVOPOLI'},
-            {id: 40, partido: 'EVOPOLI'},
-            {id: 41, partido: 'UDI'},
-            {id: 42, partido: 'UDI'},
-            {id: 43, partido: 'DEM'},
-            {id: 44, partido: 'PPD'},
-            {id: 45, partido: 'PPD'},
-            {id: 46, partido: 'PDC'},
-            {id: 47, partido: 'PDC'},
-            {id: 48, partido: 'PS'},
-            {id: 49, partido: 'PS'},
-            {id: 50, partido: 'FA'},
-        ] 
-        },
-    ];
+    {
+      radio: 80,
+      cantidad: [
+        { id: 0, partido: "PSC" },
+        { id: 1, partido: "RN" },
+        { id: 2, partido: "RN" },
+        { id: 3, partido: "DEM" },
+        { id: 4, partido: "DEM" },
+        { id: 5, partido: "FRVS" },
+        { id: 6, partido: "PC" },
+        { id: 7, partido: "PC" },
+        { id: 8, partido: "PC" },
+      ],
+    },
+    {
+      radio: 110,
+      cantidad: [
+        { id: 9, partido: "REP" },
+        { id: 10, partido: "REP" },
+        { id: 11, partido: "RN" },
+        { id: 12, partido: "RN" },
+        { id: 13, partido: "UDI" },
+        { id: 14, partido: "FRVS" },
+        { id: 15, partido: "FRVS" },
+        { id: 16, partido: "PL" },
+        { id: 17, partido: "PS" },
+        { id: 18, partido: "PS" },
+        { id: 19, partido: "PS" },
+      ],
+    },
+    {
+      radio: 140,
+      cantidad: [
+        { id: 20, partido: "REP" },
+        { id: 21, partido: "REP" },
+        { id: 22, partido: "RN" },
+        { id: 23, partido: "RN" },
+        { id: 24, partido: "RN" },
+        { id: 25, partido: "UDI" },
+        { id: 26, partido: "UDI" },
+        { id: 27, partido: "IND" },
+        { id: 28, partido: "PPD" },
+        { id: 29, partido: "PPD" },
+        { id: 30, partido: "PDC" },
+        { id: 31, partido: "PS" },
+        { id: 32, partido: "PS" },
+        { id: 33, partido: "FA" },
+      ],
+    },
+    {
+      radio: 170,
+      cantidad: [
+        { id: 34, partido: "PNL" },
+        { id: 35, partido: "REP" },
+        { id: 36, partido: "RN" },
+        { id: 38, partido: "RN" },
+        { id: 39, partido: "EVOPOLI" },
+        { id: 40, partido: "EVOPOLI" },
+        { id: 41, partido: "UDI" },
+        { id: 42, partido: "UDI" },
+        { id: 43, partido: "IND" },
+        { id: 44, partido: "PPD" },
+        { id: 45, partido: "PPD" },
+        { id: 46, partido: "PDC" },
+        { id: 47, partido: "PDC" },
+        { id: 48, partido: "PS" },
+        { id: 49, partido: "PS" },
+        { id: 50, partido: "FA" },
+      ],
+    },
+  ];
 
   const [leyesChilenas, setLeyesChilenas] = useState(LEYES);
   const pelotas = [];
   const infoPartidos = [];
   const partidosCoordenadas = [];
-  const dispatch = useDispatch();
 
   {
     senadores.map((fila, index) => {
@@ -246,9 +238,23 @@ export const CamaraSena = () => {
     }
   }
 
+  const obtenerLegisladoresPorPartido = async (partidoId) => {
+    try {
+      const data =
+        await legisladoresRepository.getSenadoresByPartido(partidoId);
+      setLegisladores(data);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   for (const partido in promediosPartidos) {
     const [posicionX, posicionY] = promediosPartidos[partido];
     const id = `${partido}-${posicionX}-${posicionY}`;
+
+    const partidoId = partidos.find((p) => p.partido === partido).id;
 
     let infoPartido;
 
@@ -263,15 +269,16 @@ export const CamaraSena = () => {
             top={posicionY - 18}
             key={id}
             onPress={() => {
+              obtenerLegisladoresPorPartido(partidoId);
               setModalVisible(true);
               setInfoModal((prevState) => ({
                 ...prevState,
                 tipo: "Asistencia",
                 partido,
+                partidoId,
                 porcentaje: "60%",
                 tiempo: "Hoy",
               }));
-              dispatch(senadoresPorPartido(partido));
             }}
           />
         );
@@ -286,15 +293,16 @@ export const CamaraSena = () => {
             top={posicionY - 18}
             key={id}
             onPress={() => {
+              obtenerLegisladoresPorPartido(partidoId);
               setModalVisible(true);
               setInfoModal((prevState) => ({
                 ...prevState,
                 tipo: "Votación",
                 partido,
+                partidoId,
                 porcentaje: "60%",
                 tiempo: "Hoy",
               }));
-              dispatch(senadoresPorPartido(partido));
             }}
           />
         );
@@ -309,15 +317,16 @@ export const CamaraSena = () => {
             top={posicionY - 18}
             key={id}
             onPress={() => {
+              obtenerLegisladoresPorPartido(partidoId);
               setModalVisible(true);
               setInfoModal((prevState) => ({
                 ...prevState,
                 tipo: "Proyectos",
                 partido,
+                partidoId,
                 porcentaje: "60%",
                 tiempo: "Hoy",
               }));
-              dispatch(senadoresPorPartido(partido));
             }}
           />
         );
@@ -328,10 +337,6 @@ export const CamaraSena = () => {
     }
     infoPartidos.push(infoPartido);
   }
-
-  const senadoresSeleccionados = useSelector(
-    (store) => store.selecccionSenadores.senadoresPorPartido
-  );
 
   const handleResultPress = (item) => {
     setSearch("");
@@ -369,7 +374,7 @@ export const CamaraSena = () => {
         setBotonActivo((prev) => prev + 1);
       },
 
-      2000
+      2000,
     );
 
     return () => clearTimeout(timeout);
@@ -395,12 +400,26 @@ export const CamaraSena = () => {
 
   const navigation = useNavigation();
 
-  const handlePressNavigate = (partidoEstadistica) => {
-    dispatch(seleccionPartidoSenado(partidoEstadistica));
-    dispatch(filteredSenadoresPartido(partidoEstadistica));
-    navigation.navigate("EstadisticaPartidoSenado");
-    console.log("partido seleccionado: ", partidoEstadistica);
+  const handlePressNavigate = (partidoId) => {
+    navigation.navigate("EstadisticaPartidoSenado", { partidoId });
   };
+
+  const skeletonCard = () => (
+    <View
+      style={{
+        flexDirection: "row",
+        width: 240,
+        alignSelf: "flex-start",
+        alignItems: "center",
+        marginVertical: 4,
+      }}
+    >
+      <Skeleton width={26} height={26} borderRadius={100} />
+      <View style={{ marginHorizontal: 12 }}>
+        <Skeleton width={100} height={15} borderRadius={4} />
+      </View>
+    </View>
+  );
 
   return (
     <View style={styles.container}>
@@ -553,7 +572,12 @@ export const CamaraSena = () => {
                 <View style={styles.conteiner2}>
                   <TouchableOpacity
                     style={styles.botonPartido}
-                    onPress={() => handlePressNavigate(infoModal.partido)}
+                    onPress={() =>
+                      handlePressNavigate(
+                        infoModal.partidoId,
+                        console.log("partido salida: ", infoModal.partidoId),
+                      )
+                    }
                   >
                     <View
                       style={{
@@ -585,14 +609,24 @@ export const CamaraSena = () => {
                       color={COLORS.greenM}
                     />
                   </TouchableOpacity>
-                  <FlatList
-                    data={senadoresSeleccionados}
-                    renderItem={renderGridItem}
-                    numColumns={1}
-                    scrollEnabled={true}
-                    style={{ flexGrow: 0, marginTop: 5, marginVertical: 15 }}
-                    keyboardShouldPersistTaps="handled"
-                  />
+                  {loading ? (
+                    <FlatList
+                      style={{ marginTop: 5 }}
+                      data={[1, 2, 3]}
+                      renderItem={skeletonCard}
+                      numColumns={1}
+                      keyExtractor={(item) => item.toString()}
+                    />
+                  ) : (
+                    <FlatList
+                      data={legisladores}
+                      renderItem={renderGridItem}
+                      numColumns={1}
+                      scrollEnabled={true}
+                      style={{ flexGrow: 0, marginTop: 5, marginVertical: 15 }}
+                      keyboardShouldPersistTaps="handled"
+                    />
+                  )}
                 </View>
               </View>
             </View>

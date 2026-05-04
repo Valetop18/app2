@@ -27,7 +27,7 @@ export const PARTIDOS = [
     id: 4,
     partido: "FRVS",
     nombre: 'Federación Regionalista Verde Social',
-    foto: require("../assets/partidos/FREVS.jpg"),
+    foto: require("../assets/partidos/FRVS.jpg"),
     Descripcion:
       "Su programa está dividido en once puntos. Entre ellos se destaca su apoyo a las luchas de las regiones y territorios; su definición como una agrupación de movimientos regionalistas que desde sus territorios articulan con autonomía; la defensa de visiones de desarrollo sostenible; su aporte a alternativas políticas renovadoras que superen el sistema político oligopólico actual y las malas prácticas; su creencia en la democracia participativa y republicana que supere la crisis de confianza política; la superación de las antiguas dicotomías de la política tradicional (derecha, centro, izquierda); una misión y un estilo descentralizador; la defensa del concepto Verde, ya que está por la sustentabilidad ambiental; su adhesión a la Declaración Universal de Derechos Humanos; y, la valoración de vida urbana y rural, entre otros elementos.",
   },
@@ -131,6 +131,13 @@ export const PARTIDOS = [
     id: 17,
     nombre: 'Independientes',
     partido: "IND",
+    foto: "",
+    Descripcion: "",
+  },
+  {
+    id: 18,
+    nombre: 'Acción Humanista',
+    partido: "AH",
     foto: "",
     Descripcion: "",
   },

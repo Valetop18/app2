@@ -13,8 +13,6 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import { COLORS } from "../constants/colors";
 import { useState, useEffect } from "react";
-import { ref, set, update, onValue, remove } from "firebase/database";
-import { db } from "../constants/config";
 import { MaterialIcons } from "@react-native-vector-icons/material-icons";
 import { PieChart, LineChart } from "react-native-gifted-charts";
 import GridRepresentPartido from "../components/gridRepresentsPartido";
@@ -29,13 +27,12 @@ import { useSelector } from "react-redux";
 import { partidosRepository } from "../infrastructure/partidosRepository";
 import { useAuth } from "../context/AuthContext";
 import { legisladoresRepository } from "../infrastructure/legisladoresRepository";
+import { Skeleton } from "../components/Skeleton";
 
 const coloresPorPartido = {
   DES: COLORS.DES,
-  AM: COLORS.AM,
   PDG: COLORS.PDG,
   IND: COLORS.IND,
-  PEV: COLORS.PEV,
   FA: COLORS.FA,
   PS: COLORS.PS,
   PC: COLORS.PC,
@@ -44,11 +41,11 @@ const coloresPorPartido = {
   PR: COLORS.PR,
   AH: COLORS.AH,
   FRVS: COLORS.FRVS,
-  DC: COLORS.PDC,
+  PDC: COLORS.PDC,
   UDI: COLORS.UDI,
   RN: COLORS.RN,
   EVOPOLI: COLORS.EVOPOLI,
-  PREP: COLORS.PREP,
+  REP: COLORS.PREP,
   PNL: COLORS.PNL,
   PSC: COLORS.PSC,
   DEM: COLORS.DEM,
@@ -59,11 +56,11 @@ export const EstadisticaPartido = ({ route }) => {
   const { user } = useAuth();
   const [isSaved, setIsSaved] = useState(false);
   const [diputados, setDiputados] = useState([]);
+  const [partido, setPartido] = useState({});
   const partidoId = route.params?.partidoId;
+  const [loading, setLoading] = useState(true);
 
-
-  console.log(route.params);
-
+  console.log("partido llegada estadistica:", route.params?.partidoId);
 
   useLayoutEffect(() => {
     // navigation.getParent()?.getParent()?.setOptions({
@@ -71,30 +68,35 @@ export const EstadisticaPartido = ({ route }) => {
     // })
   }, [navigation]);
 
-  useEffect(() => {
-    checkIfIsSaved();
-    obtenerLegisladoresPorPartido();
-  }, []);
+  //useEffect(() => {
+  //  checkIfIsSaved();
+  //  obtenerLegisladoresPorPartido();
+  //}, []);
 
   const checkIfIsSaved = async () => {
-
-      try {
-        const data = await partidosRepository.isSaved(user.id, partidoId );
-        setIsSaved(data);
-      } catch (error) {
-        console.error(error);
-      }
-  }
+    try {
+      const data = await partidosRepository.isSaved(user.id, partidoId);
+      setIsSaved(data);
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   const obtenerLegisladoresPorPartido = async () => {
     try {
-      const data = await legisladoresRepository.getDiputadosByPartido(partidoId);
+      const data =
+        await legisladoresRepository.getDiputadosByPartido(partidoId);
       setDiputados(data);
     } catch (error) {
       console.error(error);
     }
+  };
 
-  }
+  const getPartido = async () => {
+    const data = await partidosRepository.getPartidoById(partidoId);
+    console.log("Partido actual: ", data);
+    setPartido(data);
+  };
 
   const [asistencia, setAsistencia] = useState();
   const [votacion, setVotacion] = useState();
@@ -126,13 +128,26 @@ export const EstadisticaPartido = ({ route }) => {
 
   const renderGridItem = ({ item }) => <GridRepresentPartido item={item} />;
 
-  const partidoSeleccionado = useSelector(
-    (store) => store.selectPartido.seleccionPartido
-  );
+  const fetchAll = async () => {
+    try {
+      setLoading(true);
+      await Promise.all([
+        obtenerLegisladoresPorPartido(),
+        checkIfIsSaved(),
+        getPartido(),
+      ]);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  console.log("partido llegada: ", partidoSeleccionado);
+  useEffect(() => {
+    fetchAll();
+  }, []);
 
-  const borderColor = coloresPorPartido[partidoSeleccionado.partido] || "#000";
+  const borderColor = coloresPorPartido[partido.sigla] || "#000";
 
   return (
     <KeyboardAvoidingView
@@ -140,219 +155,273 @@ export const EstadisticaPartido = ({ route }) => {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       keyboardVerticalOffset={100}
     >
-      <ScrollView contentContainerStyle={styles.back}>
-        <View style={styles.principal}>
-          <View style={styles.container1}>
-            <Text style={styles.title}>{partidoSeleccionado.nombre}</Text>
+      {loading ? (
+        <View
+          style={{
+            alignSelf: "flex-start",
+            paddingVertical: 18,
+            paddingHorizontal: 10,
+          }}
+        >
+          <View
+            style={{
+              paddingLeft: 40,
+            }}
+          >
+            <Skeleton width={250} height={25} borderRadius={4} />
           </View>
-          <View style={styles.container2}>
-            <View>
-              <Image
-                style={{
-                  borderColor,
-                  width: 100,
-                  height: 100,
-                  borderRadius: 100,
-                  borderWidth: 4,
-                }}
-                source={partidoSeleccionado.foto}
-              />
-              <Text style={styles.partido}>{partidoSeleccionado.partido}</Text>
-            </View>
-            <View style={styles.estadistica}>
-              <View flexDirection={"row"} alignItems={"center"}>
-                <MaterialIcons
-                  name="event-available"
-                  size={20}
-                  color={COLORS.black}
-                />
-                <Text style={styles.informacion}>{asistencia}% Asistencia</Text>
-              </View>
-              <View flexDirection={"row"} alignItems={"center"}>
-                <MsIcon
-                  icon={msPersonRaisedHand}
-                  size={20}
-                  color={COLORS.black}
-                />
-                <Text style={styles.informacion}>{votacion}% Votaciones</Text>
-              </View>
-              <View flexDirection={"row"} alignItems={"center"}>
-                <MsIcon icon={msCloudUpload} size={20} color={COLORS.black} />
-                <Text style={styles.informacion}>{votacion}% Efectividad</Text>
-              </View>
-            </View>
-            <View marginRight={10}>
-              <View style={styles.favorite}>
-                <MaterialIcons
-                  name="favorite"
-                  size={42}
-                  color={ isSaved ? COLORS.greenM : COLORS.greyM}
-                  position={"absolute"}
-                />
-                <Text style={styles.interes}>36%</Text>
-              </View>
-              <View style={styles.datausage}>
-                <MaterialIcons
-                  name="data-usage"
-                  size={50}
-                  color={COLORS.verdeclaro}
-                  position={"absolute"}
-                />
-                <Text style={styles.data2}>36%</Text>
-              </View>
+          <View
+            style={{
+              marginHorizontal: 15,
+              flexDirection: "row",
+              paddingTop: 15,
+            }}
+          >
+            <Skeleton width={100} height={100} borderRadius={100} />
+            <View style={{ marginHorizontal: 15, marginTop: 12 }}>
+              <Skeleton width={120} height={80} borderRadius={4} />
             </View>
           </View>
-          <View style={styles.container3}>
-            <Text style={styles.title2}>Estadísticas de la gestión.</Text>
+          <View style={{ marginHorizontal: 15, marginTop: 12 }}>
+            <Skeleton width={360} height={50} borderRadius={4} />
           </View>
-          <View style={styles.container4}>
-            <View width={90} marginVertical={"5%"} alignSelf={"center"}>
-              <Text style={styles.label}>Proyectos aprobados/presentados</Text>
-            </View>
-            <View marginVertical={"1%"}>
-              <PieChart
-                strokeColor={COLORS.back}
-                strokeWidth={1}
-                donut
-                data={[
-                  { value: 20, color: COLORS.verdeclaro },
-                  { value: 10, color: COLORS.verdeclaro },
-                  { value: 30, color: COLORS.verdeclaro },
-                  { value: 5, color: COLORS.verdeclaro },
-                  { value: 15, color: COLORS.verdeclaro },
-                  { value: 10, color: COLORS.verdeclaro },
-                ]}
-                showValuesAsLabels={true}
-                innerRadius={18}
-                radius={45}
-                textSize={18}
-                centerLabelComponent={() => {
-                  return (
-                    <View>
-                      <Text
-                        style={{
-                          color: COLORS.greenM,
-                          fontSize: 14,
-                          fontFamily: "NotoSansMyanmar_700Bold",
-                        }}
-                      >
-                        90%
-                      </Text>
-                    </View>
-                  );
-                }}
-              />
-            </View>
-
-            <View>
-              <Text style={styles.label} marginVertical={5}>
-                Evolución de la opinión pública.
-              </Text>
-              <View marginVertical={5}>
-                <LineChart
-                  areaChart
-                  height={40}
-                  xAxisLength={175}
-                  data={aprobacion}
-                  data2={aprobacion2}
-                  hideDataPoints
-                  color={COLORS.greenM}
-                  color2={COLORS.verdeclaro}
-                  startFillColor2={COLORS.verdeclaro}
-                  startFillColor={COLORS.greenM}
-                  startOpacity={0.6}
-                  startOpacity2={0.8}
-                  endFillColor={COLORS.back}
-                  endOpacity={0.2}
-                  hideRules
-                  yAxisColor={COLORS.grey}
-                  yAxisThickness={0}
-                  xAxisThickness={2}
-                  maxValue={100}
-                  stepValue={50}
-                  initialSpacing={10}
-                  spacing={31}
-                  yAxisTextStyle={{
-                    color: COLORS.black,
-                    fontFamily: "NotoSansMyanmar_700Bold",
-                    fontSize: 8,
-                    marginRight: -12,
-                  }}
-                  xAxisLabelTextStyle={{
-                    color: COLORS.black,
-                    fontFamily: "NotoSansMyanmar_700Bold",
-                    fontSize: 8,
-                    marginLeft: 10,
-                  }}
-                  xAxisColor={COLORS.grey}
-                />
-              </View>
-            </View>
+          <View
+            style={{
+              paddingLeft: 30,
+              paddingVertical: 20,
+            }}
+          >
+            <Skeleton width={220} height={20} borderRadius={4} />
           </View>
-          <View style={styles.container6}>
-            <View>
-              <View style={styles.container5}>
-                <View style={styles.datausage}>
-                  <MaterialIcons
-                    name="data-usage"
-                    size={50}
-                    color={COLORS.verdeclaro}
-                    position={"absolute"}
-                  />
-                  <Text style={styles.data2}>3/4</Text>
-                </View>
-                <View width={130} marginVertical={"3%"}>
-                  <Text style={styles.label2}>
-                    Porcentaje de votos recibidos
-                  </Text>
-                </View>
-              </View>
-              <View style={styles.container5}>
-                <View style={styles.datausage}>
-                  <MaterialIcons
-                    name="data-usage"
-                    size={50}
-                    color={COLORS.verdeclaro}
-                    position={"absolute"}
-                  />
-                  <Text style={styles.data2}>50%</Text>
-                </View>
-                <View width={130}>
-                  <Text style={styles.label2}>Índice de cohesión</Text>
-                </View>
-              </View>
-            </View>
-            <View>
-              <View style={styles.container5}>
-                <View style={styles.circulo}>
-                  <Text style={styles.data2}>34%</Text>
-                </View>
-                <View width={140} marginVertical={"3%"} marginLeft={5}>
-                  <Text style={styles.label2}>
-                    Compatibilidad con el partido
-                  </Text>
-                </View>
-              </View>
-              <View style={styles.container5}>
-                <View style={styles.circulo}>
-                  <Text style={styles.data2}>55</Text>
-                </View>
-                <View width={145} marginVertical={"3%"} marginLeft={5}>
-                  <Text style={styles.label2}>
-                    Lugar estadístico entre los partidos
-                  </Text>
-                </View>
-              </View>
-            </View>
+          <View
+            style={{
+              paddingLeft: 15,
+            }}
+          >
+            <Skeleton width={360} height={170} borderRadius={4} />
           </View>
         </View>
-        <FlatList
-          data={diputados}
-          renderItem={renderGridItem}
-          numColumns={1}
-          keyExtractor={(item) => item.id}
-        />
-      </ScrollView>
+      ) : (
+        <ScrollView contentContainerStyle={styles.back}>
+          <View style={styles.principal}>
+            <View style={styles.container1}>
+              <Text style={styles.title}>{partido.nombre}</Text>
+            </View>
+            <View style={styles.container2}>
+              <View>
+                <Image
+                  style={{
+                    borderColor,
+                    width: 100,
+                    height: 100,
+                    borderRadius: 100,
+                    borderWidth: 4,
+                  }}
+                  source={{ uri: partido.foto }}
+                />
+                <Text style={styles.partido}>{partido.sigla}</Text>
+              </View>
+              <View style={styles.estadistica}>
+                <View flexDirection={"row"} alignItems={"center"}>
+                  <MaterialIcons
+                    name="event-available"
+                    size={20}
+                    color={COLORS.black}
+                  />
+                  <Text style={styles.informacion}>
+                    {asistencia}% Asistencia
+                  </Text>
+                </View>
+                <View flexDirection={"row"} alignItems={"center"}>
+                  <MsIcon
+                    icon={msPersonRaisedHand}
+                    size={20}
+                    color={COLORS.black}
+                  />
+                  <Text style={styles.informacion}>{votacion}% Votaciones</Text>
+                </View>
+                <View flexDirection={"row"} alignItems={"center"}>
+                  <MsIcon icon={msCloudUpload} size={20} color={COLORS.black} />
+                  <Text style={styles.informacion}>
+                    {votacion}% Efectividad
+                  </Text>
+                </View>
+              </View>
+              <View marginRight={10}>
+                <View style={styles.favorite}>
+                  <MaterialIcons
+                    name="favorite"
+                    size={42}
+                    color={isSaved ? COLORS.greenM : COLORS.greyM}
+                    position={"absolute"}
+                  />
+                  <Text style={styles.interes}>36%</Text>
+                </View>
+                <View style={styles.datausage}>
+                  <MaterialIcons
+                    name="data-usage"
+                    size={50}
+                    color={COLORS.verdeclaro}
+                    position={"absolute"}
+                  />
+                  <Text style={styles.data2}>36%</Text>
+                </View>
+              </View>
+            </View>
+            <View style={styles.container3}>
+              <Text style={styles.title2}>Estadísticas de la gestión.</Text>
+            </View>
+            <View style={styles.container4}>
+              <View width={90} marginVertical={"5%"} alignSelf={"center"}>
+                <Text style={styles.label}>
+                  Proyectos aprobados/presentados
+                </Text>
+              </View>
+              <View marginVertical={"1%"}>
+                <PieChart
+                  strokeColor={COLORS.back}
+                  strokeWidth={1}
+                  donut
+                  data={[
+                    { value: 20, color: COLORS.verdeclaro },
+                    { value: 10, color: COLORS.verdeclaro },
+                    { value: 30, color: COLORS.verdeclaro },
+                    { value: 5, color: COLORS.verdeclaro },
+                    { value: 15, color: COLORS.verdeclaro },
+                    { value: 10, color: COLORS.verdeclaro },
+                  ]}
+                  showValuesAsLabels={true}
+                  innerRadius={18}
+                  radius={45}
+                  textSize={18}
+                  centerLabelComponent={() => {
+                    return (
+                      <View>
+                        <Text
+                          style={{
+                            color: COLORS.greenM,
+                            fontSize: 14,
+                            fontFamily: "NotoSansMyanmar_700Bold",
+                          }}
+                        >
+                          90%
+                        </Text>
+                      </View>
+                    );
+                  }}
+                />
+              </View>
+
+              <View>
+                <Text style={styles.label} marginVertical={5}>
+                  Evolución de la opinión pública.
+                </Text>
+                <View marginVertical={5}>
+                  <LineChart
+                    areaChart
+                    height={40}
+                    xAxisLength={175}
+                    data={aprobacion}
+                    data2={aprobacion2}
+                    hideDataPoints
+                    color={COLORS.greenM}
+                    color2={COLORS.verdeclaro}
+                    startFillColor2={COLORS.verdeclaro}
+                    startFillColor={COLORS.greenM}
+                    startOpacity={0.6}
+                    startOpacity2={0.8}
+                    endFillColor={COLORS.back}
+                    endOpacity={0.2}
+                    hideRules
+                    yAxisColor={COLORS.grey}
+                    yAxisThickness={0}
+                    xAxisThickness={2}
+                    maxValue={100}
+                    stepValue={50}
+                    initialSpacing={10}
+                    spacing={31}
+                    yAxisTextStyle={{
+                      color: COLORS.black,
+                      fontFamily: "NotoSansMyanmar_700Bold",
+                      fontSize: 8,
+                      marginRight: -12,
+                    }}
+                    xAxisLabelTextStyle={{
+                      color: COLORS.black,
+                      fontFamily: "NotoSansMyanmar_700Bold",
+                      fontSize: 8,
+                      marginLeft: 10,
+                    }}
+                    xAxisColor={COLORS.grey}
+                  />
+                </View>
+              </View>
+            </View>
+            <View style={styles.container6}>
+              <View>
+                <View style={styles.container5}>
+                  <View style={styles.datausage}>
+                    <MaterialIcons
+                      name="data-usage"
+                      size={50}
+                      color={COLORS.verdeclaro}
+                      position={"absolute"}
+                    />
+                    <Text style={styles.data2}>3/4</Text>
+                  </View>
+                  <View width={130} marginVertical={"3%"}>
+                    <Text style={styles.label2}>
+                      Porcentaje de votos recibidos
+                    </Text>
+                  </View>
+                </View>
+                <View style={styles.container5}>
+                  <View style={styles.datausage}>
+                    <MaterialIcons
+                      name="data-usage"
+                      size={50}
+                      color={COLORS.verdeclaro}
+                      position={"absolute"}
+                    />
+                    <Text style={styles.data2}>50%</Text>
+                  </View>
+                  <View width={130}>
+                    <Text style={styles.label2}>Índice de cohesión</Text>
+                  </View>
+                </View>
+              </View>
+              <View>
+                <View style={styles.container5}>
+                  <View style={styles.circulo}>
+                    <Text style={styles.data2}>34%</Text>
+                  </View>
+                  <View width={140} marginVertical={"3%"} marginLeft={5}>
+                    <Text style={styles.label2}>
+                      Compatibilidad con el partido
+                    </Text>
+                  </View>
+                </View>
+                <View style={styles.container5}>
+                  <View style={styles.circulo}>
+                    <Text style={styles.data2}>55</Text>
+                  </View>
+                  <View width={145} marginVertical={"3%"} marginLeft={5}>
+                    <Text style={styles.label2}>
+                      Lugar estadístico entre los partidos
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            </View>
+          </View>
+          <FlatList
+            data={diputados}
+            renderItem={renderGridItem}
+            numColumns={1}
+            keyExtractor={(item) => item.id}
+          />
+        </ScrollView>
+      )}
     </KeyboardAvoidingView>
   );
 };
@@ -405,7 +474,6 @@ const styles = StyleSheet.create({
   },
   container3: {
     marginLeft: "5%",
-
   },
   container4: {
     flexDirection: "row",
@@ -485,5 +553,6 @@ const styles = StyleSheet.create({
   },
   keyboardView: {
     flex: 1,
+    backgroundColor: COLORS.back
   },
 });

@@ -18,15 +18,16 @@ import { FontAwesome } from "@expo/vector-icons";
 import { Entypo } from "@expo/vector-icons";
 import { COLORS } from "../constants/colors";
 import { useState, useEffect } from "react";
-import { ref, set, update, onValue, remove } from "firebase/database";
-import { db } from "../constants/config";
 import { MaterialIcons } from "@react-native-vector-icons/material-icons";
 import { PieChart, LineChart } from "react-native-gifted-charts";
 import Buscador from "../components/Buscador";
 import { SearchResults } from "../components/SearchResults";
 import { LEYES } from "../data/leyes";
 import { BuscadorContext } from "../context/BuscadorContext";
-import { msPersonRaisedHand } from "@material-symbols-react-native/outlined-400";
+import {
+  msPersonRaisedHand,
+  msBlock,
+} from "@material-symbols-react-native/outlined-400";
 import { MsIcon } from "material-symbols-react-native";
 import { reaccionesRepository } from "../infrastructure/ReaccionesRepository";
 import { useAuth } from "../context/AuthContext";
@@ -34,13 +35,12 @@ import { compromisosRepository } from "../infrastructure/compromisosRepository";
 import Ionicons from "@react-native-vector-icons/ionicons";
 import { legisladoresRepository } from "../infrastructure/legisladoresRepository";
 import { useReacciones } from "../hooks/useReacciones";
+import { Skeleton } from "../components/Skeleton";
 
 const coloresPorPartido = {
   DES: COLORS.DES,
-  AM: COLORS.AM,
   PDG: COLORS.PDG,
   IND: COLORS.IND,
-  PEV: COLORS.PEV,
   FA: COLORS.FA,
   PS: COLORS.PS,
   PC: COLORS.PC,
@@ -49,14 +49,14 @@ const coloresPorPartido = {
   PR: COLORS.PR,
   AH: COLORS.AH,
   FRVS: COLORS.FRVS,
-  DC: COLORS.PDC,
+  PDC: COLORS.PDC,
   UDI: COLORS.UDI,
   RN: COLORS.RN,
   EVOPOLI: COLORS.EVOPOLI,
-  PREP: COLORS.PREP,
+  REP: COLORS.PREP,
   PNL: COLORS.PNL,
   PSC: COLORS.PSC,
-  PD: COLORS.PD,
+  DEM: COLORS.DEM,
 };
 
 const MODAL_HEIGHT = Dimensions.get("window").height * 0.9;
@@ -64,8 +64,7 @@ const MODAL_HEIGHT = Dimensions.get("window").height * 0.9;
 export const DescripcionDiputado = ({ route }) => {
   const { user, distrito } = useAuth();
   const [reacciones, setReacciones] = useState({});
-  const { handleLike } = useReacciones(user.id, reacciones, setReacciones  );
-
+  const { handleLike } = useReacciones(user.id, reacciones, setReacciones);
 
   const [diputado, setDiputado] = useState({});
   const [asistencia, setAsistencia] = useState();
@@ -74,6 +73,7 @@ export const DescripcionDiputado = ({ route }) => {
   const [comision, setComision] = useState("5");
   const [mocion, setMocion] = useState("15");
   const [proyectos, setProyectos] = useState("3/5");
+  const [loading, setLoading] = useState(true);
 
   const [leyesChilenas, setLeyesChilenas] = useState(LEYES);
 
@@ -106,18 +106,14 @@ export const DescripcionDiputado = ({ route }) => {
     filtrarLeyes(search);
   }, [search]);
 
-  useEffect(() => {
-     getDiputado(); 
-  }, []);
-
   const idDiputado = route.params?.idDiputado;
   const reaccionActual = reacciones[idDiputado];
 
   const getDiputado = async () => {
     const data = await legisladoresRepository.getLegisladorById(idDiputado);
-    console.log('distrito diputado actual: ', data.diputado?.distrito);
+    console.log("distrito diputado actual: ", data.diputado?.distrito);
     setDiputado(data);
-  }
+  };
 
   const getCompromisos = async () => {
     const compromisos =
@@ -148,18 +144,28 @@ export const DescripcionDiputado = ({ route }) => {
     setCompromisos(formateados);
   };
 
-  useEffect(() => {
-    const getReaccion = async () => {
-      const reaccion = await reaccionesRepository.getReaccion(
-        user.id,
-        idDiputado,
-        "representante",
-      );
-      setReacciones({[idDiputado]: reaccion});
-    };
+  const getReaccion = async () => {
+    const reaccion = await reaccionesRepository.getReaccion(
+      user.id,
+      idDiputado,
+      "representante",
+    );
+    setReacciones({ [idDiputado]: reaccion });
+  };
 
-    getReaccion();
-    getCompromisos();
+  const fetchAll = async () => {
+    try {
+      setLoading(true);
+      await Promise.all([getDiputado(), getReaccion(), getCompromisos()]);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAll();
   }, []);
 
   const borderColor = coloresPorPartido[diputado.partido] || "#000";
@@ -244,245 +250,320 @@ export const DescripcionDiputado = ({ route }) => {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       keyboardVerticalOffset={100}
     >
-      <ScrollView contentContainerStyle={styles.back}>
-        <View style={styles.principal}>
-          <View style={styles.container1}>
-            <Text style={styles.title}>{diputado.nombre}</Text>
-            <TouchableOpacity style={styles.favorite} onPress={() => {
-                if(distrito !== diputado.diputado?.distrito) return;
-                handleLike( idDiputado, 'like')
-            }}>
-              <MaterialIcons
-                name="favorite"
-                size={42}
-                color={reaccionActual === "like" ? COLORS.greenM : COLORS.grey}
-                position={"absolute"}
-              />
-              <Text style={styles.interes}>36%</Text>
-            </TouchableOpacity>
+      {loading ? (
+        <View
+          style={{
+            alignSelf: "flex-start",
+            paddingVertical: 18,
+            paddingHorizontal: 10,
+          }}
+        >
+          <View
+            style={{
+              paddingLeft: 40,
+            }}
+          >
+            <Skeleton width={250} height={25} borderRadius={4} />
           </View>
-          <View style={styles.container2}>
-            <View>
-              <Image
-                style={{
-                  borderColor,
-                  width: 100,
-                  height: 100,
-                  borderRadius: 100,
-                  borderWidth: 4,
+          <View
+            style={{
+              marginHorizontal: 15,
+              flexDirection: "row",
+              paddingTop: 15,
+            }}
+          >
+            <Skeleton width={100} height={100} borderRadius={100} />
+            <View style={{ marginHorizontal: 15, marginTop: 12 }}>
+              <Skeleton width={120} height={80} borderRadius={4} />
+            </View>
+          </View>
+          <View style={{ marginHorizontal: 15, marginTop: 12 }}>
+            <Skeleton width={360} height={50} borderRadius={4} />
+          </View>
+          <View
+            style={{
+              paddingLeft: 30,
+              paddingVertical: 20,
+            }}
+          >
+            <Skeleton width={220} height={20} borderRadius={4} />
+          </View>
+          <View
+            style={{
+              paddingLeft: 15,
+            }}
+          >
+            <Skeleton width={360} height={170} borderRadius={4} />
+          </View>
+        </View>
+      ) : (
+        <ScrollView contentContainerStyle={styles.back}>
+          <View style={styles.principal}>
+            <View style={styles.container1}>
+              <Text style={styles.title}>{diputado.nombre}</Text>
+              <TouchableOpacity
+                style={styles.favorite}
+                onPress={() => {
+                  if (distrito !== diputado.diputado?.distrito) return;
+                  handleLike(idDiputado, "like");
                 }}
-                source={{ uri: diputado.foto }}
-              />
-              <Text style={styles.partido}>{diputado.partido}</Text>
+              >
+                <MaterialIcons
+                  name="favorite"
+                  size={42}
+                  color={
+                    reaccionActual === "like" ? COLORS.greenM : COLORS.grey
+                  }
+                  position={"absolute"}
+                />
+                <Text style={styles.interes}>36%</Text>
+              </TouchableOpacity>
             </View>
-            <View style={styles.estadistica}>
-              <View flexDirection={"row"} alignItems={"center"}>
-                <MaterialIcons
-                  name="event-available"
-                  size={17}
-                  color={COLORS.black}
+            <View style={styles.container2}>
+              <View>
+                <Image
+                  style={{
+                    borderColor,
+                    width: 100,
+                    height: 100,
+                    borderRadius: 100,
+                    borderWidth: 4,
+                  }}
+                  source={{ uri: diputado.foto }}
                 />
-                <Text style={styles.informacion}>{asistencia}% Asistencia</Text>
-              </View>
-              <View flexDirection={"row"} alignItems={"center"}>
-                <MsIcon
-                  icon={msPersonRaisedHand}
-                  size={18}
-                  color={COLORS.black}
-                />
-                <Text style={styles.informacion}>{votacion}% Votaciones</Text>
-              </View>
-              <View flexDirection={"row"} alignItems={"center"}>
-                <MaterialIcons
-                  name="diversity-2"
-                  size={17}
-                  color={COLORS.black}
-                />
-                <Text style={styles.informacion} marginLeft={"1%"}>
-                  Conforma {comision} comisiones
+                <Text style={styles.partido}>
+                  {diputado.partido}
+                  {diputado.estado && <Text> - {diputado.estado}</Text>}
                 </Text>
               </View>
-              <View flexDirection={"row"} alignItems={"center"}>
-                <MaterialIcons name="addchart" size={17} color={COLORS.black} />
-                <Text style={styles.informacion}>
-                  {mocion} mociones presentadas
-                </Text>
-              </View>
-            </View>
-            <View style={styles.datausage}>
-              <MaterialIcons
-                name="data-usage"
-                size={50}
-                color={COLORS.verdeclaro}
-                position={"absolute"}
-              />
-              <Text style={styles.data2}>36%</Text>
-            </View>
-          </View>
-          <Text
-            style={styles.descripcion}
-          >{`${diputado.profesion} de ${diputado.edad} años. ${diputado.trayectoria ? diputado.trayectoria : ""}`}</Text>
-          <View style={styles.container3}>
-            <Text style={styles.title2}>Estadísticas de la gestión.</Text>
-          </View>
-          <View style={styles.container4}>
-            {dataGrafico.length > 0 ? (
-              <>
-                <View width={90} marginVertical={"5%"} alignSelf={"center"}>
-                  <Text style={styles.label}>
-                    Avances del programa presentado.
+              <View style={styles.estadistica}>
+                <View flexDirection={"row"} alignItems={"center"}>
+                  <MaterialIcons
+                    name="event-available"
+                    size={17}
+                    color={COLORS.black}
+                  />
+                  <Text style={styles.informacion}>
+                    {asistencia}% Asistencia
                   </Text>
                 </View>
-                <TouchableOpacity
+                <View flexDirection={"row"} alignItems={"center"}>
+                  <MsIcon
+                    icon={msPersonRaisedHand}
+                    size={18}
+                    color={COLORS.black}
+                  />
+                  <Text style={styles.informacion}>{votacion}% Votaciones</Text>
+                </View>
+                <View flexDirection={"row"} alignItems={"center"}>
+                  <MaterialIcons
+                    name="diversity-2"
+                    size={17}
+                    color={COLORS.black}
+                  />
+                  <Text style={styles.informacion} marginLeft={"1%"}>
+                    Conforma {comision} comisiones
+                  </Text>
+                </View>
+                <View flexDirection={"row"} alignItems={"center"}>
+                  <MaterialIcons
+                    name="addchart"
+                    size={17}
+                    color={COLORS.black}
+                  />
+                  <Text style={styles.informacion}>
+                    {mocion} mociones presentadas
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.datausage}>
+                <MaterialIcons
+                  name="data-usage"
+                  size={50}
+                  color={COLORS.verdeclaro}
+                  position={"absolute"}
+                />
+                <Text style={styles.data2}>36%</Text>
+              </View>
+            </View>
+            <Text
+              style={styles.descripcion}
+            >{`${diputado.profesion} de ${diputado.edad} años. ${diputado.trayectoria ? diputado.trayectoria : ""}`}</Text>
+            <View style={styles.container3}>
+              <Text style={styles.title2}>Estadísticas de la gestión.</Text>
+            </View>
+            <View style={styles.container4}>
+              {dataGrafico.length > 0 ? (
+                <>
+                  <View width={90} marginVertical={"5%"} alignSelf={"center"}>
+                    <Text style={styles.label}>
+                      Avances del programa presentado.
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    marginVertical={"1%"}
+                    onPress={() => setModalVisible(true)}
+                  >
+                    <PieChart
+                      strokeColor={COLORS.back}
+                      strokeWidth={1}
+                      donut
+                      data={dataGrafico}
+                      showValuesAsLabels={true}
+                      innerRadius={18}
+                      radius={45}
+                      textSize={18}
+                      centerLabelComponent={() => {
+                        return (
+                          <View>
+                            <Text
+                              style={{
+                                color: COLORS.greenM,
+                                fontSize: 14,
+                                fontFamily: "NotoSansMyanmar_700Bold",
+                              }}
+                            >
+                              90%
+                            </Text>
+                          </View>
+                        );
+                      }}
+                    />
+                  </TouchableOpacity>
+                </>
+              ) : (
+                <View
+                  width={"45%"}
                   marginVertical={"1%"}
-                  onPress={() => setModalVisible(true)}
+                  alignSelf={"center"}
+                  alignItems={"center"}
                 >
-                  <PieChart
-                    strokeColor={COLORS.back}
-                    strokeWidth={1}
-                    donut
-                    data={dataGrafico}
-                    showValuesAsLabels={true}
-                    innerRadius={18}
-                    radius={45}
-                    textSize={18}
-                    centerLabelComponent={() => {
-                      return (
-                        <View>
-                          <Text
-                            style={{
-                              color: COLORS.greenM,
-                              fontSize: 14,
-                              fontFamily: "NotoSansMyanmar_700Bold",
-                            }}
-                          >
-                            90%
-                          </Text>
-                        </View>
-                      );
-                    }}
-                  />
-                </TouchableOpacity>
-              </>
-            ) : (
-              <Text style={styles.label}>.</Text>
-            )}
+                  <View marginVertical={"1%"} top={-6}>
+                    <MsIcon icon={msBlock} size={18} color={COLORS.greenM} />
+                  </View>
+                  <Text style={styles.label} width={170} top={-3}>
+                    No se encontró programa, propuestas o compromisos de
+                    campaña.
+                  </Text>
+                </View>
+              )}
 
-            <View>
-              <Text style={styles.label} marginVertical={5}>
-                Evolución de la opinión pública.
-              </Text>
-              <View marginVertical={5}>
-                <LineChart
-                  areaChart
-                  height={40}
-                  xAxisLength={175}
-                  data={aprobacion}
-                  data2={aprobacion2}
-                  hideDataPoints
-                  color={COLORS.greenM}
-                  color2={COLORS.verdeclaro}
-                  startFillColor2={COLORS.verdeclaro}
-                  startFillColor={COLORS.greenM}
-                  startOpacity={0.6}
-                  startOpacity2={0.8}
-                  endFillColor={COLORS.back}
-                  endOpacity={0.2}
-                  hideRules
-                  yAxisColor={COLORS.grey}
-                  yAxisThickness={0}
-                  xAxisThickness={2}
-                  maxValue={100}
-                  stepValue={50}
-                  initialSpacing={10}
-                  spacing={31}
-                  yAxisTextStyle={{
-                    color: COLORS.black,
-                    fontFamily: "NotoSansMyanmar_700Bold",
-                    fontSize: 8,
-                    marginRight: -12,
-                  }}
-                  xAxisLabelTextStyle={{
-                    color: COLORS.black,
-                    fontFamily: "NotoSansMyanmar_700Bold",
-                    fontSize: 8,
-                    marginLeft: 10,
-                  }}
-                  xAxisColor={COLORS.grey}
-                />
+              <View>
+                <Text style={styles.label} marginVertical={5}>
+                  Evolución de la opinión pública.
+                </Text>
+                <View marginVertical={5}>
+                  <LineChart
+                    areaChart
+                    height={40}
+                    xAxisLength={175}
+                    data={aprobacion}
+                    data2={aprobacion2}
+                    hideDataPoints
+                    color={COLORS.greenM}
+                    color2={COLORS.verdeclaro}
+                    startFillColor2={COLORS.verdeclaro}
+                    startFillColor={COLORS.greenM}
+                    startOpacity={0.6}
+                    startOpacity2={0.8}
+                    endFillColor={COLORS.back}
+                    endOpacity={0.2}
+                    hideRules
+                    yAxisColor={COLORS.grey}
+                    yAxisThickness={0}
+                    xAxisThickness={2}
+                    maxValue={100}
+                    stepValue={50}
+                    initialSpacing={10}
+                    spacing={31}
+                    yAxisTextStyle={{
+                      color: COLORS.black,
+                      fontFamily: "NotoSansMyanmar_700Bold",
+                      fontSize: 8,
+                      marginRight: -12,
+                    }}
+                    xAxisLabelTextStyle={{
+                      color: COLORS.black,
+                      fontFamily: "NotoSansMyanmar_700Bold",
+                      fontSize: 8,
+                      marginLeft: 10,
+                    }}
+                    xAxisColor={COLORS.grey}
+                  />
+                </View>
+              </View>
+            </View>
+            <View style={styles.container6}>
+              <View>
+                <View style={styles.container5}>
+                  <View style={styles.datausage}>
+                    <MaterialIcons
+                      name="data-usage"
+                      size={50}
+                      color={COLORS.verdeclaro}
+                      position={"absolute"}
+                    />
+                    <Text style={styles.data2}>3/4</Text>
+                  </View>
+                  <View width={130} marginVertical={"3%"}>
+                    <Text style={styles.label2}>
+                      Proyectos aprobados/presentados
+                    </Text>
+                  </View>
+                </View>
+                <View style={styles.container5}>
+                  <View style={styles.datausage}>
+                    <MaterialIcons
+                      name="data-usage"
+                      size={50}
+                      color={COLORS.verdeclaro}
+                      position={"absolute"}
+                    />
+                    <Text style={styles.data2}>50%</Text>
+                  </View>
+                  <View width={130}>
+                    <Text style={styles.label2}>
+                      Adherencia al partido político
+                    </Text>
+                  </View>
+                </View>
+              </View>
+              <View>
+                <View style={styles.container5}>
+                  <View style={styles.circulo}>
+                    <Text style={styles.data2}>34%</Text>
+                  </View>
+                  <View width={140} marginVertical={"3%"} marginLeft={5}>
+                    <Text style={styles.label2}>
+                      Compatibilidad con el representante
+                    </Text>
+                  </View>
+                </View>
+                <View style={styles.container5}>
+                  <View style={styles.circulo}>
+                    <Text style={styles.data2}>55</Text>
+                  </View>
+                  <View width={145} marginVertical={"3%"} marginLeft={5}>
+                    <Text style={styles.label2}>
+                      Lugar estadístico de todos los representantes
+                    </Text>
+                  </View>
+                </View>
               </View>
             </View>
           </View>
-          <View style={styles.container6}>
-            <View>
-              <View style={styles.container5}>
-                <View style={styles.datausage}>
-                  <MaterialIcons
-                    name="data-usage"
-                    size={50}
-                    color={COLORS.verdeclaro}
-                    position={"absolute"}
-                  />
-                  <Text style={styles.data2}>3/4</Text>
-                </View>
-                <View width={130} marginVertical={"3%"}>
-                  <Text style={styles.label2}>
-                    Proyectos aprobados/presentados
-                  </Text>
-                </View>
-              </View>
-              <View style={styles.container5}>
-                <View style={styles.datausage}>
-                  <MaterialIcons
-                    name="data-usage"
-                    size={50}
-                    color={COLORS.verdeclaro}
-                    position={"absolute"}
-                  />
-                  <Text style={styles.data2}>50%</Text>
-                </View>
-                <View width={130}>
-                  <Text style={styles.label2}>
-                    Adherencia al partido político
-                  </Text>
-                </View>
-              </View>
-            </View>
-            <View>
-              <View style={styles.container5}>
-                <View style={styles.circulo}>
-                  <Text style={styles.data2}>34%</Text>
-                </View>
-                <View width={140} marginVertical={"3%"} marginLeft={5}>
-                  <Text style={styles.label2}>
-                    Compatibilidad con el representante
-                  </Text>
-                </View>
-              </View>
-              <View style={styles.container5}>
-                <View style={styles.circulo}>
-                  <Text style={styles.data2}>55</Text>
-                </View>
-                <View width={145} marginVertical={"3%"} marginLeft={5}>
-                  <Text style={styles.label2}>
-                    Lugar estadístico de todos los representantes
-                  </Text>
-                </View>
-              </View>
-            </View>
+          <View style={styles.buscador}>
+            <Buscador />
           </View>
-        </View>
-        <View style={styles.buscador}>
-          <Buscador />
-        </View>
-        <View>
-          <SearchResults
-            data={leyesChilenas}
-            onSelect={() => console.log("click")}
-            representante={diputado.id}
-          />
-        </View>
-      </ScrollView>
+          <View>
+            <SearchResults
+              data={leyesChilenas}
+              onSelect={() => console.log("click")}
+              representante={diputado.id}
+            />
+          </View>
+        </ScrollView>
+      )}
 
       <Modal visible={modalVisible} transparent animationType="fade">
         <View style={styles.overlay}>
@@ -663,6 +744,7 @@ const styles = StyleSheet.create({
   },
   keyboardView: {
     flex: 1,
+    backgroundColor: COLORS.back,
   },
   buscador: {
     width: "96%",

@@ -20,7 +20,7 @@ export const topicosRepository = {
 
         const { error } = await supabase
             .from('user_topicos')
-            .insert(rows)
+            .upsert( rows, { onConflict: "user_id,topico_id", ignoreDuplicates: true } );
         
         if (error) throw error;
     }

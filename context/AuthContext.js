@@ -39,9 +39,10 @@ export const AuthProvider = ({children}) => {
             const user = await authRepo.login(payload);
             setUser(user);
             setTipoAuth('login');
-
+            return true;
         } catch (error) {
-            setAuthError(true);    
+            setAuthError(true);
+            return false;    
         }
 
     }
@@ -67,7 +68,7 @@ export const AuthProvider = ({children}) => {
                 authRepo,
                 setUser,
                 distrito,
-                setDistrito,
+                setDistrito
             }}
         >
             {children}

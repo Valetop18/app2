@@ -2,11 +2,11 @@ import { supabase } from "../constants/supabase";
 
 const BUCKET_LEGISLADORES = "legisladores";
 
-function getPublicUrl(path){
+export function getPublicUrl(path, bucket){
     if (!path) return null;
 
     const { data } =  supabase.storage
-        .from(BUCKET_LEGISLADORES)
+        .from(bucket)
         .getPublicUrl(path);
 
     return data.publicUrl;
@@ -44,6 +44,7 @@ export const legisladoresRepository = {
                 periodo_inicio,
                 periodo_fin,
                 partido_id,
+                estado,
                 partidos (
                     id,
                     nombre,
@@ -52,7 +53,7 @@ export const legisladoresRepository = {
                 diputados(
                     distrito
                 ),
-                senadores (
+                senadores(
                     circunscripcion
                 )
             `)
@@ -71,11 +72,12 @@ export const legisladoresRepository = {
                     trayectoria: data.trayectoria,
                     periodoInicio: data.periodo_inicio,
                     periodoFin: data.periodo_fin,
-                    foto: getPublicUrl(data.url_img),
+                    estado: data.estado,
+                    foto: getPublicUrl(data.url_img, BUCKET_LEGISLADORES),
                     edad: calcularEdad(data.fecha_nacimiento) ,
                     partido: data.partidos ? data.partidos.sigla : "",
                     diputado : esDiputado ? {distrito: data.diputados[0].distrito } : null,
-                    senador : esSenador ? {circunscripcion: data.diputados[0].circunscripcion } : null
+                    senador : esSenador ? {circunscripcion: data.senadores[0].circunscripcion } : null
                 }
             }
 
@@ -85,8 +87,6 @@ export const legisladoresRepository = {
         }
     },
     
-
-
     async getDiputadosByDistrito(distrito) {
         try {
 
@@ -104,6 +104,7 @@ export const legisladoresRepository = {
                     trayectoria,
                     periodo_inicio,
                     periodo_fin,
+                    estado,
                     partidos (
                         id,
                         nombre,
@@ -129,7 +130,8 @@ export const legisladoresRepository = {
                     periodoInicio: legislador.periodo_inicio,
                     periodoFin: legislador.periodo_fin,
                     partido: partido ? partido.sigla : "",
-                    foto: getPublicUrl(legislador.url_img),
+                    estado: legislador.estado,
+                    foto: getPublicUrl(legislador.url_img, BUCKET_LEGISLADORES),
                     edad: calcularEdad(legislador.fecha_nacimiento)     
                 }
             })
@@ -179,7 +181,7 @@ export const legisladoresRepository = {
                     periodoInicio: legislador.periodo_inicio,
                     periodoFin: legislador.periodo_fin,
                     partido: partido ? partido.sigla : "",
-                    foto: getPublicUrl(legislador.url_img),
+                    foto: getPublicUrl(legislador.url_img, BUCKET_LEGISLADORES),
                 }
             })
             
@@ -189,7 +191,111 @@ export const legisladoresRepository = {
             console.error("Error al obtener diputados: ", error.message);
             return [];
         }
-    }
+    },
+
+    async getSenadoresByCircunscripcion(circunscripcion) {
+        try {
+
+            const { data, error } = await supabase
+            .from('senadores')
+            .select(`
+                id,
+                circunscripcion,
+                legisladores (
+                    id,
+                    nombre,
+                    url_img,
+                    fecha_nacimiento,
+                    profesion,
+                    trayectoria,
+                    periodo_inicio,
+                    periodo_fin,
+                    partidos (
+                        id,
+                        nombre,
+                        sigla
+                    )
+                )    
+            `)
+            .eq("circunscripcion", circunscripcion);
+
+
+            if (error) throw error;
+
+            return data.map( senador => {
+                const legislador = senador.legisladores;
+                const partido = legislador?.partidos;
+
+                return {
+                    id: legislador.id,
+                    nombre: legislador.nombre,
+                    circunscripcion: senador.circunscripcion,
+                    profesion: legislador.profesion,
+                    trayectoria: legislador.trayectoria,
+                    periodoInicio: legislador.periodo_inicio,
+                    periodoFin: legislador.periodo_fin,
+                    partido: partido ? partido.sigla : "",
+                    foto: getPublicUrl(legislador.url_img, BUCKET_LEGISLADORES),
+                    edad: calcularEdad(legislador.fecha_nacimiento)     
+                }
+            })
+            
+            return data;
+
+        } catch (error) {
+            console.error("Error al obtener senadores: ", error.message);
+            return [];
+        }
+    },
+
+    async getSenadoresByPartido(partidoId){
+        try {
+            const { data, error } = await supabase
+            .from('senadores')
+            .select(`
+                id,
+                circunscripcion,
+                legisladores!inner (
+                    id,
+                    nombre,
+                    url_img,
+                    periodo_inicio,
+                    periodo_fin,
+                    partido_id,
+                    partidos (
+                        id,
+                        nombre,
+                        sigla
+                    )
+                )    
+            `)
+            .eq("legisladores.partido_id", partidoId);
+
+            if (error) throw error;
+
+            return data.map( sena => {
+                console.log('senadores filtrados: ', sena )
+                const legislador = sena.legisladores;
+                const partido = legislador?.partidos;
+
+                return {
+                    id: legislador.id,
+                    nombre: legislador.nombre,
+                    circunscripcion: sena.circunscripcion,
+                    periodoInicio: legislador.periodo_inicio,
+                    periodoFin: legislador.periodo_fin,
+                    partido: partido ? partido.sigla : "",
+                    foto: getPublicUrl(legislador.url_img, BUCKET_LEGISLADORES),
+                }
+            })
+            
+            return data;
+
+        } catch (error) {
+            console.error("Error al obtener senadores: ", error.message);
+            return [];
+        }
+    },
 
 
 }

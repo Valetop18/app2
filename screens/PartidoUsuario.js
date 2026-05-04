@@ -10,55 +10,64 @@ import { useNavigation } from "@react-navigation/native";
 import { Partido } from "../components/partido";
 import Ionicons from "@react-native-vector-icons/ionicons";
 import { useState, useEffect } from "react";
-import { updateDoc, doc } from "firebase/firestore";
-import { dbFirestore } from "../constants/config";
 import { partidosRepository } from "../infrastructure/partidosRepository";
 import { useAuth } from "../context/AuthContext";
+import { Skeleton } from "../components/Skeleton";
 
 export const PartidoUsuario = () => {
   const navigation = useNavigation();
   const { user, setTipoAuth } = useAuth();
   const [partidoSeleccionado, setPartidoSeleccionado] = useState("");
-  const [partidos, setPartidos] = useState([])
+  const [partidos, setPartidos] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     cargarPartidos();
-  }, [])
+  }, []);
 
-  const cargarPartidos = async () => { 
+  const cargarPartidos = async () => {
     try {
       const data = await partidosRepository.getPartidos();
       console.log(data);
       setPartidos(data);
     } catch (error) {
       console.error(error);
+    } finally {
+      setLoading(false);
     }
-  }
+  };
 
   const renderGridItem = ({ item }) => {
+    const onPress = () => setPartidoSeleccionado(item.id);
+    const isSelected = item.id === partidoSeleccionado;
 
-  const onPress = () => setPartidoSeleccionado(item.id);
-  const isSelected = item.id === partidoSeleccionado;
-
-  return(
-  <TouchableOpacity onPress={onPress}>
-    <Partido item={item} selected={isSelected}/>
-  </TouchableOpacity>
-  );
+    return (
+      <TouchableOpacity onPress={onPress}>
+        <Partido item={item} selected={isSelected} />
+      </TouchableOpacity>
+    );
   };
 
   const handleContinuar = async () => {
     try {
-
-
       await partidosRepository.savePartidoUsuario(user.id, partidoSeleccionado);
       setTipoAuth("");
       //navigation.navigate("SelectDistrito");
-      
     } catch (error) {
       console.error(error);
     }
   };
+
+  const skeletonCard = () => (
+    <View
+      style={{
+        alignSelf: "flex-start",
+        paddingVertical: 8,
+      }}
+    >
+      <Skeleton width={300} height={15} borderRadius={5} />
+    </View>
+  );
 
   return (
     <View style={styles.container}>
@@ -68,13 +77,23 @@ export const PartidoUsuario = () => {
         </Text>
         <Text style={styles.titulo}>Selecciona un partido:</Text>
         <View marginTop={"3%"}>
-          <FlatList
-            style={styles.flatlist}
-            data={partidos}
-            renderItem={renderGridItem}
-            numColumns={1}
-            keyExtractor={(item) => item.id}
-          />
+          {loading ? (
+            <FlatList
+              style={styles.flatlist}
+              data={[1, 2, 3, 4, 5]}
+              renderItem={skeletonCard}
+              numColumns={1}
+              keyExtractor={(item) => item.toString()}
+            />
+          ) : (
+            <FlatList
+              style={styles.flatlist}
+              data={partidos}
+              renderItem={renderGridItem}
+              numColumns={1}
+              keyExtractor={(item) => item.id}
+            />
+          )}
         </View>
         <View style={styles.containerFinal}>
           <TouchableOpacity
@@ -131,7 +150,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     height: "25%",
     flexDirection: "row",
-
   },
   boton: {
     fontFamily: "NotoSansMyanmar_700Bold",
@@ -141,7 +159,7 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   containerFinal: {
-    alignItems: 'flex-end',
+    alignItems: "flex-end",
     marginTop: "15%",
   },
 });

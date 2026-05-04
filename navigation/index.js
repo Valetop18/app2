@@ -9,9 +9,12 @@ import { useAuth } from "../context/AuthContext";
 import { AuthStack } from "./AuthStack";
 import { RegisterStack } from "./RegisterStack";
 import { AppStack } from "./AppStack";
+import { UbicacionStack } from "./UbicacionStack";
 
 const MainNavigation = () => {
   const { user, tipoAuth } = useAuth();
+
+  const tieneUbicacion = !!user?.distrito && !!user?.circunscripcion;
 
   return (
     <NavigationContainer>
@@ -19,6 +22,8 @@ const MainNavigation = () => {
         <AuthStack />
       ) : tipoAuth === "register" ? (
         <RegisterStack />
+      ) : tieneUbicacion ? (
+        <UbicacionStack />
       ) : (
         <AppStack />
       )}

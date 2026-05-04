@@ -76,73 +76,79 @@ export const SearchResults = ({ data = [], onSelect, representante }) => {
 
           return (
             <View style={styles.container}>
-              <View flexDirection={'row'} justifyContent={'space-between'}>
-              <View style={styles.containerNombre}>
-                <View flexDirection={"row"}>
-                  <Text style={styles.nombre}> {item.nombre} </Text>
-                  <View style={styles.datausage}>
-                    <MaterialIcons
-                      name="data-usage"
-                      size={34}
-                      color={COLORS.verdeclaro}
-                      position={"absolute"}
+              <View flexDirection={"row"} justifyContent={"space-between"}>
+                <View style={styles.containerNombre}>
+                  <View flexDirection={"row"}>
+                    <Text style={styles.nombre}> {item.nombre} </Text>
+                    <View style={styles.estadistica2}>
+                      <TouchableOpacity
+                        onPress={() => handleLike(item.id, "like")}
+                      >
+                        <FontAwesome
+                          name="thumbs-up"
+                          size={19}
+                          color={
+                            reaccion === "like" ? COLORS.greenM : COLORS.grey
+                          }
+                        />
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={() => handleLike(item.id, "dislike")}
+                      >
+                        <FontAwesome
+                          name="thumbs-down"
+                          size={19}
+                          color={
+                            reaccion === "dislike" ? COLORS.greenM : COLORS.grey
+                          }
+                          style={{ transform: [{ scaleX: -1 }] }}
+                        />
+                      </TouchableOpacity>
+                    </View>
+                    <View style={styles.datausage}>
+                      <MaterialIcons
+                        name="data-usage"
+                        size={34}
+                        color={COLORS.verdeclaro}
+                        position={"absolute"}
+                      />
+                      <Text style={styles.data2}>36%</Text>
+                    </View>
+                  </View>
+                  <View
+                    style={styles.estadistica}
+                    onPress={() => onSelect(item)}
+                  >
+                    {representante && (
+                      <View style={styles.flexHorizontal}>
+                        <MsIcon
+                          icon={msPersonRaisedHand}
+                          size={18}
+                          color={COLORS.black}
+                        />
+                        <MaterialIcons
+                          name="cancel"
+                          size={18}
+                          color={COLORS.greenM}
+                          marginRight={16}
+                        />
+                      </View>
+                    )}
+
+                    <MaterialCommunityIcons
+                      name="chart-donut-variant"
+                      size={22}
+                      color={COLORS.black}
                     />
-                    <Text style={styles.data2}>36%</Text>
+                    <MaterialIcons
+                      name="check-circle"
+                      size={18}
+                      color={COLORS.greenM}
+                      marginRight={20}
+                    />
                   </View>
                 </View>
-                <View
-                  style={styles.estadistica}
-                  onPress={() => onSelect(item)}
-                >
-                  {representante && (
-                    <View style={styles.flexHorizontal}>
-                      <MsIcon
-                        icon={msPersonRaisedHand}
-                        size={18}
-                        color={COLORS.black}
-                      />
-                      <MaterialIcons
-                        name="cancel"
-                        size={18}
-                        color={COLORS.greenM}
-                        marginRight={20}
-                      />
-                    </View>
-                  )}
-
-                  <MaterialCommunityIcons
-                    name="chart-donut-variant"
-                    size={22}
-                    color={COLORS.black}
-                  />
-                  <MaterialIcons
-                    name="check-circle"
-                    size={18}
-                    color={COLORS.greenM}
-                    marginRight={20}
-                  />
-                </View>
               </View>
-              <View style={styles.estadistica2}>
-                <TouchableOpacity onPress={() => handleLike(item.id, "like")}>
-                  <FontAwesome
-                    name="thumbs-up"
-                    size={19}
-                    color={reaccion === "like" ? COLORS.greenM : COLORS.grey}
-                  />
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={() => handleLike(item.id, "dislike")}
-                >
-                  <FontAwesome
-                    name="thumbs-down"
-                    size={19}
-                    color={reaccion === "dislike" ? COLORS.greenM : COLORS.grey}
-                    style={{ transform: [{ scaleX: -1 }] }}
-                  />
-                </TouchableOpacity>
-              </View>
-    </View>
               <TouchableOpacity onPress={() => onSelect(item)}>
                 {item.descripcion && (
                   <Text style={styles.descripcion}> {item.descripcion} </Text>
@@ -173,7 +179,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     marginTop: 10,
     justifyContent: "space-between",
-    width: '88%'
+    width: "100%",
   },
   votacion: {
     fontFamily: "NotoSansMyanmar_400Regular",
@@ -205,17 +211,14 @@ const styles = StyleSheet.create({
   estadistica: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "flex-end",
-    marginRight: "2%",
-    marginTop: "-1%",
+    marginRight: '-2%'
   },
   estadistica2: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     justifyContent: "space-between",
-    marginTop: 6,
-    marginRight: 15,
-    width: 39
+    marginRight: 8,
+    width: 38,
   },
   flexHorizontal: {
     flexDirection: "row",

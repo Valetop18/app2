@@ -3,7 +3,7 @@ import { Platform } from "react-native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
 import { Senadores } from "../screens/sena";
-import { DescripcionSenador } from "../screens/detallesSenadores";
+import { DescripcionSenador } from "../screens/detallesSena";
 
 const Stack = createNativeStackNavigator()
 
@@ -13,7 +13,7 @@ const NaveSenadores = () => {
             headerShown: false,
         }}>
             <Stack.Screen name='Senadores' component={Senadores} options={{title: 'Senadores'}} />
-            <Stack.Screen name='Descripcion' component={DescripcionSenador} options={({route}) => ({title: route.params.nombre})} />
+            <Stack.Screen name='DescripcionSenador' component={DescripcionSenador} options={({route}) => ({title: route.params.nombre})} />
         </Stack.Navigator>
     )
 }

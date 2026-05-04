@@ -23,15 +23,11 @@ import MaterialIcons from "@react-native-vector-icons/material-icons";
 import { LEYES } from "../data/leyes";
 import Ionicons from "@react-native-vector-icons/ionicons";
 import { FlatList } from "react-native-gesture-handler";
-import { representantePorPartido } from "../store/actions/representante.action";
 import RepresentantePartido from "../components/representantePartido";
 import { useNavigation } from "@react-navigation/native";
-import {
-  seleccionPartido,
-  filteredDiputadosPartido,
-} from "../store/actions/partido.action";
 import { TouchableWithoutFeedback } from "react-native";
 import { legisladoresRepository } from "../infrastructure/legisladoresRepository";
+import { Skeleton } from "../components/Skeleton";
 
 export const CamaraDipu = () => {
   const { search, setSearch } = useContext(BuscadorContext);
@@ -40,6 +36,7 @@ export const CamaraDipu = () => {
   const [hoyActivo, setHoyActivo] = useState(true);
   const [habilitarTransicion, setHabilitarTransicion] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [infoModal, setInfoModal] = useState({
     tipo: "",
     partido: "",
@@ -50,13 +47,10 @@ export const CamaraDipu = () => {
   });
   const [legisladores, setLegisladores] = useState([]);
 
-
   const coloresPorPartido = {
     DES: COLORS.DES,
-    AM: COLORS.AM,
     PDG: COLORS.PDG,
     IND: COLORS.IND,
-    PEV: COLORS.PEV,
     FA: COLORS.FA,
     PS: COLORS.PS,
     PC: COLORS.PC,
@@ -65,37 +59,36 @@ export const CamaraDipu = () => {
     PR: COLORS.PR,
     AH: COLORS.AH,
     FRVS: COLORS.FRVS,
-    DC: COLORS.PDC,
+    PDC: COLORS.PDC,
     UDI: COLORS.UDI,
     RN: COLORS.RN,
     EVOPOLI: COLORS.EVOPOLI,
-    PREP: COLORS.PREP,
+    REP: COLORS.PREP,
     PNL: COLORS.PNL,
     PSC: COLORS.PSC,
     DEM: COLORS.DEM,
   };
 
-
   const partidos = [
-  { id: 1, partido: "DEM" },
-  { id: 2, partido: "EVOPOLI" },
-  { id: 3, partido: "FA" },
-  { id: 4, partido: "FRVS" },
-  { id: 5, partido: "PC" },
-  { id: 6, partido: "PDC" },
-  { id: 7, partido: "PDG" },
-  { id: 8, partido: "PL" },
-  { id: 9, partido: "PNL" },
-  { id: 10, partido: "PPD" },
-  { id: 11, partido: "PR" },
-  { id: 12, partido: "PREP" },
-  { id: 13, partido: "PS" },
-  { id: 14, partido: "PSC" },
-  { id: 15, partido: "RN" },
-  { id: 16, partido: "UDI" },
-  { id: 17, partido: "IND" }
-];
-
+    { id: 1, partido: "DEM" },
+    { id: 2, partido: "EVOPOLI" },
+    { id: 3, partido: "FA" },
+    { id: 4, partido: "FRVS" },
+    { id: 5, partido: "PC" },
+    { id: 6, partido: "PDC" },
+    { id: 7, partido: "PDG" },
+    { id: 8, partido: "PL" },
+    { id: 9, partido: "PNL" },
+    { id: 10, partido: "PPD" },
+    { id: 11, partido: "PR" },
+    { id: 12, partido: "REP" },
+    { id: 13, partido: "PS" },
+    { id: 14, partido: "PSC" },
+    { id: 15, partido: "RN" },
+    { id: 16, partido: "UDI" },
+    { id: 17, partido: "IND" },
+    { id: 18, partido: "AH" },
+  ];
 
   const diputados = [
     {
@@ -113,10 +106,10 @@ export const CamaraDipu = () => {
         { id: 9, partido: "RN" },
         { id: 10, partido: "RN" },
         { id: 11, partido: "RN" },
-        { id: 12, partido: "PREP" },
-        { id: 13, partido: "PREP" },
-        { id: 14, partido: "PREP" },
-        { id: 15, partido: "PREP" },
+        { id: 12, partido: "REP" },
+        { id: 13, partido: "REP" },
+        { id: 14, partido: "REP" },
+        { id: 15, partido: "REP" },
       ],
     },
     {
@@ -137,11 +130,11 @@ export const CamaraDipu = () => {
         { id: 28, partido: "RN" },
         { id: 29, partido: "RN" },
         { id: 30, partido: "RN" },
-        { id: 31, partido: "PREP" },
-        { id: 32, partido: "PREP" },
-        { id: 33, partido: "PREP" },
-        { id: 34, partido: "PREP" },
-        { id: 35, partido: "PREP" },
+        { id: 31, partido: "REP" },
+        { id: 32, partido: "REP" },
+        { id: 33, partido: "REP" },
+        { id: 34, partido: "REP" },
+        { id: 35, partido: "REP" },
       ],
     },
     {
@@ -165,12 +158,12 @@ export const CamaraDipu = () => {
         { id: 51, partido: "RN" },
         { id: 52, partido: "RN" },
         { id: 53, partido: "RN" },
-        { id: 54, partido: "PREP" },
-        { id: 55, partido: "PREP" },
-        { id: 56, partido: "PREP" },
-        { id: 57, partido: "PREP" },
-        { id: 58, partido: "PREP" },
-        { id: 59, partido: "PREP" },
+        { id: 54, partido: "REP" },
+        { id: 55, partido: "REP" },
+        { id: 56, partido: "REP" },
+        { id: 57, partido: "REP" },
+        { id: 58, partido: "REP" },
+        { id: 59, partido: "REP" },
       ],
     },
     {
@@ -198,12 +191,12 @@ export const CamaraDipu = () => {
         { id: 80, partido: "UDI" },
         { id: 81, partido: "PNL" },
         { id: 82, partido: "PNL" },
-        { id: 83, partido: "PREP" },
-        { id: 84, partido: "PREP" },
-        { id: 85, partido: "PREP" },
-        { id: 86, partido: "PREP" },
-        { id: 87, partido: "PREP" },
-        { id: 88, partido: "PREP" },
+        { id: 83, partido: "REP" },
+        { id: 84, partido: "REP" },
+        { id: 85, partido: "REP" },
+        { id: 86, partido: "REP" },
+        { id: 87, partido: "REP" },
+        { id: 88, partido: "REP" },
       ],
     },
     {
@@ -221,7 +214,7 @@ export const CamaraDipu = () => {
         { id: 98, partido: "FA" },
         { id: 99, partido: "FA" },
         { id: 100, partido: "FA" },
-        { id: 101, partido: "FRVS" },
+        { id: 101, partido: "PDG" },
         { id: 102, partido: "PDG" },
         { id: 103, partido: "PDG" },
         { id: 104, partido: "PDG" },
@@ -235,11 +228,11 @@ export const CamaraDipu = () => {
         { id: 112, partido: "PNL" },
         { id: 113, partido: "PNL" },
         { id: 114, partido: "PNL" },
-        { id: 115, partido: "PREP" },
-        { id: 116, partido: "PREP" },
-        { id: 117, partido: "PREP" },
-        { id: 118, partido: "PREP" },
-        { id: 119, partido: "PREP" },
+        { id: 115, partido: "REP" },
+        { id: 116, partido: "REP" },
+        { id: 117, partido: "REP" },
+        { id: 118, partido: "REP" },
+        { id: 119, partido: "REP" },
         { id: 120, partido: "PSC" },
       ],
     },
@@ -262,9 +255,9 @@ export const CamaraDipu = () => {
         { id: 135, partido: "FRVS" },
         { id: 136, partido: "FRVS" },
         { id: 137, partido: "PDG" },
-        { id: 138, partido: "PDG" },
-        { id: 139, partido: "DEM" },
-        { id: 140, partido: "UDI" },
+        { id: 138, partido: "AH" },
+        { id: 139, partido: "UDI" },
+        { id: 140, partido: "DEM" },
         { id: 141, partido: "UDI" },
         { id: 142, partido: "UDI" },
         { id: 143, partido: "UDI" },
@@ -274,11 +267,11 @@ export const CamaraDipu = () => {
         { id: 147, partido: "PNL" },
         { id: 148, partido: "PNL" },
         { id: 149, partido: "PNL" },
-        { id: 150, partido: "PREP" },
-        { id: 151, partido: "PREP" },
-        { id: 152, partido: "PREP" },
-        { id: 153, partido: "PREP" },
-        { id: 154, partido: "PREP" },
+        { id: 150, partido: "REP" },
+        { id: 151, partido: "REP" },
+        { id: 152, partido: "REP" },
+        { id: 153, partido: "REP" },
+        { id: 154, partido: "REP" },
         { id: 155, partido: "PSC" },
         { id: 156, partido: "PSC" },
       ],
@@ -289,7 +282,6 @@ export const CamaraDipu = () => {
   const pelotas = [];
   const infoPartidos = [];
   const partidosCoordenadas = [];
-  const dispatch = useDispatch();
 
   {
     diputados.map((fila, index) => {
@@ -362,23 +354,22 @@ export const CamaraDipu = () => {
   }
 
   const obtenerLegisladoresPorPartido = async (partidoId) => {
-
     try {
-      const data = await legisladoresRepository.getDiputadosByPartido(partidoId);
+      const data =
+        await legisladoresRepository.getDiputadosByPartido(partidoId);
       setLegisladores(data);
     } catch (error) {
       console.error(error);
+    } finally {
+      setLoading(false);
     }
-
-  }
+  };
 
   for (const partido in promediosPartidos) {
     const [posicionX, posicionY] = promediosPartidos[partido];
     const id = `${partido}-${posicionX}-${posicionY}`;
 
-
-    const partidoId = partidos.find( p => p.partido === partido ).id;
-    
+    const partidoId = partidos.find((p) => p.partido === partido).id;
 
     let infoPartido;
 
@@ -524,12 +515,26 @@ export const CamaraDipu = () => {
 
   const navigation = useNavigation();
 
-  const handlePressNavigate = (partidoEstadistica, partidoId) => {
-    dispatch(seleccionPartido(partidoEstadistica));
-    dispatch(filteredDiputadosPartido(partidoEstadistica));
-    navigation.navigate("EstadisticaPartido", {partidoId} );
-
+  const handlePressNavigate = (partidoId) => {
+    navigation.navigate("EstadisticaPartido", { partidoId });
   };
+
+  const skeletonCard = () => (
+    <View
+      style={{
+        flexDirection: "row",
+        width: 240,
+        alignSelf: "flex-start",
+        alignItems: "center",
+        marginVertical: 4,
+      }}
+    >
+      <Skeleton width={26} height={26} borderRadius={100} />
+      <View style={{ marginHorizontal: 12 }}>
+        <Skeleton width={100} height={15} borderRadius={4} />
+      </View>
+    </View>
+  );
 
   return (
     <View style={styles.container}>
@@ -682,7 +687,14 @@ export const CamaraDipu = () => {
                 <View style={styles.conteiner2}>
                   <TouchableOpacity
                     style={styles.botonPartido}
-                    onPress={() => handlePressNavigate(infoModal.partido, infoModal.partidoId)}
+                    onPress={() =>
+                      handlePressNavigate(
+                        //infoModal.partido,
+                        //console.log('partido', infoModal.partido),
+                        infoModal.partidoId,
+                        console.log('partidoid', infoModal.partidoId),
+                      )
+                    }
                   >
                     <View
                       style={{
@@ -714,14 +726,24 @@ export const CamaraDipu = () => {
                       color={COLORS.greenM}
                     />
                   </TouchableOpacity>
-                  <FlatList
-                    data={legisladores}
-                    renderItem={renderGridItem}
-                    numColumns={1}
-                    scrollEnabled={true}
-                    style={{ flexGrow: 0, marginTop: 5, marginVertical: 15 }}
-                    keyboardShouldPersistTaps="handled"
-                  />
+                  {loading ? (
+                    <FlatList
+                      style={{ marginTop: 5 }}
+                      data={[1, 2, 3]}
+                      renderItem={skeletonCard}
+                      numColumns={1}
+                      keyExtractor={(item) => item.toString()}
+                    />
+                  ) : (
+                    <FlatList
+                      data={legisladores}
+                      renderItem={renderGridItem}
+                      numColumns={1}
+                      scrollEnabled={true}
+                      style={{ flexGrow: 0, marginTop: 5, marginVertical: 15 }}
+                      keyboardShouldPersistTaps="handled"
+                    />
+                  )}
                 </View>
               </View>
             </View>

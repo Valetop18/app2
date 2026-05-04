@@ -4,10 +4,8 @@ import { COLORS } from "../constants/colors";
 
 const coloresPorPartido = {
         'DES' : COLORS.DES,
-        'AM': COLORS.AM,
         'PDG': COLORS.PDG,
         'IND': COLORS.IND,
-        'PEV': COLORS.PEV,
         'FA' : COLORS.FA,
         'PS': COLORS.PS,
         'PC': COLORS.PC,
@@ -20,7 +18,7 @@ const coloresPorPartido = {
         'UDI': COLORS.UDI,
         'RN' : COLORS.RN,
         'EVOPOLI': COLORS.EVOPOLI,
-        'PREP': COLORS.PREP,
+        'REP': COLORS.PREP,
         'PNL': COLORS.PNL,
         'PSC': COLORS.PSC,
         'DEM': COLORS.DEM

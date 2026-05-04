@@ -130,7 +130,7 @@ function CustomDrawerContent(props) {
 const MyDrawer = () => {
 
 
-    const { distrito } = useAuth();
+  const { user, distrito } = useAuth();
 
   const filteredDiputados = useSelector(
     (state) => state.selectDiputado.filteredDiputados
@@ -231,7 +231,10 @@ const MyDrawer = () => {
                 if(fromEstadisticaPartido(rutaActiva, "EstadistaPartidoSenador")){
                   return <Text style={styles.header}>Cámara de senadores</Text>
                 }
-                return <Text style={styles.header}>Distrito {distrito}</Text>
+                if(rutaActiva.name === "Senadores" || rutaActiva.name === "DescripcionSenador"){
+                  return <Text style={styles.header}>Circunscripción {user?.circunscripcion}</Text>
+                }
+                return <Text style={styles.header}>Distrito {user?.distrito}</Text>
               },
               drawerIcon: ({ focused, size }) => (
                 <Ionicons

@@ -13,8 +13,6 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import { COLORS } from "../constants/colors";
 import { useState, useEffect } from "react";
-import { ref, set, update, onValue, remove } from "firebase/database";
-import { db } from "../constants/config";
 import { MaterialIcons } from "@react-native-vector-icons/material-icons";
 import { PieChart, LineChart } from "react-native-gifted-charts";
 import GridRepresentPartido from "../components/gridRepresentsPartido";
@@ -26,13 +24,15 @@ import {
 } from "@material-symbols-react-native/outlined-400";
 import { MsIcon } from "material-symbols-react-native";
 import { useSelector } from "react-redux";
+import { partidosRepository } from "../infrastructure/partidosRepository";
+import { useAuth } from "../context/AuthContext";
+import { legisladoresRepository } from "../infrastructure/legisladoresRepository";
+import { Skeleton } from "../components/Skeleton";
 
 const coloresPorPartido = {
   DES: COLORS.DES,
-  AM: COLORS.AM,
   PDG: COLORS.PDG,
   IND: COLORS.IND,
-  PEV: COLORS.PEV,
   FA: COLORS.FA,
   PS: COLORS.PS,
   PC: COLORS.PC,
@@ -41,24 +41,81 @@ const coloresPorPartido = {
   PR: COLORS.PR,
   AH: COLORS.AH,
   FRVS: COLORS.FRVS,
-  DC: COLORS.PDC,
+  PDC: COLORS.PDC,
   UDI: COLORS.UDI,
   RN: COLORS.RN,
   EVOPOLI: COLORS.EVOPOLI,
-  PREP: COLORS.PREP,
+  REP: COLORS.PREP,
   PNL: COLORS.PNL,
   PSC: COLORS.PSC,
   DEM: COLORS.DEM,
 };
 
-export const EstadisticaPartidoSenado = ({}) => {
+export const EstadisticaPartidoSenado = ({ route }) => {
   const navigation = useNavigation();
+  const { user } = useAuth();
+  const [isSaved, setIsSaved] = useState(false);
+  const [senadores, setSenadores] = useState([]);
+  const partidoId = route.params?.partidoId;
+  const [partido, setPartido] = useState({});
+  const [loading, setLoading] = useState(true);
+
+  console.log(route.params);
+
+  const getPartido = async () => {
+    const data = await partidosRepository.getPartidoById(partidoId);
+    setPartido(data);
+  };
 
   useLayoutEffect(() => {
     // navigation.getParent()?.getParent()?.setOptions({
     //   headerTitle: "Diputadoss",
     // })
   }, [navigation]);
+
+  //useEffect(() => {
+  // getPartido();
+  // checkIfIsSaved();
+  //  obtenerLegisladoresPorPartido();
+  //}, []);
+
+  const checkIfIsSaved = async () => {
+    try {
+      const data = await partidosRepository.isSaved(user.id, partidoId);
+      setIsSaved(data);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const obtenerLegisladoresPorPartido = async () => {
+    try {
+      const data =
+        await legisladoresRepository.getSenadoresByPartido(partidoId);
+      setSenadores(data);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const fetchAll = async () => {
+    try {
+      setLoading(true);
+      await Promise.all([
+        obtenerLegisladoresPorPartido(),
+        checkIfIsSaved(),
+        getPartido(),
+      ]);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAll();
+  }, []);
 
   const [asistencia, setAsistencia] = useState();
   const [votacion, setVotacion] = useState();
@@ -88,21 +145,11 @@ export const EstadisticaPartidoSenado = ({}) => {
     { value: 60, label: "JUN" },
   ];
 
-  const senadores = useSelector(
-    (store) => store.selectSenadorPartido.filteredSenadoresPartido
-  );
-
-  console.log("senadores: ", senadores);
-
   const renderGridItem = ({ item }) => <GridRepresentPartido item={item} />;
 
-  const partidoSeleccionadoSenado = useSelector(
-    (store) => store.selectSenadorPartido.seleccionPartidoSenado
-  );
+  console.log("partido llegada: ", partido);
 
-  console.log("partido llegada: ", partidoSeleccionadoSenado);
-
-  const borderColor = coloresPorPartido[partidoSeleccionadoSenado.partido] || "#000";
+  const borderColor = coloresPorPartido[partido.sigla] || "#000";
 
   return (
     <KeyboardAvoidingView
@@ -110,10 +157,57 @@ export const EstadisticaPartidoSenado = ({}) => {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       keyboardVerticalOffset={100}
     >
+      {loading ? (
+              <View
+                style={{
+                  alignSelf: "flex-start",
+                  paddingVertical: 18,
+                  paddingHorizontal: 10,
+                }}
+              >
+                <View
+                  style={{
+                    paddingLeft: 40,
+                  }}
+                >
+                  <Skeleton width={250} height={25} borderRadius={4} />
+                </View>
+                <View
+                  style={{
+                    marginHorizontal: 15,
+                    flexDirection: "row",
+                    paddingTop: 15,
+                  }}
+                >
+                  <Skeleton width={100} height={100} borderRadius={100} />
+                  <View style={{ marginHorizontal: 15, marginTop: 12 }}>
+                    <Skeleton width={120} height={80} borderRadius={4} />
+                  </View>
+                </View>
+                <View style={{ marginHorizontal: 15, marginTop: 12 }}>
+                  <Skeleton width={360} height={50} borderRadius={4} />
+                </View>
+                <View
+                  style={{
+                    paddingLeft: 30,
+                    paddingVertical: 20,
+                  }}
+                >
+                  <Skeleton width={220} height={20} borderRadius={4} />
+                </View>
+                <View
+                  style={{
+                    paddingLeft: 15,
+                  }}
+                >
+                  <Skeleton width={360} height={170} borderRadius={4} />
+                </View>
+              </View>
+            ) : (
       <ScrollView contentContainerStyle={styles.back}>
         <View style={styles.principal}>
           <View style={styles.container1}>
-            <Text style={styles.title}>{partidoSeleccionadoSenado.nombre}</Text>
+            <Text style={styles.title}>{partido.nombre}</Text>
           </View>
           <View style={styles.container2}>
             <View>
@@ -125,9 +219,9 @@ export const EstadisticaPartidoSenado = ({}) => {
                   borderRadius: 100,
                   borderWidth: 4,
                 }}
-                source={partidoSeleccionadoSenado.foto}
+                source={{ uri: partido.foto }}
               />
-              <Text style={styles.partido}>{partidoSeleccionadoSenado.partido}</Text>
+              <Text style={styles.partido}>{partido.sigla}</Text>
             </View>
             <View style={styles.estadistica}>
               <View flexDirection={"row"} alignItems={"center"}>
@@ -156,7 +250,7 @@ export const EstadisticaPartidoSenado = ({}) => {
                 <MaterialIcons
                   name="favorite"
                   size={42}
-                  color={COLORS.greenM}
+                  color={isSaved ? COLORS.greenM : COLORS.greyM}
                   position={"absolute"}
                 />
                 <Text style={styles.interes}>36%</Text>
@@ -322,7 +416,7 @@ export const EstadisticaPartidoSenado = ({}) => {
           numColumns={1}
           keyExtractor={(item) => item.id}
         />
-      </ScrollView>
+      </ScrollView>)}
     </KeyboardAvoidingView>
   );
 };
@@ -375,7 +469,6 @@ const styles = StyleSheet.create({
   },
   container3: {
     marginLeft: "5%",
-
   },
   container4: {
     flexDirection: "row",
@@ -455,5 +548,6 @@ const styles = StyleSheet.create({
   },
   keyboardView: {
     flex: 1,
+    backgroundColor: COLORS.back
   },
 });

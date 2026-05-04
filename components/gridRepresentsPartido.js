@@ -11,10 +11,8 @@ import { useNavigation } from "@react-navigation/native";
 
 const coloresPorPartido = {
   DES: COLORS.DES,
-  AM: COLORS.AM,
   PDG: COLORS.PDG,
   IND: COLORS.IND,
-  PEV: COLORS.PEV,
   FA: COLORS.FA,
   PS: COLORS.PS,
   PC: COLORS.PC,
@@ -23,14 +21,14 @@ const coloresPorPartido = {
   PR: COLORS.PR,
   AH: COLORS.AH,
   FRVS: COLORS.FRVS,
-  DC: COLORS.PDC,
+  PDC: COLORS.PDC,
   UDI: COLORS.UDI,
   RN: COLORS.RN,
   EVOPOLI: COLORS.EVOPOLI,
-  PREP: COLORS.PREP,
+  REP: COLORS.PREP,
   PNL: COLORS.PNL,
   PSC: COLORS.PSC,
-  PD: COLORS.PD,
+  DEM: COLORS.DEM,
 };
 
 const GridRepresentPartido = ({ item }) => {
@@ -70,7 +68,7 @@ const GridRepresentPartido = ({ item }) => {
   const onSelected = () => {
     navigation.navigate('Descripcion', { 
       idDiputado: item.id,
-      from: "EstadistaPartidoDiputado" 
+      from: "EstadistaPartidoDiputad" 
     })
   }
 

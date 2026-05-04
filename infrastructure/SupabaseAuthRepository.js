@@ -42,7 +42,20 @@ export class SupabaseAuthRepository{
 
         if (error) throw error;
         if (!data.user) throw Error("Error en login") 
-        return data.user
+
+        const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('id, distrito, circunscripcion')
+            .eq('id',data.user.id )
+            .single();
+
+        if (profileError) throw error;
+
+
+        return {
+            ...data.user,
+            ...profile
+        }
 
     }
 

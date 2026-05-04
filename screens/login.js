@@ -14,7 +14,6 @@ import {
 } from "react-native";
 import Input from "../components/input";
 import { useDispatch, useSelector } from "react-redux";
-import { signup, login } from "../store/actions/login.actions";
 import { filteredDiputados } from "../store/actions/diputado.action";
 import { filteredSenadores } from "../store/actions/senador.action";
 import { COLORS } from "../constants/colors";
@@ -23,9 +22,6 @@ import { FontAwesome } from "@expo/vector-icons";
 import { Ionicons } from "@react-native-vector-icons/ionicons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth, dbFirestore } from "../constants/config";
-import { doc, getDoc } from "firebase/firestore";
 import { useAuth } from "../context/AuthContext";
 import Modal from "react-native-modal";
 import { msGppMaybe } from "@material-symbols-react-native/outlined-400";
@@ -99,48 +95,8 @@ const Login = () => {
     //onHandleValidationEmail();
   };
 
-  const onHandleValidationPassword = (currentPass = "") => {
-    const passRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
-    let isValid = true;
-    if (!passRegex.test(currentPass.toLowerCase())) isValid = false;
-    setIsPassValid({
-      touched: true,
-      isValid: isValid,
-    });
-    return {
-      touched: true,
-      isValid: isValid,
-    };
-  };
-
   const onSignUpHandler = () => {
     navigation.navigate("Registro");
-  };
-
-  const handleLoginFirebase = async (email, pass) => {
-    try {
-      const userCredential = await signInWithEmailAndPassword(
-        auth,
-        email,
-        pass,
-      );
-      const uid = userCredential.user.uid;
-      const userRef = doc(dbFirestore, "usuarios", uid);
-      const userInfo = await getDoc(userRef);
-
-      if (!userInfo.exists()) {
-        Alert.alert("Error", "Usuario no registrado");
-      }
-
-      const data = userInfo.data();
-
-      //dispatch({ type: 'LOGIN_FIREBASE', userData: uid })
-      navigation.navigate("SelectDistrito");
-
-      console.log(data);
-    } catch (error) {
-      console.error(error);
-    }
   };
 
   const onLogInHandler = async (emailParam, passParam) => {
@@ -157,9 +113,9 @@ const Login = () => {
 
       fetchDistrito();
 
-      await login({ email: currentEmail, password: currentPass });
+      const sucess = await login({ email: currentEmail, password: currentPass });
 
-      if (authError) {
+      if (!sucess) {
         setModalVisible(true);
       }
 
@@ -185,6 +141,7 @@ const Login = () => {
       setMinLengthPass(true);
     } else {
       setMinLengthPass(false);
+
     }
   }, [pass]);
 
@@ -203,6 +160,7 @@ const Login = () => {
             height: "16%",
             width: "100%",
             backgroundColor: COLORS.back,
+      
             justifyContent: "center",
             alignItems: "center",
             borderTopRightRadius: 5,
@@ -212,11 +170,7 @@ const Login = () => {
         >
           <View style={{ alignSelf: "flex-end" }}>
             <TouchableOpacity onPress={() => setModalVisible(false)}>
-              <MaterialIcons
-                name="cancel"
-                size={20}
-                color={COLORS.grey}
-              />
+              <MaterialIcons name="cancel" size={20} color={COLORS.grey} />
             </TouchableOpacity>
           </View>
           <View style={{ alignItems: "center", justifyContent: "center" }}>
@@ -251,18 +205,6 @@ const Login = () => {
                   keyboardType="email-address"
                 />
               </View>
-              <FontAwesome
-                name="check"
-                size={16}
-                fill={true}
-                color={COLORS.grey}
-                marginRight={"4%"}
-                style={
-                  isEmailValid.isValid && {
-                    color: COLORS.greenM,
-                  }
-                }
-              />
             </View>
           </View>
           <View style={styles.conteinerpass}>
@@ -341,8 +283,7 @@ const styles = StyleSheet.create({
   },
   containerTitle: {
     alignItems: "center",
-    top: "7%",
-    margintop: 600,
+    top: "28%",
     paddingVertical: 15,
     justifyContent: "center",
   },
@@ -352,7 +293,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     letterSpacing: 2,
     fontFamily: "NotoSansMyanmar_700Bold",
-    marginVertical: "2%",
+    marginVertical: "1%",
   },
   subtitle: {
     color: COLORS.grey,
@@ -361,13 +302,13 @@ const styles = StyleSheet.create({
     fontFamily: "NotoSansMyanmar_700Bold",
   },
   containerlogin: {
-    marginTop: "48%",
+    marginTop: "72%",
     height: "24%",
     alignSelf: "center",
     width: "100%",
   },
   textoCorreo: {
-    width: "85%",
+    width: "80%",
   },
   containercorreo: {
     flexDirection: "column",
@@ -378,7 +319,7 @@ const styles = StyleSheet.create({
   inputcorreo: {
     backgroundColor: COLORS.verdeclaro,
     textAlign: "center",
-    width: "90%",
+    width: "85%",
     height: 50,
     borderRadius: 10,
     flexDirection: "row",
@@ -390,10 +331,11 @@ const styles = StyleSheet.create({
     flexDirection: "column",
     textAlign: "center",
     alignItems: "center",
-    height: "50%",
+    height: 94,
+    marginTop: 10,
   },
   textoPass: {
-    width: "85%",
+    width: "80%",
   },
   inputErrors: {
     color: COLORS.falso,
@@ -404,7 +346,7 @@ const styles = StyleSheet.create({
   inputpass: {
     backgroundColor: COLORS.verdeclaro,
     textAlign: "center",
-    width: "90%",
+    width: "85%",
     fontSize: 13,
     height: 50,
     borderRadius: 10,
@@ -419,16 +361,16 @@ const styles = StyleSheet.create({
   Ingresar: {
     justifyContent: "space-around",
     alignItems: "center",
-    marginTop: 115,
+    marginTop: "20%",
     justifyContent: "center",
   },
   buttonIngresar: {
     backgroundColor: COLORS.greenM,
-    width: "60%",
+    width: "56%",
     justifyContent: "center",
     alignItems: "center",
     borderRadius: 20,
-    height: 50,
+    height: 47,
   },
   IngresarText: {
     color: "#ffffff",
@@ -446,7 +388,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignSelf: "center",
-    width: "55%",
+    width: "51%",
   },
   buttonRegistro: {
     justifyContent: "center",
@@ -472,7 +414,8 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     textAlign: "center",
     flexDirection: "row",
-    width: "86%",
+    width: "80%",
+    marginTop: 3,
   },
   labelforget: {
     color: COLORS.black,
