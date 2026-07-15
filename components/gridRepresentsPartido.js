@@ -3,7 +3,6 @@ import { View, Text, Image, StyleSheet, TouchableOpacity } from "react-native";
 import { MaterialIcons } from "@react-native-vector-icons/material-icons";
 import { COLORS } from "../constants/colors";
 import { useState, useEffect } from "react";
-import { ref, set, update, onValue, remove } from "firebase/database";
 import { db } from "../constants/config";
 import { msPersonRaisedHand } from "@material-symbols-react-native/outlined-400";
 import { MsIcon } from "material-symbols-react-native";
@@ -35,59 +34,26 @@ const GridRepresentPartido = ({ item }) => {
   const borderColor = coloresPorPartido[item.partido] || "#000";
   const navigation = useNavigation();
 
-  const [asistencia, setAsistencia] = useState("90");
-  const [votacion, setVotacion] = useState("80");
-  const [comision, setComision] = useState("5");
-  const [mocion, setMocion] = useState("15");
-  const [proyectos, setProyectos] = useState("3/5");
-
-  useEffect(() => {
-    const starCountRef = ref(db, "diputados/asistencia/" + item.id);
-    onValue(starCountRef, (snapshot) => {
-      console.log(snapshot.val(item.id));
-      setAsistencia(snapshot.val(item.id));
-    });
-  }, [item.id]);
-
-  useEffect(() => {
-    const starCountRef = ref(db, "diputados/votaciones/" + item.id);
-    onValue(starCountRef, (snapshot) => {
-      console.log(snapshot.val(item.id));
-      setVotacion(snapshot.val(item.id));
-    });
-  }, [item.id]);
-
-  useEffect(() => {
-    const starCountRef = ref(db, "diputados/proyectos/" + item.id);
-    onValue(starCountRef, (snapshot) => {
-      console.log(snapshot.val(item.id));
-      setProyectos(snapshot.val(item.id));
-    });
-  }, [item.id]);
-
   const onSelected = () => {
-    navigation.navigate('Descripcion', { 
+    navigation.navigate("Descripcion", {
       idDiputado: item.id,
-      from: "EstadistaPartidoDiputad" 
-    })
-  }
+      from: "EstadistaPartidoDiputad",
+    });
+  };
 
   return (
     <View style={styles.card}>
-      <TouchableOpacity
-        onPress={onSelected}
-        style={{ ...styles.container }}
-      >
+      <TouchableOpacity onPress={onSelected} style={{ ...styles.container }}>
         <View style={styles.containImage}>
           <Image
             style={{
               borderColor,
-              width: 76,
-              height: 76,
+              width: 72,
+              height: 72,
               borderRadius: 100,
               borderWidth: 3,
             }}
-            source={{uri: item.foto}}
+            source={{ uri: item.foto }}
           />
           <Text style={styles.partido}>{item.partido}</Text>
         </View>
@@ -96,14 +62,16 @@ const GridRepresentPartido = ({ item }) => {
             <Text style={styles.name}>{item.nombre}</Text>
             <View style={styles.icono} marginTop={"-1%"}>
               <View style={styles.dataUsage}>
-              <MaterialIcons
-                name="data-usage"
-                size={40}
-                color={COLORS.verdeclaro}
-                position={'absolute'}
-              />
-              <Text style={styles.data2}>36%</Text>
-            </View>
+                <MaterialIcons
+                  name="data-usage"
+                  size={40}
+                  color={COLORS.verdeclaro}
+                  position={"absolute"}
+                />
+                <Text style={styles.data2}>
+                  {item.representacionDistrital ?? 0}%
+                </Text>
+              </View>
             </View>
           </View>
           <View style={styles.containerInfo}>
@@ -115,7 +83,7 @@ const GridRepresentPartido = ({ item }) => {
                   color={COLORS.greenM}
                 />
                 <Text style={styles.informacion}>
-                  {asistencia}% Asistencia{" "}
+                  {item.asistencia ?? 0}% Asistencia
                 </Text>
               </View>
               <View
@@ -128,7 +96,9 @@ const GridRepresentPartido = ({ item }) => {
                   size={18}
                   color={COLORS.greenM}
                 />
-                <Text style={styles.informacion}>{votacion}% Votaciones </Text>
+                <Text style={styles.informacion}>
+                  {item.participacionVotaciones ?? 0}% Votaciones
+                </Text>
               </View>
             </View>
             <View style={styles.info}>
@@ -139,8 +109,12 @@ const GridRepresentPartido = ({ item }) => {
                     size={17}
                     color={COLORS.greenM}
                   />
-                  <Text style={styles.informacion} marginLeft={"1%"} maxWidth={120}>
-                    {comision}% adherencia al partido
+                  <Text
+                    style={styles.informacion}
+                    marginLeft={"1%"}
+                    maxWidth={120}
+                  >
+                    {item.adherenciaPartido ?? 0}% adherencia al partido
                   </Text>
                 </View>
                 <View
@@ -153,11 +127,12 @@ const GridRepresentPartido = ({ item }) => {
                     size={17}
                     color={COLORS.greenM}
                   />
-                  <Text style={styles.informacion}>{mocion}% efectividad </Text>
+                  <Text style={styles.informacion}>
+                    {item.fraccionMociones ?? "0/0"} mociones
+                  </Text>
                 </View>
               </View>
             </View>
-            
           </View>
         </View>
       </TouchableOpacity>
@@ -197,7 +172,7 @@ const styles = StyleSheet.create({
   },
   name: {
     fontFamily: "NotoSansMyanmar_700Bold",
-    fontSize: 20,
+    fontSize: 18,
     marginLeft: "1%",
     flex: 1,
     maxWidth: "87%",
@@ -231,7 +206,7 @@ const styles = StyleSheet.create({
     marginLeft: "2%",
     lineHeight: 16,
     paddingVertical: 5,
-    paddingLeft: 4
+    paddingLeft: 4,
   },
   informacionProyectos: {
     fontFamily: "NotoSansMyanmar_400Regular",
@@ -240,10 +215,11 @@ const styles = StyleSheet.create({
     marginLeft: "2%",
   },
   containerInfo: {
-    marginVertical: "2%",
-    marginHorizontal: "3%",
+    marginVertical: "1%",
+    marginHorizontal: "2%",
     flexDirection: "row",
-    marginLeft: "2%",
+    marginLeft: "0.5%",
+    backgroundColor: 'pink'
   },
   dataUsage: {
     alignItems: "center",

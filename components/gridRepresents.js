@@ -2,9 +2,8 @@ import React from "react";
 import { View, Text, Image, StyleSheet, TouchableOpacity } from "react-native";
 import { MaterialIcons } from "@react-native-vector-icons/material-icons";
 import { COLORS } from "../constants/colors";
+import Ionicons from "@react-native-vector-icons/ionicons";
 import { useState, useEffect } from "react";
-import { ref, set, update, onValue, remove } from "firebase/database";
-import { db } from "../constants/config";
 import { msPersonRaisedHand } from "@material-symbols-react-native/outlined-400";
 import { MsIcon } from "material-symbols-react-native";
 
@@ -34,36 +33,6 @@ const GridRepresent = ({ item, reaccion, onSelected, handleLike }) => {
   //const isLiked = item
   const borderColor = coloresPorPartido[item.partido] || "#000";
 
-  const [asistencia, setAsistencia] = useState("90");
-  const [votacion, setVotacion] = useState("80");
-  const [comision, setComision] = useState("5");
-  const [mocion, setMocion] = useState("15");
-  const [proyectos, setProyectos] = useState("3/5");
-
-  useEffect(() => {
-    const starCountRef = ref(db, "diputados/asistencia/" + item.id);
-    onValue(starCountRef, (snapshot) => {
-      console.log(snapshot.val(item.id));
-      setAsistencia(snapshot.val(item.id));
-    });
-  }, [item.id]);
-
-  useEffect(() => {
-    const starCountRef = ref(db, "diputados/votaciones/" + item.id);
-    onValue(starCountRef, (snapshot) => {
-      console.log(snapshot.val(item.id));
-      setVotacion(snapshot.val(item.id));
-    });
-  }, [item.id]);
-
-  useEffect(() => {
-    const starCountRef = ref(db, "diputados/proyectos/" + item.id);
-    onValue(starCountRef, (snapshot) => {
-      console.log(snapshot.val(item.id));
-      setProyectos(snapshot.val(item.id));
-    });
-  }, [item.id]);
-
   return (
     <View style={styles.card}>
       <TouchableOpacity
@@ -87,16 +56,17 @@ const GridRepresent = ({ item, reaccion, onSelected, handleLike }) => {
           </Text>
         </View>
         <View style={styles.infoEscrita}>
-          <View flexDirection={"row"} alignItems={"center"}>
+          <View flexDirection={"row"} alignItems={"center"} >
             <Text style={styles.name}>{item.nombre}</Text>
+            <Text style={styles.totLikes}>{item.totalLikes > 0 ? item.totalLikes : ""}</Text>
             <TouchableOpacity
               style={styles.icono}
               marginTop={"-1%"}
               onPress={() => handleLike(item.id, "like")}
             >
-              <MaterialIcons
-                name="favorite"
-                size={22}
+              <Ionicons
+                name="heart-circle-outline"
+                size={26}
                 color={reaccion === "like" ? COLORS.greenM : COLORS.grey}
               />
             </TouchableOpacity>
@@ -110,7 +80,7 @@ const GridRepresent = ({ item, reaccion, onSelected, handleLike }) => {
                   color={COLORS.greenM}
                 />
                 <Text style={styles.informacion}>
-                  {asistencia}% Asistencia{" "}
+                  {item.asistencia ?? 0}% Asistencia{" "}
                 </Text>
               </View>
               <View
@@ -123,19 +93,21 @@ const GridRepresent = ({ item, reaccion, onSelected, handleLike }) => {
                   size={18}
                   color={COLORS.greenM}
                 />
-                <Text style={styles.informacion}>{votacion}% Votaciones </Text>
+                <Text style={styles.informacion}>
+                  {item.votaciones ?? 0}% Votaciones{" "}
+                </Text>
               </View>
             </View>
             <View style={styles.info}>
               <View>
                 <View flexDirection={"row"} alignItems={"center"}>
                   <MaterialIcons
-                    name="diversity-2"
-                    size={17}
+                    name="assignment-late"
+                    size={18}
                     color={COLORS.greenM}
                   />
                   <Text style={styles.informacion} marginLeft={"1%"}>
-                    {comision} comisiones
+                    {item.oficios ?? 0} oficios
                   </Text>
                 </View>
                 <View
@@ -144,11 +116,13 @@ const GridRepresent = ({ item, reaccion, onSelected, handleLike }) => {
                   marginTop={"2.5%"}
                 >
                   <MaterialIcons
-                    name="assignment-turned-in"
+                    name="addchart"
                     size={17}
                     color={COLORS.greenM}
                   />
-                  <Text style={styles.informacion}>{mocion}% efectividad </Text>
+                  <Text style={styles.informacion}>
+                    {item.mociones ?? 0} mociones{" "}
+                  </Text>
                 </View>
               </View>
             </View>
@@ -159,7 +133,7 @@ const GridRepresent = ({ item, reaccion, onSelected, handleLike }) => {
                 color={COLORS.verdeclaro}
                 position={"absolute"}
               />
-              <Text style={styles.data2}>36%</Text>
+              <Text style={styles.data2}>{item.representacionDistrital ?? 0}%</Text>
             </View>
           </View>
         </View>
@@ -188,7 +162,7 @@ const styles = StyleSheet.create({
     alignContent: "center",
     justifyContent: "center",
     alignItems: "center",
-    marginHorizontal: "1.5%",
+    marginHorizontal: "1.8%",
     marginTop: "4.5%",
   },
   infoEscrita: {
@@ -196,7 +170,7 @@ const styles = StyleSheet.create({
     width: "74%",
   },
   info: {
-    marginLeft: "4%",
+    marginLeft: "6.5%",
   },
   name: {
     fontFamily: "NotoSansMyanmar_700Bold",
@@ -207,10 +181,16 @@ const styles = StyleSheet.create({
     color: COLORS.black,
     marginTop: "-1.5%",
   },
+  totLikes: {
+    fontFamily: "NotoSansMyanmar_700Bold",
+    fontSize: 12,
+    color: COLORS.greyM,
+    right: "-2%"
+  },
   icono: {
     justifyContent: "center",
     alignItems: "center",
-    marginLeft: "5%",
+    marginLeft: "4%",
   },
   porcentaje: {
     fontFamily: "NotoSansMyanmar_700Bold",
@@ -231,7 +211,7 @@ const styles = StyleSheet.create({
     fontFamily: "NotoSansMyanmar_400Regular",
     fontSize: 14,
     color: COLORS.black,
-    marginLeft: "2%",
+    marginLeft: 5,
   },
   informacionProyectos: {
     fontFamily: "NotoSansMyanmar_400Regular",
@@ -243,13 +223,15 @@ const styles = StyleSheet.create({
     marginVertical: "2%",
     marginHorizontal: "3%",
     flexDirection: "row",
-    marginLeft: "2%",
+    marginLeft: "3%",
   },
   dataUsage: {
     alignItems: "center",
     width: 42,
     height: 42,
     justifyContent: "center",
+    right: -12,
+    marginTop: 5
   },
   data2: {
     fontSize: 12,

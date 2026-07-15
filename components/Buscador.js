@@ -10,7 +10,7 @@ const Buscador = ({value, onChange}) => {
 
     return (
     <View style={styles.container}>
-        <Ionicons name="search-circle" size={22} color={COLORS.greenM} marginHorizontal={4} marginLeft={10}/>
+        <Ionicons name="search-circle" size={23} color={COLORS.greenM} marginHorizontal={4} marginLeft={10}/>
         <TextInput
             value={search}
             onChangeText={setSearch}
@@ -35,7 +35,7 @@ const styles = StyleSheet.create({
     },
     input: {
         fontFamily: "NotoSansMyanmar_400Regular",
-        fontSize: 12.5,
+        fontSize: 13,
         color: COLORS.black,
         height: 32,
         alignSelf: 'center', 

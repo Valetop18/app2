@@ -18,7 +18,7 @@ const NaveCamaras = () => {
       screenOptions={{
         headerShown: false,
         tabBarLabelStyle: {
-          fontSize: 16,
+          fontSize: 16.5,
           fontFamily: "NotoSansMyanmar_700Bold",
         },
         tabBarInactiveTintColor: COLORS.greyM,

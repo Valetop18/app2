@@ -20,6 +20,8 @@ import {
 import { ActivityIndicator } from "react-native";
 import { BuscadorProvider } from "./context/BuscadorContext";
 import { AuthProvider } from "./context/AuthContext";
+import { TooltipProvider } from "./context/TooltipProvider";
+import { ReaccionesProvider } from "./context/ReaccionesContext";
 
 init()
   .then(() => console.log("database initialized"))
@@ -41,27 +43,30 @@ export default function App() {
 
   let [fontsLoaded] = useFonts({
     Sedan_400Regular,
-    NotoSansMyanmar_100Thin, 
-    NotoSansMyanmar_200ExtraLight, 
-    NotoSansMyanmar_300Light, 
-    NotoSansMyanmar_400Regular, 
-    NotoSansMyanmar_500Medium, 
-    NotoSansMyanmar_600SemiBold, 
-    NotoSansMyanmar_700Bold, 
-    NotoSansMyanmar_800ExtraBold, 
-    NotoSansMyanmar_900Black
+    NotoSansMyanmar_100Thin,
+    NotoSansMyanmar_200ExtraLight,
+    NotoSansMyanmar_300Light,
+    NotoSansMyanmar_400Regular,
+    NotoSansMyanmar_500Medium,
+    NotoSansMyanmar_600SemiBold,
+    NotoSansMyanmar_700Bold,
+    NotoSansMyanmar_800ExtraBold,
+    NotoSansMyanmar_900Black,
   });
 
-  if(!fontsLoaded){
+  if (!fontsLoaded) {
     return null;
   }
-
 
   return (
     <AuthProvider>
       <Provider store={store}>
         <BuscadorProvider>
-          <MainNavigation />
+          <TooltipProvider>
+            <ReaccionesProvider>
+              <MainNavigation />
+            </ReaccionesProvider>
+          </TooltipProvider>
         </BuscadorProvider>
       </Provider>
     </AuthProvider>

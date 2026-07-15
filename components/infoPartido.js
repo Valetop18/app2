@@ -1,6 +1,7 @@
 import React from "react";
 import { View, StyleSheet, Text, TouchableOpacity } from "react-native";
 import { COLORS } from "../constants/colors";
+import MaterialIcons from "@react-native-vector-icons/material-icons";
 
 const coloresPorPartido = {
         'DES' : COLORS.DES,
@@ -21,24 +22,40 @@ const coloresPorPartido = {
         'REP': COLORS.PREP,
         'PNL': COLORS.PNL,
         'PSC': COLORS.PSC,
-        'DEM': COLORS.DEM
+        'DEM': COLORS.DEM,
 }
 
-export const InfoPartido = ({partido, porcentajeAsistencia, porcentajeVotacion, numeroProyectos, left, top, onPress}) => {
-    const borderColor = coloresPorPartido[partido] || '#000';
+export const InfoPartido = ({data, left, top, onPress}) => {
+    if (!data) return null;
+    
+    const borderColor = coloresPorPartido[data.partido] || '#000';
 
     const TextoDinamico = () => {
 
-        if (porcentajeAsistencia) {
-            return <Text style={styles.infoPorcentaje}>{porcentajeAsistencia}</Text>  
+        if ( data.loading) {
+            return data.loadingComponent
         }
 
-        if (porcentajeVotacion) {
-            return <Text style={styles.infoPorcentaje}>{porcentajeVotacion}</Text>  
+        if ( data.icon ){
+            return (
+                <View style={styles.containerProy}>
+                    <MaterialIcons
+                        name={data.icon}
+                        size={14}
+                        color={data.iconColor}
+                    />
+                    <Text style={{color:data.iconColor, fontFamily:"NotoSansMyanmar_700Bold", fontSize:14}}>
+                        {data.value}{data.suffix}
+                    </Text>
+                </View>
+             )
         }
-        if (numeroProyectos) {
-            return <Text style={styles.infoPorcentaje}>{numeroProyectos}</Text>  
-        }
+
+        return (
+            <Text style={styles.infoPorcentaje}>
+                {data.value}{data.suffix}
+            </Text>
+        )
     }
 
     return (
@@ -58,7 +75,7 @@ export const InfoPartido = ({partido, porcentajeAsistencia, porcentajeVotacion, 
                 top
             }}
         >
-            <Text style={styles.infopartido}>{partido}</Text>  
+            <Text style={styles.infopartido}>{data.partido}</Text>  
 
             {TextoDinamico()}
         </TouchableOpacity>
@@ -77,5 +94,15 @@ infopartido: {
         fontFamily: 'NotoSansMyanmar_700Bold',
         color: COLORS.greenM,
         fontSize: 15,
+    },
+    containerProy: {
+        flexDirection: 'row',
+        alignItems: 'center', 
+
+    },
+    infoPorcentajeProy: {
+        fontFamily: 'NotoSansMyanmar_700Bold',
+        color: COLORS.greenM,
+        fontSize: 14,
     }
 })

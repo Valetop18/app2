@@ -1,7 +1,6 @@
 import { View, Text, StyleSheet} from "react-native"
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useEffect } from "react";
-import { login } from "../store/actions/login.actions";
 import { useDispatch, useSelector } from "react-redux";
 import { COLORS } from '../constants/colors'
 import { useFonts, Sedan_400Regular } from "@expo-google-fonts/sedan";

@@ -26,17 +26,16 @@ export const Diputados = ({ navigation }) => {
   };
 
   const cargarLegisladores = async (distrito) => {
-    console.log("distrito id en listado: ", distrito);
-
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    //await new Promise(resolve => setTimeout(resolve, 1000));
 
     try {
       //se podria agregar un spinner
       setLoading(true);
-      //await new Promise(resolve => setTimeout(resolve, 10000));
       const data =
         await legisladoresRepository.getDiputadosByDistrito(distrito);
-      const dataRandom = data.sort( () => Math.random() - 0.5 );
+
+      console.log("diputados distrito:", data);
+      const dataRandom = data.sort(() => Math.random() - 0.5);
       setDiputados(dataRandom);
     } catch (error) {
     } finally {
@@ -46,45 +45,50 @@ export const Diputados = ({ navigation }) => {
   };
 
   const loadReacciones = async () => {
+    try {
+      setIsRefreshing(true);
 
-    setIsRefreshing(true);
+      const data = await reaccionesRepository.getReacciones(
+        user.id,
+        "representante",
+      );
 
-    const data = await reaccionesRepository.getReacciones(
-      user.id,
-      "representante",
-    );
-
-    if (data) {
       const mapReacciones = {};
-      data.forEach((r) => {
-        mapReacciones[r.target_id] = r.tipo_reaccion;
+
+      (data ?? []).forEach((reaccion) => {
+        mapReacciones[reaccion.target_id] = reaccion.tipo_reaccion;
       });
+
       setReacciones(mapReacciones);
+    } catch (error) {
+      console.error("Error al cargar reacciones:", error);
+      setReacciones({});
+    } finally {
       setIsRefreshing(false);
     }
   };
 
-  useEffect(() => {
-    if(user?.distrito){
-      cargarLegisladores(user.distrito);
-    }
-  }, []);
-
   useFocusEffect(
-    useCallback(() => {
-      loadReacciones();
-    }, []),
-  );
+  useCallback(() => {
+    if (!user?.id || !user?.distrito) return;
 
-  const handleLike = (id, tipoReaccion) => {
+    const actualizarPantalla = async () => {
+      await Promise.all([
+        loadReacciones(),
+        cargarLegisladores(user.distrito),
+      ]);
+    };
+
+    actualizarPantalla();
+  }, [user?.id, user?.distrito]),
+);
+
+  const handleLike = async (id, tipoReaccion) => {
     try {
       const actual = reacciones[id];
-
       const nueva = actual === tipoReaccion ? "null" : tipoReaccion;
 
-      console.log("intento reaccion");
-
-      const resultado = reaccionesRepository.setReaccion(
+      await reaccionesRepository.setReaccion(
         user.id,
         id,
         "representante",
@@ -95,6 +99,22 @@ export const Diputados = ({ navigation }) => {
         ...prev,
         [id]: nueva,
       }));
+
+      setDiputados((prev) =>
+        prev.map((dipu) => {
+          if (dipu.id !== id) return dipu;
+
+          let cambio = 0;
+
+          if (actual !== "like" && nueva === "like") cambio = 1;
+          if (actual === "like" && nueva !== "like") cambio = -1;
+
+          return {
+            ...dipu,
+            totalLikes: Math.max((dipu.totalLikes ?? 0) + cambio, 0),
+          };
+        }),
+      );
     } catch (error) {
       console.log(error);
     }
@@ -137,7 +157,6 @@ export const Diputados = ({ navigation }) => {
       <View style={styles.back}></View>
       {loading ? (
         <FlatList
-        
           style={styles.container}
           data={[1, 2, 3]}
           renderItem={skeletonCard}

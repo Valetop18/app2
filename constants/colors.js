@@ -25,6 +25,7 @@ export const COLORS = {
     PSC: '#0557FA',
     DEM: '#4C7EE1',
     greenM: '#02733E',
+    green: "#02A157",
     verdeclaro: '#DAF1DE',
     skeleton: '#EEEEEE'
 }

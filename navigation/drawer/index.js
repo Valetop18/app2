@@ -264,8 +264,9 @@ const MyDrawer = () => {
                     color: COLORS.black,
                   },
                   tabBarIconStyle: {
-                    width: 40,
-                    height: 40,
+                    width: 36,
+                    height: 36,
+                    marginTop: 5
                   },
                   tabBarHideOnKeyboard: true,
                 }}
@@ -280,7 +281,7 @@ const MyDrawer = () => {
                       <View style={styles.item}>
                         <Ionicons
                           name="people-circle"
-                          size={40}
+                          size={36}
                           color={focused ? COLORS.greenM : COLORS.grey}
                         />
                       </View>
@@ -296,7 +297,7 @@ const MyDrawer = () => {
                       <View style={styles.item}>
                         <Ionicons
                           name="people-circle-outline"
-                          size={40}
+                          size={36}
                           color={focused ? COLORS.greenM : COLORS.grey}
                         />
                       </View>
@@ -311,7 +312,7 @@ const MyDrawer = () => {
                       <View style={styles.item}>
                         <MaterialCommunityIcons
                           name="chart-donut-variant"
-                          size={40}
+                          size={36}
                           color={focused ? COLORS.greenM : COLORS.grey}
                         />
                       </View>
@@ -358,7 +359,7 @@ const MyDrawer = () => {
 
 const styles = StyleSheet.create({
   tabBar: {
-    height: "10%",
+    height: "9.5%",
     justifyContent: "center",
     backgroundColor: COLORS.back,
     width: "100%",

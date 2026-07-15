@@ -10,109 +10,195 @@ import { COLORS } from "../constants/colors";
 import Ionicons from "@react-native-vector-icons/ionicons";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import MaterialIcons from "@react-native-vector-icons/material-icons";
-import { msPersonRaisedHand } from "@material-symbols-react-native/outlined-400";
+import {
+  msPersonRaisedHand,
+  msJoin,
+  msFlaky,
+  msJoinRight,
+} from "@material-symbols-react-native/outlined-400";
 import { MsIcon } from "material-symbols-react-native";
 import { FontAwesome } from "@expo/vector-icons";
-import { reaccionesRepository } from "../infrastructure/ReaccionesRepository";
-import { useAuth } from "../context/AuthContext";
-import { useState, useEffect } from "react";
+import { useReacciones } from "../context/ReaccionesContext";
 
 export const SearchResults = ({ data = [], onSelect, representante }) => {
-  const { user } = useAuth();
-  const [reacciones, setReacciones] = useState({});
+  const { reaccionesLey, setReaccionLey } = useReacciones();
+  const [resultados, setResultados] = React.useState(data);
 
-  useEffect(() => {
-    const loadReacciones = async () => {
-      const data = await reaccionesRepository.getReacciones(user.id, "ley");
+  React.useEffect(() => {
+    setResultados(data);
+  }, [data]);
 
-      if (data) {
-        const mapReacciones = {};
-        data.forEach((r) => {
-          mapReacciones[r.target_id] = r.tipo_reaccion;
-        });
-        setReacciones(mapReacciones);
-      }
-    };
-
-    loadReacciones();
-  }, []);
-
-  const handleLike = async (id, tipoReaccion) => {
+  const handleReaccion = async (idVotacion, tipoReaccion) => {
     try {
-      const actual = reacciones[id];
+      const cambio = await setReaccionLey(idVotacion, tipoReaccion);
 
-      const nueva = actual === tipoReaccion ? "null" : tipoReaccion;
+      if (!cambio) return;
 
-      const resultado = reaccionesRepository.setReaccion(
-        user.id,
-        id,
-        "ley",
-        nueva,
+      const { anterior, nueva } = cambio;
+
+      setResultados((prev) =>
+        prev.map((item) => {
+          if (Number(item.id) !== Number(idVotacion)) {
+            return item;
+          }
+
+          let totalLikes = Number(item.totalLikes ?? 0);
+          let totalDislikes = Number(item.totalDislikes ?? 0);
+
+          // Quitar la reacción anterior del conteo
+          if (anterior === "like") {
+            totalLikes = Math.max(totalLikes - 1, 0);
+          }
+
+          if (anterior === "dislike") {
+            totalDislikes = Math.max(totalDislikes - 1, 0);
+          }
+
+          // Agregar la nueva reacción
+          if (nueva === "like") {
+            totalLikes += 1;
+          }
+
+          if (nueva === "dislike") {
+            totalDislikes += 1;
+          }
+
+          return {
+            ...item,
+            totalLikes,
+            totalDislikes,
+          };
+        }),
       );
-
-      setReacciones((prev) => ({
-        ...prev,
-        [id]: nueva,
-      }));
-      /**
-       * ley_1 : like
-       * ley_2 : dislike
-       */
-
-      console.log("resultado: ", resultado);
     } catch (error) {
-      console.log(error);
+      console.error("Error actualizando reacción:", error);
     }
+  };
+
+  const IconoPorVoto = ({ voto }) => {
+    if (!voto)
+      return <Ionicons name="remove-circle" size={18} color={COLORS.greyM} />;
+
+    const v = voto.toLowerCase();
+
+    if (v.includes("favor")) {
+      return (
+        <MaterialIcons name="check-circle" size={18} color={COLORS.greenM} />
+      );
+    }
+
+    if (v.includes("contra")) {
+      return <MaterialIcons name="cancel" size={18} color={COLORS.FA} />;
+    }
+
+    if (v.includes("pareo")) {
+      return <MsIcon icon={msJoinRight} size={19} color={COLORS.PDG} />;
+    }
+
+    if (v.includes("absten")) {
+      return <MsIcon icon={msFlaky} size={18} color={COLORS.UDI} />;
+    }
+
+    return null;
+  };
+
+  const IconoPorResultado = ({ resultado }) => {
+    if (!resultado) return null;
+
+    const v = resultado.toLowerCase();
+
+    if (v.includes("aprobado")) {
+      return (
+        <MaterialIcons
+          name="check-circle"
+          size={18}
+          color={COLORS.greenM}
+          marginRight={18}
+        />
+      );
+    }
+
+    if (v.includes("rechazado")) {
+      return (
+        <MaterialIcons
+          name="cancel"
+          size={18}
+          color={COLORS.FA}
+          marginRight={18}
+        />
+      );
+    }
+
+    return null;
   };
 
   return (
     <View>
       <FlatList
-        data={data}
+        data={resultados}
         keyExtractor={(item) => item.id}
         keyboardShouldPersistTaps="handled"
         renderItem={({ item }) => {
-          const reaccion = reacciones[item.id];
+          const reaccion = reaccionesLey[item.id];
 
           return (
             <View style={styles.container}>
               <View flexDirection={"row"} justifyContent={"space-between"}>
                 <View style={styles.containerNombre}>
-                  <View flexDirection={"row"}>
-                    <Text style={styles.nombre}> {item.nombre} </Text>
-                    <View style={styles.estadistica2}>
+                  <View flexDirection={"row"} alignItems={"center"}>
+                    <Text style={styles.nombre}> {item.tipoDocumento} </Text>
+
+                    <View style={styles.reaccionesResumen}>
                       <TouchableOpacity
-                        onPress={() => handleLike(item.id, "like")}
+                        style={styles.reaccionGrupo}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 5 }}
+                        activeOpacity={0.65}
+                        onPress={() => handleReaccion(item.id, "like")}
                       >
+                        <Text
+                          style={[
+                            styles.reaccionCantidad,
+                            reaccion === "like" &&
+                              styles.reaccionCantidadActiva,
+                          ]}
+                        >
+                          {item.totalLikes ?? 0}
+                        </Text>
+
                         <FontAwesome
                           name="thumbs-up"
-                          size={19}
+                          size={18}
                           color={
                             reaccion === "like" ? COLORS.greenM : COLORS.grey
                           }
                         />
                       </TouchableOpacity>
+
                       <TouchableOpacity
-                        onPress={() => handleLike(item.id, "dislike")}
+                        style={styles.reaccionGrupo}
+                        hitSlop={{ top: 8, bottom: 8, left: 5, right: 8 }}
+                        activeOpacity={0.65}
+                        onPress={() => handleReaccion(item.id, "dislike")}
                       >
                         <FontAwesome
                           name="thumbs-down"
-                          size={19}
+                          size={18}
                           color={
                             reaccion === "dislike" ? COLORS.greenM : COLORS.grey
                           }
                           style={{ transform: [{ scaleX: -1 }] }}
                         />
+
+                        <Text
+                          style={[
+                            styles.reaccionCantidad,
+                            reaccion === "dislike" &&
+                              styles.reaccionCantidadActiva,
+                          ]}
+                        >
+                          {item.totalDislikes ?? 0}
+                        </Text>
                       </TouchableOpacity>
-                    </View>
-                    <View style={styles.datausage}>
-                      <MaterialIcons
-                        name="data-usage"
-                        size={34}
-                        color={COLORS.verdeclaro}
-                        position={"absolute"}
-                      />
-                      <Text style={styles.data2}>36%</Text>
                     </View>
                   </View>
                   <View
@@ -126,12 +212,8 @@ export const SearchResults = ({ data = [], onSelect, representante }) => {
                           size={18}
                           color={COLORS.black}
                         />
-                        <MaterialIcons
-                          name="cancel"
-                          size={18}
-                          color={COLORS.greenM}
-                          marginRight={16}
-                        />
+
+                        <IconoPorVoto voto={item?.votoRepresentante} />
                       </View>
                     )}
 
@@ -140,19 +222,28 @@ export const SearchResults = ({ data = [], onSelect, representante }) => {
                       size={22}
                       color={COLORS.black}
                     />
-                    <MaterialIcons
-                      name="check-circle"
-                      size={18}
-                      color={COLORS.greenM}
-                      marginRight={20}
-                    />
+                    <IconoPorResultado resultado={item?.resultado} />
                   </View>
                 </View>
               </View>
               <TouchableOpacity onPress={() => onSelect(item)}>
-                {item.descripcion && (
-                  <Text style={styles.descripcion}> {item.descripcion} </Text>
+                {item.materia_resumen ? (
+                  <Text style={styles.descripcion}>
+                    {item.materia_resumen}
+                    <Text style={styles.resumenIA}>✨Resumen IA</Text>
+                  </Text>
+                ) : (
+                  <Text style={styles.descripcion}> {item.materia} </Text>
                 )}
+                {item.articulo_resumen ? (
+                  <Text style={styles.articulo}>
+
+                    {item.articulo_resumen}{" "}
+                    <Text style={styles.resumenIA}>✨Resumen IA</Text>
+                  </Text>
+                ) : item.articulo ? (
+                  <Text style={styles.articulo}> {item.articulo} </Text>
+                ) : null}
               </TouchableOpacity>
             </View>
           );
@@ -188,10 +279,11 @@ const styles = StyleSheet.create({
     marginHorizontal: "1%",
   },
   nombre: {
-    fontFamily: "Sedan_400Regular",
-    fontSize: 18,
+    fontFamily: "NotoSansMyanmar_700Bold",
+    fontSize: 14.5,
     color: COLORS.greenM,
-    marginHorizontal: 10,
+    marginLeft: 10,
+    marginHorizontal: 6,
     paddingVertical: 0,
     paddingBottom: 0,
     paddingTop: 0,
@@ -211,21 +303,39 @@ const styles = StyleSheet.create({
   estadistica: {
     flexDirection: "row",
     alignItems: "center",
-    marginRight: '-2%'
+    marginRight: "-2%",
   },
   estadistica2: {
     flexDirection: "row",
     alignItems: "flex-start",
     justifyContent: "space-between",
-    marginRight: 8,
+    marginRight: 6,
     width: 38,
   },
   flexHorizontal: {
     flexDirection: "row",
+    marginRight: 16,
   },
   descripcion: {
     fontFamily: "NotoSansMyanmar_400Regular",
-    fontSize: 12,
+    fontSize: 14,
+    color: COLORS.black,
+    textAlign: "justify",
+    marginHorizontal: "2%",
+    lineHeight: 18,
+    marginVertical: 4,
+    marginTop: 7,
+    width: "95%",
+    alignSelf: "center",
+  },
+  resumenIA: {
+    fontFamily: "NotoSansMyanmar_700Bold",
+    fontSize: 11.5,
+    color: COLORS.greyM,
+  },
+  articulo: {
+    fontFamily: "NotoSansMyanmar_400Regular",
+    fontSize: 13,
     color: COLORS.black,
     textAlign: "justify",
     marginHorizontal: "2%",
@@ -233,5 +343,43 @@ const styles = StyleSheet.create({
     marginVertical: 5,
     width: "95%",
     alignSelf: "center",
+  },
+  reaccionesResumen: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 7,
+    marginLeft: 1,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 14,
+    backgroundColor: "#F6F8F6",
+  },
+  reaccionGrupo: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+
+  reaccionCantidad: {
+    minWidth: 15,
+    textAlign: "center",
+    fontSize: 11,
+    lineHeight: 15,
+    fontFamily: "NotoSansMyanmar_700Bold",
+    color: COLORS.greyM,
+  },
+  reaccionBoton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+
+    paddingHorizontal: 3,
+    paddingVertical: 2,
+
+    borderRadius: 10,
+  },
+
+  reaccionCantidadActiva: {
+    color: COLORS.greenM,
   },
 });

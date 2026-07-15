@@ -9,6 +9,10 @@ import {
   Platform,
   TextInput,
   FlatList,
+  TouchableOpacity,
+  Modal,
+  Pressable,
+  ActivityIndicator,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { COLORS } from "../constants/colors";
@@ -59,6 +63,155 @@ export const EstadisticaPartido = ({ route }) => {
   const [partido, setPartido] = useState({});
   const partidoId = route.params?.partidoId;
   const [loading, setLoading] = useState(true);
+  const [detalleMociones, setDetalleMociones] = useState([]);
+  const [modalMocionesVisible, setModalMocionesVisible] = useState(false);
+  const [loadingMociones, setLoadingMociones] = useState(false);
+  const [representacionPromedio, setRepresentacionPromedio] = useState(0);
+  const [totalLikesPartido, setTotalLikesPartido] = useState(0);
+
+  const [mocionesAprobadas, setMocionesAprobadas] = useState({
+    aprobadas: 0,
+    totalMociones: 0,
+    fraccion: "0/0",
+  });
+
+  const [cohesionPartido, setCohesionPartido] = useState({
+    cohesion: 0,
+    votacionesEvaluadas: 0,
+  });
+
+  const [compatibilidadPartido, setCompatibilidadPartido] = useState({
+    compatibilidad: 0,
+    coincidencias: 0,
+    totalReacciones: 0,
+  });
+
+  const normalizarTexto = (texto = "") =>
+    texto.trim().replace(/\s+/g, " ").toLowerCase();
+
+  const cargarDetalleMociones = async () => {
+    try {
+      setLoadingMociones(true);
+
+      const data =
+        await partidosRepository.getDetalleMocionesPartido(partidoId);
+
+      const agrupadas = Object.values(
+        data.reduce((acc, row) => {
+          const boletin = row.numero_boletin;
+
+          if (!acc[boletin]) {
+            acc[boletin] = {
+              numeroBoletin: boletin,
+              titulo: row.titulo_mocion,
+              votaciones: [],
+            };
+          }
+
+          if (row.id_votacion) {
+            acc[boletin].votaciones.push({
+              idVotacion: row.id_votacion,
+              materia: row.materia,
+              materiaResumen: row.materia_resumen,
+              articulo: row.articulo,
+              articuloResumen: row.articulo_resumen,
+              resultado: row.resultado,
+              fechaTexto: row.fecha_texto,
+              fechaDate: row.fecha_date,
+              sesion: row.sesion,
+            });
+          }
+
+          return acc;
+        }, {}),
+      );
+
+      const procesadas = agrupadas.map((mocion) => {
+        let materiaAnterior = "";
+        let articuloAnterior = "";
+
+        return {
+          ...mocion,
+          votaciones: mocion.votaciones.map((votacion) => {
+            const materiaActual =
+              votacion.materiaResumen || votacion.materia || "";
+
+            const articuloActual =
+              votacion.articuloResumen || votacion.articulo || "";
+
+            const materiaNormalizada = normalizarTexto(materiaActual);
+            const articuloNormalizado = normalizarTexto(articuloActual);
+
+            const mostrarMateria =
+              materiaNormalizada !== "" &&
+              materiaNormalizada !== materiaAnterior;
+
+            const mostrarArticulo =
+              articuloNormalizado !== "" &&
+              articuloNormalizado !== articuloAnterior;
+
+            materiaAnterior = materiaNormalizada;
+            articuloAnterior = articuloNormalizado;
+
+            return {
+              ...votacion,
+              materiaMostrar: mostrarMateria ? materiaActual : null,
+              articuloMostrar: mostrarArticulo ? articuloActual : null,
+            };
+          }),
+        };
+      });
+
+      setDetalleMociones(procesadas);
+      setModalMocionesVisible(true);
+    } catch (error) {
+      console.error("Error cargando detalle de mociones:", error);
+    } finally {
+      setLoadingMociones(false);
+    }
+  };
+
+  const getTotalLikesPartido = async () => {
+    try {
+      if (!partidoId) return;
+
+      const total = await partidosRepository.getTotalLikesPartido(partidoId);
+
+      setTotalLikesPartido(total);
+    } catch (error) {
+      console.error("Error cargando total de likes del partido:", error);
+
+      setTotalLikesPartido(0);
+    }
+  };
+
+  const getCompatibilidadPartido = async () => {
+    try {
+      if (!user?.id || !partidoId) return;
+
+      const data = await partidosRepository.getCompatibilidadUsuarioPartido(
+        user.id,
+        partidoId,
+      );
+
+      setCompatibilidadPartido(data);
+    } catch (error) {
+      console.error("Error cargando compatibilidad con el partido:", error);
+
+      setCompatibilidadPartido({
+        compatibilidad: 0,
+        coincidencias: 0,
+        totalReacciones: 0,
+      });
+    }
+  };
+
+  const [estadisticasGenerales, setEstadisticasGenerales] = useState({
+    asistencia: 0,
+    participacionVotaciones: 0,
+    mocionesPresentadas: 0,
+    oficiosPresentados: 0,
+  });
 
   console.log("partido llegada estadistica:", route.params?.partidoId);
 
@@ -82,13 +235,79 @@ export const EstadisticaPartido = ({ route }) => {
     }
   };
 
+  const getMocionesAprobadas = async () => {
+    try {
+      const data =
+        await partidosRepository.getMocionesAprobadasPartido(partidoId);
+
+      setMocionesAprobadas(data);
+    } catch (error) {
+      console.error("Error cargando mociones aprobadas del partido:", error);
+
+      setMocionesAprobadas({
+        aprobadas: 0,
+        totalMociones: 0,
+        fraccion: "0/0",
+      });
+    }
+  };
+
+  const getEstadisticasGenerales = async () => {
+    try {
+      const data =
+        await partidosRepository.getEstadisticasGeneralesPartido(partidoId);
+
+      setEstadisticasGenerales(data);
+    } catch (error) {
+      console.error(
+        "Error cargando estadísticas generales del partido:",
+        error,
+      );
+
+      setEstadisticasGenerales({
+        asistencia: 0,
+        participacionVotaciones: 0,
+        mocionesPresentadas: 0,
+        oficiosPresentados: 0,
+      });
+    }
+  };
+
+  const getCohesionPartido = async () => {
+    try {
+      if (!partidoId) return;
+
+      const data = await partidosRepository.getCohesionPartido(partidoId);
+
+      setCohesionPartido(data);
+    } catch (error) {
+      console.error("Error cargando cohesión del partido:", error);
+
+      setCohesionPartido({
+        cohesion: 0,
+        votacionesEvaluadas: 0,
+      });
+    }
+  };
+
   const obtenerLegisladoresPorPartido = async () => {
     try {
       const data =
-        await legisladoresRepository.getDiputadosByPartido(partidoId);
+        await partidosRepository.getEstadisticasDiputadosPartido(partidoId);
+
       setDiputados(data);
+
+      setRepresentacionPromedio(
+        data.length > 0 ? data[0].representacionPromedioPartido : 0,
+      );
     } catch (error) {
-      console.error(error);
+      console.error(
+        "Error cargando diputados y estadísticas del partido:",
+        error,
+      );
+
+      setDiputados([]);
+      setRepresentacionPromedio(0);
     }
   };
 
@@ -97,13 +316,6 @@ export const EstadisticaPartido = ({ route }) => {
     console.log("Partido actual: ", data);
     setPartido(data);
   };
-
-  const [asistencia, setAsistencia] = useState();
-  const [votacion, setVotacion] = useState();
-
-  const [comision, setComision] = useState("5");
-  const [mocion, setMocion] = useState("15");
-  const [proyectos, setProyectos] = useState("3/5");
 
   const [leyesChilenas, setLeyesChilenas] = useState(LEYES);
 
@@ -126,7 +338,30 @@ export const EstadisticaPartido = ({ route }) => {
     { value: 60, label: "JUN" },
   ];
 
-  const renderGridItem = ({ item }) => <GridRepresentPartido item={item} />;
+  const mocionesNoAprobadas = Math.max(
+    mocionesAprobadas.totalMociones - mocionesAprobadas.aprobadas,
+    0,
+  );
+
+  const dataMociones = [
+    {
+      value: mocionesAprobadas.aprobadas,
+      color: COLORS.greenM,
+    },
+    {
+      value: mocionesNoAprobadas,
+      color: COLORS.verdeclaro,
+    },
+  ];
+
+  const renderGridItem = ({ item }) => (
+    <GridRepresentPartido
+      item={{
+        ...item,
+        partido: partido.sigla,
+      }}
+    />
+  );
 
   const fetchAll = async () => {
     try {
@@ -135,6 +370,11 @@ export const EstadisticaPartido = ({ route }) => {
         obtenerLegisladoresPorPartido(),
         checkIfIsSaved(),
         getPartido(),
+        getEstadisticasGenerales(),
+        getMocionesAprobadas(),
+        getCompatibilidadPartido(),
+        getCohesionPartido(),
+        getTotalLikesPartido(),
       ]);
     } catch (error) {
       console.error(error);
@@ -222,28 +462,51 @@ export const EstadisticaPartido = ({ route }) => {
                 <Text style={styles.partido}>{partido.sigla}</Text>
               </View>
               <View style={styles.estadistica}>
-                <View flexDirection={"row"} alignItems={"center"}>
+                <View style={styles.estadisticaFila}>
                   <MaterialIcons
                     name="event-available"
                     size={20}
                     color={COLORS.black}
                   />
+
                   <Text style={styles.informacion}>
-                    {asistencia}% Asistencia
+                    {estadisticasGenerales.asistencia}% Asistencia
                   </Text>
                 </View>
-                <View flexDirection={"row"} alignItems={"center"}>
+
+                <View style={styles.estadisticaFila}>
                   <MsIcon
                     icon={msPersonRaisedHand}
                     size={20}
                     color={COLORS.black}
                   />
-                  <Text style={styles.informacion}>{votacion}% Votaciones</Text>
-                </View>
-                <View flexDirection={"row"} alignItems={"center"}>
-                  <MsIcon icon={msCloudUpload} size={20} color={COLORS.black} />
+
                   <Text style={styles.informacion}>
-                    {votacion}% Efectividad
+                    {estadisticasGenerales.participacionVotaciones}% Votaciones
+                  </Text>
+                </View>
+
+                <View style={styles.estadisticaFila}>
+                  <MaterialIcons
+                    name="addchart"
+                    size={20}
+                    color={COLORS.black}
+                  />
+
+                  <Text style={styles.informacion}>
+                    {estadisticasGenerales.mocionesPresentadas} Mociones
+                  </Text>
+                </View>
+
+                <View style={styles.estadisticaFila}>
+                  <MaterialIcons
+                    name="assignment-late"
+                    size={20}
+                    color={COLORS.black}
+                  />
+
+                  <Text style={styles.informacion}>
+                    {estadisticasGenerales.oficiosPresentados} Oficios
                   </Text>
                 </View>
               </View>
@@ -253,9 +516,12 @@ export const EstadisticaPartido = ({ route }) => {
                     name="favorite"
                     size={42}
                     color={isSaved ? COLORS.greenM : COLORS.greyM}
-                    position={"absolute"}
+                    position="absolute"
                   />
-                  <Text style={styles.interes}>36%</Text>
+
+                  {totalLikesPartido > 0 && (
+                    <Text style={styles.interes}>{totalLikesPartido}</Text>
+                  )}
                 </View>
                 <View style={styles.datausage}>
                   <MaterialIcons
@@ -272,45 +538,47 @@ export const EstadisticaPartido = ({ route }) => {
               <Text style={styles.title2}>Estadísticas de la gestión.</Text>
             </View>
             <View style={styles.container4}>
-              <View width={90} marginVertical={"5%"} alignSelf={"center"}>
-                <Text style={styles.label}>
-                  Proyectos aprobados/presentados
-                </Text>
-              </View>
-              <View marginVertical={"1%"}>
-                <PieChart
-                  strokeColor={COLORS.back}
-                  strokeWidth={1}
-                  donut
-                  data={[
-                    { value: 20, color: COLORS.verdeclaro },
-                    { value: 10, color: COLORS.verdeclaro },
-                    { value: 30, color: COLORS.verdeclaro },
-                    { value: 5, color: COLORS.verdeclaro },
-                    { value: 15, color: COLORS.verdeclaro },
-                    { value: 10, color: COLORS.verdeclaro },
-                  ]}
-                  showValuesAsLabels={true}
-                  innerRadius={18}
-                  radius={45}
-                  textSize={18}
-                  centerLabelComponent={() => {
-                    return (
-                      <View>
-                        <Text
-                          style={{
-                            color: COLORS.greenM,
-                            fontSize: 14,
-                            fontFamily: "NotoSansMyanmar_700Bold",
-                          }}
-                        >
-                          90%
-                        </Text>
-                      </View>
-                    );
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={cargarDetalleMociones}
+                style={styles.mocionesPartidoTouchable}
+              >
+                <View
+                  style={{
+                    width: 90,
+                    marginVertical: "5%",
+                    alignSelf: "center",
                   }}
-                />
-              </View>
+                >
+                  <Text style={styles.label}>
+                    Mociones aprobadas/presentadas
+                  </Text>
+                </View>
+
+                <View style={{ marginVertical: "1%" }}>
+                  <PieChart
+                    strokeColor={COLORS.back}
+                    strokeWidth={1}
+                    donut
+                    data={dataMociones}
+                    showValuesAsLabels={false}
+                    innerRadius={18}
+                    radius={45}
+                    textSize={18}
+                    centerLabelComponent={() => (
+                      <Text
+                        style={{
+                          color: COLORS.greenM,
+                          fontSize: 14,
+                          fontFamily: "NotoSansMyanmar_700Bold",
+                        }}
+                      >
+                        {mocionesAprobadas.fraccion}
+                      </Text>
+                    )}
+                  />
+                </View>
+              </TouchableOpacity>
 
               <View>
                 <Text style={styles.label} marginVertical={5}>
@@ -365,14 +633,14 @@ export const EstadisticaPartido = ({ route }) => {
                       name="data-usage"
                       size={50}
                       color={COLORS.verdeclaro}
-                      position={"absolute"}
+                      position="absolute"
                     />
-                    <Text style={styles.data2}>3/4</Text>
+
+                    <Text style={styles.data2}>{representacionPromedio}%</Text>
                   </View>
-                  <View width={130} marginVertical={"3%"}>
-                    <Text style={styles.label2}>
-                      Porcentaje de votos recibidos
-                    </Text>
+
+                  <View style={{ width: 130, marginVertical: "3%" }}>
+                    <Text style={styles.label2}>Representación promedio</Text>
                   </View>
                 </View>
                 <View style={styles.container5}>
@@ -381,11 +649,15 @@ export const EstadisticaPartido = ({ route }) => {
                       name="data-usage"
                       size={50}
                       color={COLORS.verdeclaro}
-                      position={"absolute"}
+                      position="absolute"
                     />
-                    <Text style={styles.data2}>50%</Text>
+
+                    <Text style={styles.data2}>
+                      {cohesionPartido.cohesion}%
+                    </Text>
                   </View>
-                  <View width={130}>
+
+                  <View style={{ width: 130 }}>
                     <Text style={styles.label2}>Índice de cohesión</Text>
                   </View>
                 </View>
@@ -393,9 +665,18 @@ export const EstadisticaPartido = ({ route }) => {
               <View>
                 <View style={styles.container5}>
                   <View style={styles.circulo}>
-                    <Text style={styles.data2}>34%</Text>
+                    <Text style={styles.data2}>
+                      {compatibilidadPartido.compatibilidad}%
+                    </Text>
                   </View>
-                  <View width={140} marginVertical={"3%"} marginLeft={5}>
+
+                  <View
+                    style={{
+                      width: 140,
+                      marginVertical: "3%",
+                      marginLeft: 5,
+                    }}
+                  >
                     <Text style={styles.label2}>
                       Compatibilidad con el partido
                     </Text>
@@ -403,12 +684,21 @@ export const EstadisticaPartido = ({ route }) => {
                 </View>
                 <View style={styles.container5}>
                   <View style={styles.circulo}>
-                    <Text style={styles.data2}>55</Text>
-                  </View>
-                  <View width={145} marginVertical={"3%"} marginLeft={5}>
-                    <Text style={styles.label2}>
-                      Lugar estadístico entre los partidos
+                    <Text style={styles.data2}>
+                      {partido.rankingEstadistico
+                        ? `${partido.rankingEstadistico}`
+                        : "-"}
                     </Text>
+                  </View>
+
+                  <View
+                    style={{
+                      width: 145,
+                      marginVertical: "3%",
+                      marginLeft: 5,
+                    }}
+                  >
+                    <Text style={styles.label2}>Ranking nacional</Text>
                   </View>
                 </View>
               </View>
@@ -418,8 +708,88 @@ export const EstadisticaPartido = ({ route }) => {
             data={diputados}
             renderItem={renderGridItem}
             numColumns={1}
-            keyExtractor={(item) => item.id}
+            keyExtractor={(item) => item.id.toString()}
           />
+
+          <Modal
+            visible={modalMocionesVisible}
+            transparent
+            animationType="fade"
+            onRequestClose={() => setModalMocionesVisible(false)}
+          >
+            <View style={styles.overlay}>
+              <Pressable
+                style={StyleSheet.absoluteFill}
+                onPress={() => setModalMocionesVisible(false)}
+              />
+
+              <View style={styles.modalMocionesContainer}>
+                <View style={styles.tituloContainer}>
+                  <Text style={styles.tituloText}>
+                    Mociones presentadas por el partido
+                  </Text>
+                </View>
+
+                {loadingMociones ? (
+                  <View style={styles.loadingMociones}>
+                    <ActivityIndicator size="large" color={COLORS.greenM} />
+                  </View>
+                ) : (
+                  <FlatList
+                    data={detalleMociones}
+                    keyExtractor={(item) => item.numeroBoletin}
+                    contentContainerStyle={styles.listaMociones}
+                    renderItem={({ item }) => (
+                      <View style={styles.mocionCard}>
+                        <Text style={styles.mocionBoletin}>
+                          Boletín N° {item.numeroBoletin}
+                        </Text>
+
+                        <Text style={styles.mocionTitulo}>{item.titulo}</Text>
+
+                        {item.votaciones.length === 0 ? (
+                          <Text style={styles.mocionSinVotacion}>
+                            Aún no registra votaciones.
+                          </Text>
+                        ) : (
+                          item.votaciones.map((votacion) => (
+                            <View
+                              key={votacion.idVotacion}
+                              style={styles.votacionMocion}
+                            >
+                              <Text style={styles.votacionResultado}>
+                                {votacion.resultado || "Sin resultado"}
+                              </Text>
+
+                              {votacion.materiaMostrar && (
+                                <Text style={styles.votacionMateria}>
+                                  {votacion.materiaMostrar}
+                                </Text>
+                              )}
+
+                              {votacion.articuloMostrar && (
+                                <Text style={styles.votacionArticulo}>
+                                  {votacion.articuloMostrar}
+                                </Text>
+                              )}
+
+                              <Text style={styles.votacionSesion}>
+                                {votacion.sesion}
+                              </Text>
+
+                              <Text style={styles.votacionFecha}>
+                                {votacion.fechaTexto}
+                              </Text>
+                            </View>
+                          ))
+                        )}
+                      </View>
+                    )}
+                  />
+                )}
+              </View>
+            </View>
+          </Modal>
         </ScrollView>
       )}
     </KeyboardAvoidingView>
@@ -461,11 +831,20 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  estadisticaFila: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 1,
+  },
   interes: {
     fontSize: 12,
     fontFamily: "NotoSansMyanmar_700Bold",
     color: COLORS.back,
     marginTop: "-16%",
+  },
+  mocionesPartidoTouchable: {
+    flexDirection: "row",
+    alignItems: "center",
   },
   title2: {
     fontSize: 15,
@@ -478,6 +857,13 @@ const styles = StyleSheet.create({
   container4: {
     flexDirection: "row",
     marginHorizontal: "2%",
+  },
+  modalMocionesContainer: {
+    width: "90%",
+    maxHeight: "88%",
+    backgroundColor: COLORS.back,
+    borderRadius: 10,
+    overflow: "hidden",
   },
   container5: {
     alignItems: "center",
@@ -503,8 +889,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
   },
   estadistica: {
-    marginTop: "4%",
-    marginLeft: "-16%",
+    marginTop: "1%",
+    marginLeft: "-12%",
   },
   info: {},
   informacion: {
@@ -553,6 +939,127 @@ const styles = StyleSheet.create({
   },
   keyboardView: {
     flex: 1,
-    backgroundColor: COLORS.back
+    backgroundColor: COLORS.back,
+  },
+  overlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.48)",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 18,
+  },
+  loadingMociones: {
+    minHeight: 180,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalMocionesContainer: {
+    width: "94%",
+    maxHeight: "88%",
+    backgroundColor: COLORS.back,
+    borderRadius: 10,
+    overflow: "hidden",
+
+    elevation: 12,
+    shadowColor: COLORS.black,
+    shadowOffset: {
+      width: 0,
+      height: 6,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 14,
+  },
+
+  tituloContainer: {
+    backgroundColor: COLORS.greenM,
+    paddingHorizontal: 18,
+    paddingVertical: 14,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  tituloText: {
+    fontSize: 16,
+    lineHeight: 22,
+    fontFamily: "NotoSansMyanmar_700Bold",
+    color: COLORS.back,
+  },
+
+  listaMociones: {
+    paddingHorizontal: 14,
+    paddingTop: 14,
+    paddingBottom: 22,
+    backgroundColor: COLORS.back,
+  },
+
+  mocionCard: {
+    marginBottom: 16,
+    paddingBottom: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.verdeclaro,
+  },
+
+  mocionBoletin: {
+    fontFamily: "NotoSansMyanmar_700Bold",
+    fontSize: 14,
+    color: COLORS.greenM,
+  },
+
+  mocionTitulo: {
+    fontFamily: "NotoSansMyanmar_700Bold",
+    fontSize: 14,
+    lineHeight: 18,
+    color: COLORS.black,
+    marginTop: 4,
+  },
+
+  mocionSinVotacion: {
+    fontFamily: "NotoSansMyanmar_400Regular",
+    fontSize: 13,
+    color: COLORS.greyM,
+    marginTop: 8,
+  },
+
+  votacionMocion: {
+    marginTop: 10,
+    padding: 10,
+    borderRadius: 8,
+    backgroundColor: COLORS.verdeclaro,
+  },
+
+  votacionResultado: {
+    fontFamily: "NotoSansMyanmar_700Bold",
+    fontSize: 13,
+    color: COLORS.greenM,
+    textTransform: "uppercase",
+  },
+
+  votacionMateria: {
+    fontFamily: "NotoSansMyanmar_600SemiBold",
+    fontSize: 13,
+    lineHeight: 17,
+    color: COLORS.black,
+    marginTop: 4,
+  },
+
+  votacionArticulo: {
+    fontFamily: "NotoSansMyanmar_400Regular",
+    fontSize: 12.5,
+    lineHeight: 17,
+    color: COLORS.black,
+    marginTop: 4,
+  },
+
+  votacionSesion: {
+    fontFamily: "NotoSansMyanmar_600SemiBold",
+    fontSize: 12,
+    color: COLORS.greyM,
+    marginTop: 8,
+  },
+
+  votacionFecha: {
+    fontFamily: "NotoSansMyanmar_400Regular",
+    fontSize: 12,
+    color: COLORS.greyM,
   },
 });
