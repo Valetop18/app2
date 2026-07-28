@@ -12,11 +12,19 @@ export const partidosRepository = {
     return data;
   },
 
-  async savePartidoUsuario(userId, partidoId) {
-    const { error } = await supabase.from("usuarios_partidos").insert({
+  async savePartidoUsuario(userId, partidosIds) {
+    if (!partidosIds || partidosIds.length === 0) {
+      return;
+    }
+
+    const registros = partidosIds.map((partidoId) => ({
       user_id: userId,
       partido_id: partidoId,
-    });
+    }));
+
+    const { error } = await supabase
+      .from("usuarios_partidos")
+      .insert(registros);
 
     if (error) throw error;
   },
@@ -352,6 +360,58 @@ export const partidosRepository = {
         cohesion: 0,
         votacionesEvaluadas: 0,
       };
+    }
+  },
+
+  async getTotalLikesPartido(partidoId) {
+    try {
+      const { data, error } = await supabase.rpc("total_likes_partido", {
+        p_partido_id: partidoId,
+      });
+
+      if (error) throw error;
+
+      return Number(data ?? 0);
+    } catch (error) {
+      console.error(
+        "Error al obtener total de likes del partido:",
+        error.message,
+      );
+
+      return 0;
+    }
+  },
+
+  async getMetricasHistoricasPartido(partidoId) {
+    try {
+      const { data, error } = await supabase
+        .from("partido_metricas_historico")
+        .select(
+          `
+        fecha_snapshot,
+        total_likes,
+        representacion_promedio_partido
+      `,
+        )
+        .eq("partido_id", partidoId)
+        .order("fecha_snapshot", { ascending: true });
+
+      if (error) throw error;
+
+      return (data ?? []).map((row) => ({
+        fechaSnapshot: row.fecha_snapshot,
+        totalLikes: Number(row.total_likes ?? 0),
+        representacionPromedioPartido: Number(
+          row.representacion_promedio_partido ?? 0,
+        ),
+      }));
+    } catch (error) {
+      console.error(
+        "Error al obtener métricas históricas del partido:",
+        error.message,
+      );
+
+      return [];
     }
   },
 };

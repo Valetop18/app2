@@ -195,6 +195,8 @@ export const legisladoresRepository = {
           `
                 id,
                 distrito,
+                ranking_estadistico,
+                puntaje_estadistico,
                 asistencia (
                     asistencia,
                     observaciones
@@ -256,6 +258,8 @@ export const legisladoresRepository = {
             idDiputado: dipu.id,
             nombre: legislador.nombre,
             distrito: dipu.distrito,
+            rankingEstadistico: dipu.ranking_estadistico ?? null,
+            puntajeEstadistico: dipu.puntaje_estadistico ?? 0,
             profesion: legislador.profesion,
             trayectoria: legislador.trayectoria,
             periodoInicio: legislador.periodo_inicio,
@@ -720,6 +724,37 @@ export const legisladoresRepository = {
         "Error al obtener detalle de mociones del diputado:",
         error.message,
       );
+      return [];
+    }
+  },
+
+  async getMetricasHistoricasDiputado(idLegislador) {
+    try {
+      const { data, error } = await supabase
+        .from("diputado_metricas_historico")
+        .select(
+          `
+        fecha_snapshot,
+        total_likes,
+        representacion_distrital
+      `,
+        )
+        .eq("id_legislador", idLegislador)
+        .order("fecha_snapshot", { ascending: true });
+
+      if (error) throw error;
+
+      return (data ?? []).map((row) => ({
+        fechaSnapshot: row.fecha_snapshot,
+        totalLikes: Number(row.total_likes ?? 0),
+        representacionDistrital: Number(row.representacion_distrital ?? 0),
+      }));
+    } catch (error) {
+      console.error(
+        "Error al obtener métricas históricas del diputado:",
+        error.message,
+      );
+
       return [];
     }
   },

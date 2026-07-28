@@ -4,7 +4,7 @@ import {
   StyleSheet,
   FlatList,
   TouchableOpacity,
-  Alert,
+  Modal,
 } from "react-native";
 import { COLORS } from "../constants/colors";
 import { Topicos } from "../components/topico";
@@ -14,10 +14,16 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { topicosRepository } from "../infrastructure/TopicosRepository";
 import { Skeleton } from "../components/Skeleton";
-import Modal from "react-native-modal";
 import { msCancel } from "@material-symbols-react-native/outlined-400";
 import { MsIcon } from "material-symbols-react-native";
 import MaterialIcons from "@react-native-vector-icons/material-icons";
+import {
+  responsiveVerticalSize,
+  responsiveSpacing,
+  responsiveFont,
+  responsiveIcon,
+  responsiveSize,
+} from "../utils/responsive";
 
 export const TopicosInteres = () => {
   const { user } = useAuth();
@@ -95,32 +101,38 @@ export const TopicosInteres = () => {
   return (
     <View style={styles.container}>
       <Modal
-        isVisible={modalVisible}
-        onBackdropPress={() => setModalVisible(false)}
-        style={{ margin: 0, justifyContent: "flex-end" }}
+        visible={modalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setModalVisible(false)}
       >
-        <View
-          style={{
-            height: "16%",
-            width: "100%",
-            backgroundColor: COLORS.back,
-            justifyContent: "center",
-            alignItems: "center",
-            borderTopRightRadius: 5,
-            borderTopLeftRadius: 5,
-            paddingHorizontal: 25,
-          }}
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setModalVisible(false)}
         >
-          <View style={{ alignSelf: "flex-end" }}>
-            <TouchableOpacity onPress={() => setModalVisible(false)}>
-              <MaterialIcons name="cancel" size={20} color={COLORS.grey} />
-            </TouchableOpacity>
-          </View>
-          <View style={{ alignItems: "center", justifyContent: "center" }}>
-            <MsIcon icon={msCancel} size={45} color={COLORS.greenM} />
-            <Text style={styles.textModal}>Debes seleccionar al menos un tema</Text>
-          </View>
-        </View>
+          <TouchableOpacity
+            style={styles.modalContainer}
+            activeOpacity={1}
+            onPress={() => {}}
+          >
+            <View style={{ alignSelf: "flex-end" }}>
+              <TouchableOpacity onPress={() => setModalVisible(false)}>
+                <MaterialIcons
+                  name="cancel"
+                  size={responsiveIcon(20)}
+                  color={COLORS.back}
+                />
+              </TouchableOpacity>
+            </View>
+            <View style={{ alignItems: "center", justifyContent: "center" }}>
+              <MsIcon icon={msCancel} size={36} color={COLORS.back} />
+              <Text style={styles.textModal}>
+                Debes seleccionar al menos un tema
+              </Text>
+            </View>
+          </TouchableOpacity>
+        </TouchableOpacity>
       </Modal>
 
       <View style={styles.containerTitulo}>
@@ -137,12 +149,14 @@ export const TopicosInteres = () => {
             style={styles.flatlist}
             columnWrapperStyle={styles.columnWrapper}
             renderItem={skeletonCard}
+            contentContainerStyle={styles.flatlistContent}
             keyExtractor={(item) => item.toString()}
           />
         ) : (
           <FlatList
             data={topicos}
             numColumns={3}
+            contentContainerStyle={styles.flatlistContent}
             style={styles.flatlist}
             columnWrapperStyle={styles.columnWrapper}
             renderItem={renderGridItem}
@@ -158,7 +172,7 @@ export const TopicosInteres = () => {
           <Text style={styles.textContinuar}>{textContinuar}</Text>
           <Ionicons
             name="chevron-forward-circle"
-            size={28}
+            size={responsiveIcon(28)}
             color={COLORS.back}
           />
         </TouchableOpacity>
@@ -173,60 +187,84 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   containerTitulo: {
-    marginTop: 65,
-    paddingVertical: 20,
-    paddingHorizontal: 30,
+    marginTop: responsiveVerticalSize(55),
+    paddingVertical: responsiveVerticalSize(20),
+    paddingHorizontal: responsiveSpacing(30),
   },
   textModal: {
     fontFamily: "NotoSansMyanmar_700Bold",
-    color: COLORS.black,
+    color: COLORS.back,
     fontSize: 15,
+    marginTop: '2%'
   },
   titulo: {
     fontFamily: "NotoSansMyanmar_600SemiBold",
-    fontSize: 20,
+    fontSize: responsiveFont(20),
     letterSpacing: 1,
     color: COLORS.back,
   },
   subTitulo: {
     fontFamily: "NotoSansMyanmar_600SemiBold",
-    fontSize: 14,
+    fontSize: responsiveFont(14),
     color: COLORS.grey,
   },
   containerFlatlist: {
-    display: "flex",
+    flexShrink: 1,
     alignItems: "center",
-    paddingVertical: 10,
-    paddingHorizontal: 5,
-    justifyContent: "center",
+    paddingVertical: responsiveVerticalSize(10),
+    paddingHorizontal: responsiveSpacing(5),
+    justifyContent: "flex-start",
   },
-  flatlist: {},
+  flatlist: {
+    width: "100%",
+  },
   topicoContainer: {
     alignSelf: "center",
     justifyContent: "center",
   },
   columnWrapper: {
     justifyContent: "center",
-    gap: 5,
+    alignItems: "center",
+    gap: responsiveSpacing(3),
   },
   containerFinal: {
-    paddingRight: 20,
-    paddingVertical: 25,
+    justifyContent: "flex-end",
+    paddingTop: responsiveVerticalSize(18),
+    paddingBottom: responsiveVerticalSize(48),
+  },
+  flatlistContent: {
+    paddingBottom: responsiveVerticalSize(8),
   },
   containerContinuar: {
-    marginHorizontal: 20,
-    marginLeft: 130,
+    width: "77%",
+    alignSelf: "center",
     flexDirection: "row",
     justifyContent: "flex-end",
     alignItems: "center",
   },
   textContinuar: {
-    width: "90%",
+    flex: 1,
     fontFamily: "NotoSansMyanmar_700Bold",
-    fontSize: 16,
+    fontSize: responsiveFont(16),
     color: COLORS.back,
     letterSpacing: 0.5,
     textAlign: "right",
-    marginRight: 5,
+    marginRight: responsiveSpacing(6),
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: "flex-end",
+    backgroundColor: "rgba(0,0,0,0.35)",
+  },
+  modalContainer: {
+    minHeight: responsiveVerticalSize(145),
+    width: "100%",
+    backgroundColor: COLORS.greenM,
+    justifyContent: "center",
+    alignItems: "center",
+    borderTopRightRadius: responsiveSize(5),
+    borderTopLeftRadius: responsiveSize(5),
+    paddingHorizontal: responsiveSpacing(25),
+    paddingBottom: responsiveVerticalSize(12),
   },
 });

@@ -7,7 +7,6 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
-  TextInput,
   Modal,
   Pressable,
   FlatList,
@@ -20,7 +19,6 @@ import { MaterialIcons } from "@react-native-vector-icons/material-icons";
 import { PieChart, LineChart } from "react-native-gifted-charts";
 import Buscador from "../components/Buscador";
 import { SearchResults } from "../components/SearchResults";
-import { LEYES } from "../data/leyes";
 import { BuscadorContext } from "../context/BuscadorContext";
 import {
   msPersonRaisedHand,
@@ -29,16 +27,27 @@ import {
   msAlarm,
 } from "@material-symbols-react-native/outlined-400";
 import { MsIcon } from "material-symbols-react-native";
-import { reaccionesRepository } from "../infrastructure/ReaccionesRepository";
 import { useAuth } from "../context/AuthContext";
 import { compromisosRepository } from "../infrastructure/compromisosRepository";
 import Ionicons from "@react-native-vector-icons/ionicons";
 import { legisladoresRepository } from "../infrastructure/legisladoresRepository";
-import { useReacciones } from "../hooks/useReacciones";
 import { Skeleton } from "../components/Skeleton";
 import { votacionesRepository } from "../infrastructure/votacionesRepository";
 import Tooltip, { TOOLTIPS } from "../components/tooltip";
 import { ActivityIndicator } from "react-native";
+import {
+  responsiveFont,
+  responsiveSize,
+  responsiveIcon,
+} from "../utils/responsive";
+import { useReacciones } from "../context/ReaccionesContext";
+import { useData } from "../context/DataContext";
+
+const SEMANAS_VISIBLES_GRAFICO = 8;
+
+const ESPACIO_EJES_GRAFICO = 120;
+
+const anchoGrafico = Dimensions.get("window").width - ESPACIO_EJES_GRAFICO;
 
 const coloresPorPartido = {
   DES: COLORS.DES,
@@ -65,22 +74,25 @@ const coloresPorPartido = {
 const MODAL_HEIGHT = Dimensions.get("window").height * 0.9;
 
 export const DescripcionDiputado = ({ route }) => {
-  const { user, distrito } = useAuth();
-  const [reacciones, setReacciones] = useState({});
-  const { handleLike } = useReacciones(user.id, reacciones, setReacciones);
+  const { user, distrito, puedeInteractuar } = useAuth();
 
-  const [diputado, setDiputado] = useState({});
-  const [votacion, setVotacion] = useState();
+  const { reaccionesRepresentante, setReaccionRepresentante } = useReacciones();
+  const {
+    obtenerDiputado,
+    actualizarDiputado,
+    obtenerDetalleDiputado,
+    cargarDetalleDiputado,
+  } = useData();
+
+  const idDiputado = route.params?.idDiputado;
+
+  const diputado = obtenerDiputado(idDiputado);
   const [porcentajeVotaciones, setPorcentajeVotaciones] = useState("");
   const [atrasosDiputado, setAtrasosDiputado] = useState("");
 
-  const [proyectos, setProyectos] = useState("3/5");
   const [loading, setLoading] = useState(true);
 
-  const [leyesChilenas, setLeyesChilenas] = useState(LEYES);
-
   const { search, setSearch } = useContext(BuscadorContext);
-  const [reaccion, setReaccion] = useState();
   const [modalVisible, setModalVisible] = useState(false);
 
   const [compromisos, setCompromisos] = useState([]);
@@ -93,12 +105,12 @@ export const DescripcionDiputado = ({ route }) => {
   const [buscandoVotaciones, setBuscandoVotaciones] = useState(false);
   const [adherenciaPartido, setAdherenciaPartido] = useState("");
   const [mocionesAprobadas, setMocionesAprobadas] = useState("0/0");
-  const [totalLikesDiputado, setTotalLikesDiputado] = useState(0);
 
   const [detalleMociones, setDetalleMociones] = useState([]);
   const [modalMocionesVisible, setModalMocionesVisible] = useState(false);
   const [loadingMociones, setLoadingMociones] = useState(false);
   const [modalEvolucionVisible, setModalEvolucionVisible] = useState(false);
+  const [metricasHistoricas, setMetricasHistoricas] = useState([]);
 
   const [compatibilidadUsuario, setCompatibilidadUsuario] = useState({
     compatibilidad: 0,
@@ -113,22 +125,104 @@ export const DescripcionDiputado = ({ route }) => {
     usuariosParticipantes: 0,
   });
 
-  const dataLikes = [
-    { value: 20, label: "ENE" },
-    { value: 40, label: "FEB" },
-    { value: 10, label: "MAR" },
-    { value: 50, label: "ABR" },
-    { value: 30, label: "MAY" },
-    { value: 80, label: "JUN" },
-  ];
-  const dataRepresentacion = [
-    { value: 40, label: "ENE" },
-    { value: 10, label: "FEB" },
-    { value: 50, label: "MAR" },
-    { value: 30, label: "ABR" },
-    { value: 80, label: "MAY" },
-    { value: 60, label: "JUN" },
-  ];
+  const formatearFechaGrafico = (fecha) => {
+    if (!fecha) return "";
+
+    const [anio, mes, dia] = fecha.split("-");
+
+    return `${dia}/${mes}`;
+  };
+
+  const formatearMesAnioGrafico = (fecha) => {
+    if (!fecha) return "";
+
+    const [anio, mes] = fecha.split("-");
+
+    const meses = [
+      "ene",
+      "feb",
+      "mar",
+      "abr",
+      "may",
+      "jun",
+      "jul",
+      "ago",
+      "sept",
+      "oct",
+      "nov",
+      "dic",
+    ];
+
+    return `${meses[Number(mes) - 1]} ${anio.slice(-2)}`;
+  };
+
+  const dataLikesCompleta = metricasHistoricas.map((item) => ({
+    value: Number(item.totalLikes ?? 0),
+    label: formatearFechaGrafico(item.fechaSnapshot),
+    fechaSnapshot: item.fechaSnapshot,
+  }));
+
+  const dataRepresentacionCompleta = metricasHistoricas.map((item) => ({
+    value: Number(item.representacionDistrital ?? 0),
+    label: formatearFechaGrafico(item.fechaSnapshot),
+    fechaSnapshot: item.fechaSnapshot,
+  }));
+  const dataLikes = dataLikesCompleta.slice(-SEMANAS_VISIBLES_GRAFICO);
+
+  const dataRepresentacion = dataRepresentacionCompleta.slice(
+    -SEMANAS_VISIBLES_GRAFICO,
+  );
+
+  const obtenerMaximoLikes = (datos) => {
+    const maximoReal = Math.max(
+      0,
+      ...datos.map((item) => Number(item.value) || 0),
+    );
+
+    if (maximoReal <= 10) return 10;
+
+    const intervaloBase = Math.ceil(maximoReal / 4);
+
+    let intervaloRedondeado;
+
+    if (intervaloBase <= 10) {
+      intervaloRedondeado = Math.ceil(intervaloBase / 5) * 5;
+    } else if (intervaloBase <= 100) {
+      intervaloRedondeado = Math.ceil(intervaloBase / 10) * 10;
+    } else {
+      intervaloRedondeado = Math.ceil(intervaloBase / 100) * 100;
+    }
+
+    return intervaloRedondeado * 4;
+  };
+
+  const maxLikesGrafico = obtenerMaximoLikes(dataLikes);
+
+  const indiceCentralGrafico = Math.floor((dataRepresentacion.length - 1) / 2);
+
+  const dataRepresentacionGraficoPequeno = dataRepresentacion.map(
+    (item, index) => {
+      const esPrimera = index === 0;
+      const esCentral = index === indiceCentralGrafico;
+      const esUltima = index === dataRepresentacion.length - 1;
+
+      return {
+        ...item,
+        label:
+          esPrimera || esCentral || esUltima
+            ? formatearMesAnioGrafico(item.fechaSnapshot)
+            : "",
+      };
+    },
+  );
+
+  const anchoGraficoPequeno = 175;
+
+  const spacingGraficoPequeno =
+    dataRepresentacionGraficoPequeno.length > 1
+      ? (anchoGraficoPequeno - 24) /
+        (dataRepresentacionGraficoPequeno.length - 1)
+      : 40;
 
   useEffect(() => {
     const texto = search.trim();
@@ -179,58 +273,66 @@ export const DescripcionDiputado = ({ route }) => {
     return () => clearTimeout(timeout);
   }, [search, idDiputadoCamara, ultimasVotaciones]);
 
-  const idDiputado = route.params?.idDiputado;
-  const reaccionActual = reacciones[idDiputado];
+  const reaccionActual = reaccionesRepresentante[idDiputado];
 
-  const getDiputado = async () => {
+  const cargarDatosDetalle = async () => {
     const data = await legisladoresRepository.getLegisladorById(idDiputado);
+
     const idDiputadoCamara = data?.diputado?.id;
-    setIdDiputadoCamara(idDiputadoCamara);
-    const atrasosLegislador =
-      await legisladoresRepository.getAtrasosDiputado(idDiputadoCamara);
-    const porcentajeVotaciones =
-      await legisladoresRepository.getParticipacionHistoricaDiputado(
+
+    const [
+      atrasosDiputado,
+      porcentajeVotaciones,
+      adherenciaPartido,
+      mocionesAprobadasData,
+      compatibilidadUsuario,
+      representacionDistrital,
+      ultimasVotaciones,
+    ] = await Promise.all([
+      legisladoresRepository.getAtrasosDiputado(idDiputadoCamara),
+
+      legisladoresRepository.getParticipacionHistoricaDiputado(
         idDiputadoCamara,
-      );
-    const adherencia =
-      await legisladoresRepository.getAdherenciaDiputadoPartido(
-        idDiputadoCamara,
-      );
-    const mocionesAprobadasData =
-      await legisladoresRepository.getMocionesAprobadasDiputado(
-        idDiputadoCamara,
-      );
-    const compatibilidad =
-      await legisladoresRepository.getCompatibilidadUsuarioDiputado(
+      ),
+
+      legisladoresRepository.getAdherenciaDiputadoPartido(idDiputadoCamara),
+
+      legisladoresRepository.getMocionesAprobadasDiputado(idDiputadoCamara),
+
+      legisladoresRepository.getCompatibilidadUsuarioDiputado(
         user.id,
         idDiputadoCamara,
-      );
-    const representacion =
-      await legisladoresRepository.getRepresentacionDistritalDiputado(
-        idDiputadoCamara,
-      );
-    const totalLikes =
-      await legisladoresRepository.getTotalLikesRepresentante(idDiputado);
+      ),
 
-    console.log("diputado detalle: ", data);
-    setDiputado(data);
-    setMocionesAprobadas(mocionesAprobadasData.fraccion);
-    setRepresentacionDistrital(representacion);
-    setAdherenciaPartido(adherencia);
-    setTotalLikesDiputado(totalLikes);
-    setCompatibilidadUsuario(compatibilidad);
-    setAtrasosDiputado(atrasosLegislador);
-    setPorcentajeVotaciones(porcentajeVotaciones);
-    await getUltimasVotaciones(idDiputadoCamara);
+      legisladoresRepository.getRepresentacionDistritalDiputado(
+        idDiputadoCamara,
+      ),
+
+      getUltimasVotaciones(idDiputadoCamara),
+    ]);
+
+    return {
+      idDiputadoCamara,
+      comisiones: data?.comisiones ?? [],
+      atrasosDiputado,
+      porcentajeVotaciones,
+      adherenciaPartido,
+      mocionesAprobadas: mocionesAprobadasData?.fraccion ?? "0/0",
+      compatibilidadUsuario,
+      representacionDistrital,
+      ultimasVotaciones,
+    };
   };
 
   const getCompromisos = async () => {
     const compromisos =
       await compromisosRepository.getCompromisosByLegislador(idDiputado);
+
     const compromisosAgrupados = {};
 
     compromisos.forEach((compromiso) => {
       const categoria = compromiso.categoria;
+
       if (!compromisosAgrupados[categoria]) {
         compromisosAgrupados[categoria] = [];
       }
@@ -238,19 +340,22 @@ export const DescripcionDiputado = ({ route }) => {
       compromisosAgrupados[categoria].push(compromiso);
     });
 
-    const formateados = Object.keys(compromisosAgrupados).map((categoria) => ({
-      titulo: categoria,
-      data: compromisosAgrupados[categoria],
-    }));
+    const compromisosFormateados = Object.keys(compromisosAgrupados).map(
+      (categoria) => ({
+        titulo: categoria,
+        data: compromisosAgrupados[categoria],
+      }),
+    );
 
-    const mapDataGrafico = compromisos.map((item) => ({
+    const dataGrafico = compromisos.map((item) => ({
       value: 20,
       color: item.cumplimiento ? COLORS.greenM : COLORS.verdeclaro,
     }));
 
-    formateados.forEach((f) => console.log(f.data));
-    setDataGrafico(mapDataGrafico);
-    setCompromisos(formateados);
+    return {
+      compromisos: compromisosFormateados,
+      dataGrafico,
+    };
   };
 
   const normalizarTexto = (texto = "") => {
@@ -344,30 +449,75 @@ export const DescripcionDiputado = ({ route }) => {
     }
   };
 
-  const getReaccion = async () => {
-    const reaccion = await reaccionesRepository.getReaccion(
-      user.id,
-      idDiputado,
-      "representante",
-    );
-    setReacciones({ [idDiputado]: reaccion });
-  };
-
-  const getUltimasVotaciones = async (idDiputado) => {
+  const getUltimasVotaciones = async (idDiputadoCamara) => {
     const votaciones = await votacionesRepository.getUltimasVotaciones(
       20,
-      idDiputado,
+      idDiputadoCamara,
     );
-    setUltimasVotaciones(votaciones);
-    setVotacionesFiltradas(votaciones);
+
+    return votaciones;
+  };
+
+  const getMetricasHistoricas = async () => {
+    try {
+      const data =
+        await legisladoresRepository.getMetricasHistoricasDiputado(idDiputado);
+
+      return data;
+    } catch (error) {
+      console.error("Error cargando métricas históricas del diputado:", error);
+
+      return [];
+    }
+  };
+
+  const aplicarDetalleDiputado = (detalle) => {
+    if (!detalle) return;
+
+    actualizarDiputado(idDiputado, () => ({
+      comisiones: detalle.comisiones ?? [],
+    }));
+
+    setIdDiputadoCamara(detalle.idDiputadoCamara);
+    setAtrasosDiputado(detalle.atrasosDiputado);
+    setPorcentajeVotaciones(detalle.porcentajeVotaciones);
+    setAdherenciaPartido(detalle.adherenciaPartido);
+    setMocionesAprobadas(detalle.mocionesAprobadas);
+    setCompatibilidadUsuario(detalle.compatibilidadUsuario);
+    setRepresentacionDistrital(detalle.representacionDistrital);
+
+    setUltimasVotaciones(detalle.ultimasVotaciones);
+    setVotacionesFiltradas(detalle.ultimasVotaciones);
+
+    setCompromisos(detalle.compromisos);
+    setDataGrafico(detalle.dataGrafico);
+    setMetricasHistoricas(detalle.metricasHistoricas);
   };
 
   const fetchAll = async () => {
     try {
-      setLoading(true);
-      await Promise.all([getDiputado(), getReaccion(), getCompromisos()]);
+      const detalleGuardado = obtenerDetalleDiputado(idDiputado);
+
+      setLoading(!detalleGuardado);
+
+      const detalle = await cargarDetalleDiputado(idDiputado, async () => {
+        const [datosPrincipales, datosCompromisos, metricasHistoricas] =
+          await Promise.all([
+            cargarDatosDetalle(),
+            getCompromisos(),
+            getMetricasHistoricas(),
+          ]);
+
+        return {
+          ...datosPrincipales,
+          ...datosCompromisos,
+          metricasHistoricas,
+        };
+      });
+
+      aplicarDetalleDiputado(detalle);
     } catch (error) {
-      console.error(error);
+      console.error("Error cargando detalle del diputado:", error);
     } finally {
       setLoading(false);
     }
@@ -387,6 +537,11 @@ export const DescripcionDiputado = ({ route }) => {
     setVotacionesFiltradas(filtradas);
     return filtradas;
   };
+
+  const spacingGrafico =
+    dataRepresentacion.length > 1
+      ? (anchoGrafico - 36) / (dataRepresentacion.length - 1)
+      : 50;
 
   const renderGridItem = (item) => {
     return (
@@ -507,39 +662,51 @@ export const DescripcionDiputado = ({ route }) => {
         <ScrollView contentContainerStyle={styles.back}>
           <View style={styles.principal}>
             <View style={styles.container1}>
-              <Text style={styles.title}>{diputado.nombre}</Text>
+              <Text
+                style={styles.title}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.75}
+              >
+                {diputado.nombre}
+              </Text>
               <TouchableOpacity
                 style={styles.favorite}
                 onPress={async () => {
+                  if (!puedeInteractuar) return;
+
                   const distritoUsuario = Number(user?.distrito);
-                  const distritoDiputado = Number(diputado.diputado?.distrito);
+                  const distritoDiputado = Number(diputado?.distrito);
 
                   if (distritoUsuario !== distritoDiputado) return;
 
-                  const actual = reacciones[idDiputado];
-                  const nueva = actual === "like" ? "null" : "like";
+                  const resultado = await setReaccionRepresentante(
+                    idDiputado,
+                    "like",
+                  );
 
-                  await handleLike(idDiputado, "like");
+                  if (!resultado) return;
 
-                  setReacciones((prev) => ({
-                    ...prev,
-                    [idDiputado]: nueva,
-                  }));
+                  const { anterior, nueva } = resultado;
 
-                  setTotalLikesDiputado((prev) => {
-                    if (actual !== "like" && nueva === "like") return prev + 1;
-                    if (actual === "like" && nueva !== "like")
-                      return Math.max(prev - 1, 0);
-                    return prev;
+                  actualizarDiputado(idDiputado, (dipu) => {
+                    let cambio = 0;
+
+                    if (anterior !== "like" && nueva === "like") cambio = 1;
+                    if (anterior === "like" && nueva !== "like") cambio = -1;
+
+                    return {
+                      totalLikes: Math.max((dipu.totalLikes ?? 0) + cambio, 0),
+                    };
                   });
                 }}
               >
                 <Text style={styles.interes}>
-                  {totalLikesDiputado > 0 ? totalLikesDiputado : ""}
+                  {diputado?.totalLikes > 0 ? diputado.totalLikes : ""}
                 </Text>
                 <Ionicons
                   name="heart-circle-outline"
-                  size={34}
+                  size={responsiveIcon(34)}
                   color={
                     reaccionActual === "like" ? COLORS.greenM : COLORS.grey
                   }
@@ -551,10 +718,10 @@ export const DescripcionDiputado = ({ route }) => {
                 <Image
                   style={{
                     borderColor,
-                    width: 100,
-                    height: 100,
+                    width: responsiveSize(100),
+                    height: responsiveSize(100),
                     borderRadius: 100,
-                    borderWidth: 4,
+                    borderWidth: responsiveSize(4),
                   }}
                   source={{ uri: diputado.foto }}
                 />
@@ -564,21 +731,23 @@ export const DescripcionDiputado = ({ route }) => {
                 </Text>
               </View>
               <View style={styles.estadistica}>
-                <View flexDirection={"row"} alignItems={"center"}>
-                  <MaterialIcons
-                    name="event-available"
-                    size={17}
-                    color={COLORS.black}
-                  />
-                  <Text style={styles.informacion}>
-                    {diputado.asistencia}% asistencia
-                  </Text>
-                </View>
-                <Tooltip text={TOOLTIPS.votaciones.definicion}>
+                <Tooltip text={TOOLTIPS.asistencia.acumulada}>
+                  <View flexDirection={"row"} alignItems={"center"}>
+                    <MaterialIcons
+                      name="event-available"
+                      size={responsiveIcon(17)}
+                      color={COLORS.black}
+                    />
+                    <Text style={styles.informacion}>
+                      {diputado.asistencia}% asistencia
+                    </Text>
+                  </View>
+                </Tooltip>
+                <Tooltip text={TOOLTIPS.votaciones.especifica}>
                   <View flexDirection={"row"} alignItems={"center"}>
                     <MsIcon
                       icon={msPersonRaisedHand}
-                      size={18}
+                      size={responsiveIcon(18)}
                       color={COLORS.black}
                     />
                     <Text style={styles.informacion}>
@@ -586,43 +755,60 @@ export const DescripcionDiputado = ({ route }) => {
                     </Text>
                   </View>
                 </Tooltip>
-                <View flexDirection={"row"} alignItems={"center"}>
-                  <MaterialIcons
-                    name="assignment-late"
-                    size={18}
-                    color={COLORS.black}
-                  />
-                  <Text style={styles.informacion} marginLeft={"1%"}>
-                    {diputado.oficios} oficios presentados
-                  </Text>
-                </View>
-                <View flexDirection={"row"} alignItems={"center"}>
-                  <MaterialIcons
-                    name="addchart"
-                    size={17}
-                    color={COLORS.black}
-                  />
-                  <Text style={styles.informacion}>
-                    {diputado.mociones} mociones presentadas
-                  </Text>
-                </View>
-                <View flexDirection={"row"} alignItems={"center"}>
-                  <MsIcon icon={msAlarm} size={18} color={COLORS.black} />
-                  <Text style={styles.informacion}>
-                    {atrasosDiputado}% atrasos
-                  </Text>
-                </View>
+                <Tooltip text={TOOLTIPS.oficios}>
+                  <View flexDirection={"row"} alignItems={"center"}>
+                    <MaterialIcons
+                      name="assignment-late"
+                      size={responsiveIcon(18)}
+                      color={COLORS.black}
+                    />
+                    <Text style={styles.informacion} marginLeft={"1%"}>
+                      {diputado.oficios} oficios presentados
+                    </Text>
+                  </View>
+                </Tooltip>
+                <Tooltip text={TOOLTIPS.mociones.especifica}>
+                  <View flexDirection={"row"} alignItems={"center"}>
+                    <MaterialIcons
+                      name="addchart"
+                      size={responsiveIcon(17)}
+                      color={COLORS.black}
+                    />
+                    <Text style={styles.informacion}>
+                      {diputado.mociones} mociones presentadas
+                    </Text>
+                  </View>
+                </Tooltip>
+                <Tooltip text={TOOLTIPS.atrasos}>
+                  <View flexDirection={"row"} alignItems={"center"}>
+                    <MsIcon
+                      icon={msAlarm}
+                      size={responsiveIcon(18)}
+                      color={COLORS.black}
+                    />
+                    <Text style={styles.informacion}>
+                      {atrasosDiputado}% atrasos
+                    </Text>
+                  </View>
+                </Tooltip>
               </View>
               <View style={styles.datausage}>
                 <MaterialIcons
                   name="data-usage"
-                  size={50}
+                  size={responsiveIcon(50)}
                   color={COLORS.verdeclaro}
-                  position={"absolute"}
+                  position="absolute"
                 />
+
                 <Text style={styles.data2}>
                   {representacionDistrital.representacion}%
                 </Text>
+
+                <View style={styles.datausageTooltip}>
+                  <Tooltip text={TOOLTIPS.representaciondistrital.legislador}>
+                    <View style={styles.datausageTouchArea} />
+                  </Tooltip>
+                </View>
               </View>
             </View>
             <Text
@@ -631,7 +817,7 @@ export const DescripcionDiputado = ({ route }) => {
             <View style={styles.infoComisiones}>
               <MaterialIcons
                 name="diversity-2"
-                size={17}
+                size={responsiveIcon(17)}
                 color={COLORS.black}
               />
               <Text style={styles.informacion}>Comisiones que integra:</Text>
@@ -647,7 +833,7 @@ export const DescripcionDiputado = ({ route }) => {
 
             <View style={styles.container4}>
               {dataGrafico.length > 0 ? (
-                <>
+                <View style={styles.containerAvances}>
                   <View width={90} marginVertical={"5%"} alignSelf={"center"}>
                     <Text style={styles.label}>
                       Avances del programa presentado.
@@ -676,14 +862,14 @@ export const DescripcionDiputado = ({ route }) => {
                                 fontFamily: "NotoSansMyanmar_700Bold",
                               }}
                             >
-                              90%
+                              0%
                             </Text>
                           </View>
                         );
                       }}
                     />
                   </TouchableOpacity>
-                </>
+                </View>
               ) : (
                 <View
                   width={"45%"}
@@ -701,8 +887,8 @@ export const DescripcionDiputado = ({ route }) => {
                 </View>
               )}
 
-              <View>
-                <Text style={styles.label} marginVertical={5}>
+              <View marginLeft={"-5%"}>
+                <Text style={styles.label} marginVertical={5} marginBottom={10}>
                   Evolución de la opinión pública.
                 </Text>
                 <TouchableOpacity
@@ -711,40 +897,92 @@ export const DescripcionDiputado = ({ route }) => {
                 >
                   <LineChart
                     areaChart
-                    height={40}
-                    xAxisLength={175}
-                    data={dataLikes}
-                    data2={dataRepresentacion}
+                    height={53}
+                    width={anchoGraficoPequeno}
+                    // Eje izquierdo: representación distrital
+                    data={dataRepresentacionGraficoPequeno}
+                    color={COLORS.verdeclaro}
+                    thickness={2}
                     hideDataPoints
-                    color={COLORS.greenM}
-                    color2={COLORS.verdeclaro}
-                    startFillColor2={COLORS.verdeclaro}
-                    startFillColor={COLORS.greenM}
-                    startOpacity={0.6}
-                    startOpacity2={0.8}
+                    curved
+                    startFillColor={COLORS.verdeclaro}
+                    startOpacity={0.55}
                     endFillColor={COLORS.back}
-                    endOpacity={0.2}
-                    hideRules
+                    endOpacity={0.08}
+                    maxValue={100}
+                    noOfSections={2}
                     yAxisColor={COLORS.grey}
                     yAxisThickness={0}
-                    xAxisThickness={2}
-                    maxValue={100}
-                    stepValue={50}
-                    initialSpacing={10}
-                    spacing={31}
+                    yAxisLabelWidth={15}
+                    formatYLabel={(value) => `${Math.round(Number(value))}`}
                     yAxisTextStyle={{
-                      color: COLORS.black,
-                      fontFamily: "NotoSansMyanmar_700Bold",
-                      fontSize: 8,
-                      marginRight: -12,
+                      color: COLORS.greyM,
+                      fontFamily: "NotoSansMyanmar_600SemiBold",
+                      fontSize: 7.5,
+                      width: 15,
+                      textAlign: "right",
+                      marginRight: -4,
                     }}
-                    xAxisLabelTextStyle={{
-                      color: COLORS.black,
-                      fontFamily: "NotoSansMyanmar_700Bold",
-                      fontSize: 8,
-                      marginLeft: 10,
+                    yAxisLabelContainerStyle={{
+                      paddingLeft: 0,
+                      paddingRight: 0,
+                      marginLeft: 0,
+                      marginRight: 0,
                     }}
+                    // Eje derecho: likes
+                    secondaryData={dataLikes}
+                    secondaryLineConfig={{
+                      color: COLORS.greenM,
+                      thickness: 2,
+                      curved: true,
+                      hideDataPoints: true,
+
+                      startFillColor: COLORS.greenM,
+                      startOpacity: 0.45,
+                      endFillColor: COLORS.back,
+                      endOpacity: 0.06,
+                    }}
+                    secondaryYAxis={{
+                      maxValue: maxLikesGrafico,
+                      noOfSections: 2,
+                      yAxisColor: COLORS.grey,
+                      yAxisThickness: 0,
+                      yAxisLabelWidth: 15,
+
+                      formatYLabel: (value) => `${Math.round(Number(value))}`,
+
+                      yAxisTextStyle: {
+                        color: COLORS.greyM,
+                        fontFamily: "NotoSansMyanmar_600SemiBold",
+                        fontSize: 7.5,
+                        textAlign: "left",
+                        marginLeft: -4,
+                      },
+
+                      yAxisLabelContainerStyle: {
+                        paddingLeft: 0,
+                        paddingRight: 0,
+                        marginLeft: 0,
+                        marginRight: 0,
+                      },
+                    }}
+                    // Sin líneas de grilla
+                    hideRules
+                    xAxisThickness={1}
                     xAxisColor={COLORS.grey}
+                    xAxisLabelTextStyle={{
+                      color: COLORS.greyM,
+                      fontFamily: "NotoSansMyanmar_600SemiBold",
+                      fontSize: 7,
+                      textAlign: "center",
+                      marginTop: 2,
+                    }}
+                    initialSpacing={8}
+                    endSpacing={8}
+                    spacing={spacingGraficoPequeno}
+                    disableScroll
+                    isAnimated
+                    animationDuration={500}
                   />
                 </TouchableOpacity>
               </View>
@@ -759,48 +997,56 @@ export const DescripcionDiputado = ({ route }) => {
                     <Text style={styles.data2}>{mocionesAprobadas}</Text>
                   </View>
 
-                  <View style={{ width: 130, marginVertical: "3%" }}>
+                  <View
+                    style={{ width: 130, marginVertical: "3%", marginLeft: 5 }}
+                  >
                     <Text style={styles.label2}>
                       Proyectos aprobados/presentados
                     </Text>
                   </View>
                 </TouchableOpacity>
-                <View style={styles.container5}>
-                  <View style={styles.circulo}>
-                    <Text style={styles.data2}>{adherenciaPartido}%</Text>
+                <Tooltip text={TOOLTIPS.adherenciaPartido}>
+                  <View style={styles.container5}>
+                    <View style={styles.circulo}>
+                      <Text style={styles.data2}>{adherenciaPartido}%</Text>
+                    </View>
+                    <View width={130} marginLeft={5}>
+                      <Text style={styles.label2}>
+                        Adherencia al partido político
+                      </Text>
+                    </View>
                   </View>
-                  <View width={130}>
-                    <Text style={styles.label2}>
-                      Adherencia al partido político
-                    </Text>
-                  </View>
-                </View>
+                </Tooltip>
               </View>
               <View>
-                <View style={styles.container5}>
-                  <View style={styles.circulo}>
-                    <Text style={styles.data2}>
-                      {compatibilidadUsuario.compatibilidad}%
-                    </Text>
+                <Tooltip text={TOOLTIPS.compatibilidadUsuarioLegislador}>
+                  <View style={styles.container5}>
+                    <View style={styles.circulo}>
+                      <Text style={styles.data2}>
+                        {compatibilidadUsuario.compatibilidad}%
+                      </Text>
+                    </View>
+                    <View width={140} marginVertical={"3%"} marginLeft={5}>
+                      <Text style={styles.label2}>
+                        Compatibilidad con el representante
+                      </Text>
+                    </View>
                   </View>
-                  <View width={140} marginVertical={"3%"} marginLeft={5}>
-                    <Text style={styles.label2}>
-                      Compatibilidad con el representante
-                    </Text>
+                </Tooltip>
+                <Tooltip text={TOOLTIPS.lugarEstadisticoLegislador}>
+                  <View style={styles.container5}>
+                    <View style={styles.circulo}>
+                      <Text style={styles.data2}>
+                        {diputado.rankingEstadistico ?? "-"}
+                      </Text>
+                    </View>
+                    <View width={145} marginVertical={"3%"} marginLeft={5}>
+                      <Text style={styles.label2}>
+                        Lugar estadístico de todos los representantes
+                      </Text>
+                    </View>
                   </View>
-                </View>
-                <View style={styles.container5}>
-                  <View style={styles.circulo}>
-                    <Text style={styles.data2}>
-                      {diputado.rankingEstadistico ?? "-"}
-                    </Text>
-                  </View>
-                  <View width={145} marginVertical={"3%"} marginLeft={5}>
-                    <Text style={styles.label2}>
-                      Lugar estadístico de todos los representantes
-                    </Text>
-                  </View>
-                </View>
+                </Tooltip>
               </View>
             </View>
           </View>
@@ -1015,49 +1261,82 @@ export const DescripcionDiputado = ({ route }) => {
                 <LineChart
                   areaChart
                   height={220}
-                  width={Math.max(
-                    Dimensions.get("window").width - 92,
-                    dataRepresentacion.length * 58,
-                  )}
-                  // Representación distrital: verde claro
+                  width={anchoGrafico}
+                  // Eje izquierdo: representación distrital
                   data={dataRepresentacion}
-                  // Likes: verde oscuro
-                  data2={dataLikes}
                   color={COLORS.verdeclaro}
-                  color2={COLORS.greenM}
                   dataPointsColor1={COLORS.verdeclaro}
-                  dataPointsColor2={COLORS.greenM}
                   dataPointsRadius={4}
                   thickness={3}
-                  thickness2={3}
-                  // Degradado de representación
                   startFillColor={COLORS.verdeclaro}
                   startOpacity={0.55}
                   endFillColor={COLORS.back}
                   endOpacity={0.04}
-                  // Degradado de likes
-                  startFillColor2={COLORS.greenM}
-                  startOpacity2={0.28}
-                  endFillColor2={COLORS.back}
-                  endOpacity2={0.03}
+                  // Eje derecho: likes
+                  secondaryData={dataLikes}
+                  secondaryLineConfig={{
+                    color: COLORS.greenM,
+                    dataPointsColor: COLORS.greenM,
+                    dataPointsRadius: 4,
+                    thickness: 3,
+                    curved: true,
+                    startFillColor: COLORS.greenM,
+                    startOpacity: 0.28,
+                    endFillColor: COLORS.back,
+                    endOpacity: 0.03,
+                  }}
+                  secondaryYAxis={{
+                    maxValue: maxLikesGrafico,
+                    noOfSections: 4,
+                    yAxisColor: COLORS.grey,
+                    yAxisThickness: 0,
+                    formatYLabel: (value) => `${Math.round(Number(value))}`,
+                    yAxisTextStyle: {
+                      ...styles.modalGraficoEjeY,
+                      textAlign: "left",
+                      marginLeft: -4,
+                    },
+                    yAxisLabelWidth: 18,
+                    yAxisLabelContainerStyle: {
+                      paddingRight: 0,
+                      paddingLeft: 0,
+                      marginRight: 0,
+                      marginLeft: 0,
+                    },
+                  }}
+                  maxValue={100}
+                  noOfSections={4}
                   hideRules={false}
                   rulesColor="#E8ECE9"
                   rulesType="dashed"
                   yAxisColor={COLORS.grey}
                   yAxisThickness={0}
+                  yAxisTextStyle={{
+                    ...styles.modalGraficoEjeY,
+                    width: 18,
+                    textAlign: "right",
+                    marginRight: -4,
+                  }}
                   xAxisThickness={1}
                   xAxisColor={COLORS.grey}
-                  initialSpacing={18}
-                  spacing={58}
-                  maxValue={100}
-                  noOfSections={4}
-                  yAxisTextStyle={styles.modalGraficoEjeY}
                   xAxisLabelTextStyle={styles.modalGraficoEjeX}
+                  initialSpacing={12}
+                  spacing={spacingGrafico}
                   showVerticalLines
                   verticalLinesColor="#F0F2F0"
+                  disableScroll
                   isAnimated
                   curved
                   animationDuration={700}
+                  yAxisLabelWidth={18}
+                  endSpacing={12}
+                  yAxisLabelContainerStyle={{
+                    paddingRight: 0,
+                    paddingLeft: 0,
+                    marginRight: 0,
+                    marginLeft: 0,
+                  }}
+                  formatYLabel={(value) => `${Math.round(Number(value))}`}
                 />
               </ScrollView>
             </View>
@@ -1095,7 +1374,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   container1: {
-    marginLeft: "12%",
+    marginLeft: "8%",
     marginTop: "1%",
     flexDirection: "row",
     justifyContent: "space-between",
@@ -1107,7 +1386,7 @@ const styles = StyleSheet.create({
     borderWidth: 3.8,
   },
   title: {
-    fontSize: 21,
+    fontSize: responsiveFont(21),
     fontFamily: "NotoSansMyanmar_700Bold",
     color: COLORS.black,
   },
@@ -1144,6 +1423,13 @@ const styles = StyleSheet.create({
   container4: {
     flexDirection: "row",
     marginHorizontal: "2%",
+    justifyContent: "space-around",
+    width: "96%",
+  },
+  containerAvances: {
+    alignItems: "center",
+    flexDirection: "row",
+    marginLeft: "-4%",
   },
   container5: {
     alignItems: "center",
@@ -1152,8 +1438,8 @@ const styles = StyleSheet.create({
   },
   container6: {
     flexDirection: "row",
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   infoComisiones: {
     marginHorizontal: "3.5%",
@@ -1205,19 +1491,33 @@ const styles = StyleSheet.create({
     lineHeight: 25,
   },
   datausage: {
+    position: "relative",
     marginTop: "8%",
     marginRight: "1%",
     alignItems: "center",
-    width: 52,
-    height: 52,
+    width: responsiveSize(52),
+    height: responsiveSize(52),
     justifyContent: "center",
+  },
+  datausageTooltip: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    width: "100%",
+    height: "100%",
+    zIndex: 10,
+  },
+
+  datausageTouchArea: {
+    width: responsiveSize(52),
+    height: responsiveSize(52),
   },
   circulo: {
     marginVertical: "4%",
     marginHorizontal: "1%",
     alignItems: "center",
-    width: 40,
-    height: 40,
+    width: responsiveSize(40),
+    height: responsiveSize(40),
     justifyContent: "center",
     backgroundColor: COLORS.verdeclaro,
     borderRadius: 100,
@@ -1548,8 +1848,8 @@ const styles = StyleSheet.create({
   },
 
   modalGraficoScroll: {
-    paddingHorizontal: 10,
-    paddingRight: 25,
+    paddingLeft: 0,
+    paddingRight: 0,
   },
 
   modalGraficoEjeY: {

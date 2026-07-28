@@ -19,16 +19,30 @@ import {
 import { MsIcon } from "material-symbols-react-native";
 import { FontAwesome } from "@expo/vector-icons";
 import { useReacciones } from "../context/ReaccionesContext";
+import {
+  responsiveSize,
+  responsiveFont,
+  responsiveIcon,
+  responsiveSpacing,
+} from "../utils/responsive";
+import { useAuth } from "../context/AuthContext";
+import TooltipVotaciones from "./TooltipVotaciones";
+import Tooltip from "./tooltip";
 
 export const SearchResults = ({ data = [], onSelect, representante }) => {
   const { reaccionesLey, setReaccionLey } = useReacciones();
   const [resultados, setResultados] = React.useState(data);
+  const { puedeInteractuar } = useAuth();
 
   React.useEffect(() => {
     setResultados(data);
   }, [data]);
 
   const handleReaccion = async (idVotacion, tipoReaccion) => {
+    if (!puedeInteractuar) {
+      return;
+    }
+
     try {
       const cambio = await setReaccionLey(idVotacion, tipoReaccion);
 
@@ -111,9 +125,9 @@ export const SearchResults = ({ data = [], onSelect, representante }) => {
       return (
         <MaterialIcons
           name="check-circle"
-          size={18}
+          size={responsiveIcon(18)}
           color={COLORS.greenM}
-          marginRight={18}
+          marginRight={responsiveSpacing(18)}
         />
       );
     }
@@ -122,9 +136,9 @@ export const SearchResults = ({ data = [], onSelect, representante }) => {
       return (
         <MaterialIcons
           name="cancel"
-          size={18}
+          size={responsiveIcon(18)}
           color={COLORS.FA}
-          marginRight={18}
+          marginRight={responsiveSpacing(18)}
         />
       );
     }
@@ -167,7 +181,7 @@ export const SearchResults = ({ data = [], onSelect, representante }) => {
 
                         <FontAwesome
                           name="thumbs-up"
-                          size={18}
+                          size={responsiveIcon(18)}
                           color={
                             reaccion === "like" ? COLORS.greenM : COLORS.grey
                           }
@@ -182,7 +196,7 @@ export const SearchResults = ({ data = [], onSelect, representante }) => {
                       >
                         <FontAwesome
                           name="thumbs-down"
-                          size={18}
+                          size={responsiveIcon(18)}
                           color={
                             reaccion === "dislike" ? COLORS.greenM : COLORS.grey
                           }
@@ -206,20 +220,22 @@ export const SearchResults = ({ data = [], onSelect, representante }) => {
                     onPress={() => onSelect(item)}
                   >
                     {representante && (
-                      <View style={styles.flexHorizontal}>
-                        <MsIcon
-                          icon={msPersonRaisedHand}
-                          size={18}
-                          color={COLORS.black}
-                        />
+                      <Tooltip width={140} text={<TooltipVotaciones />}>
+                        <View style={styles.flexHorizontal}>
+                          <MsIcon
+                            icon={msPersonRaisedHand}
+                            size={responsiveIcon(18)}
+                            color={COLORS.black}
+                          />
 
-                        <IconoPorVoto voto={item?.votoRepresentante} />
-                      </View>
+                          <IconoPorVoto voto={item?.votoRepresentante} />
+                        </View>
+                      </Tooltip>
                     )}
 
                     <MaterialCommunityIcons
                       name="chart-donut-variant"
-                      size={22}
+                      size={responsiveIcon(22)}
                       color={COLORS.black}
                     />
                     <IconoPorResultado resultado={item?.resultado} />
@@ -237,7 +253,6 @@ export const SearchResults = ({ data = [], onSelect, representante }) => {
                 )}
                 {item.articulo_resumen ? (
                   <Text style={styles.articulo}>
-
                     {item.articulo_resumen}{" "}
                     <Text style={styles.resumenIA}>✨Resumen IA</Text>
                   </Text>
@@ -274,13 +289,14 @@ const styles = StyleSheet.create({
   },
   votacion: {
     fontFamily: "NotoSansMyanmar_400Regular",
-    fontSize: 12,
+    fontSize: responsiveFont(12),
     color: COLORS.black,
     marginHorizontal: "1%",
   },
+
   nombre: {
     fontFamily: "NotoSansMyanmar_700Bold",
-    fontSize: 14.5,
+    fontSize: responsiveFont(14.5),
     color: COLORS.greenM,
     marginLeft: 10,
     marginHorizontal: 6,
@@ -290,13 +306,13 @@ const styles = StyleSheet.create({
   },
   datausage: {
     alignItems: "center",
-    width: 34,
-    height: 34,
+    width: responsiveSize(34),
+    height: responsiveSize(34),
     justifyContent: "center",
     marginTop: "-2%",
   },
   data2: {
-    fontSize: 10,
+    fontSize: responsiveFont(10),
     fontFamily: "NotoSansMyanmar_700Bold",
     color: COLORS.greenM,
   },
@@ -318,11 +334,11 @@ const styles = StyleSheet.create({
   },
   descripcion: {
     fontFamily: "NotoSansMyanmar_400Regular",
-    fontSize: 14,
+    fontSize: responsiveFont(14),
     color: COLORS.black,
     textAlign: "justify",
     marginHorizontal: "2%",
-    lineHeight: 18,
+    lineHeight: responsiveSize(18),
     marginVertical: 4,
     marginTop: 7,
     width: "95%",
@@ -330,16 +346,16 @@ const styles = StyleSheet.create({
   },
   resumenIA: {
     fontFamily: "NotoSansMyanmar_700Bold",
-    fontSize: 11.5,
+    fontSize: responsiveFont(11.5),
     color: COLORS.greyM,
   },
   articulo: {
     fontFamily: "NotoSansMyanmar_400Regular",
-    fontSize: 13,
+    fontSize: responsiveFont(13),
     color: COLORS.black,
     textAlign: "justify",
     marginHorizontal: "2%",
-    lineHeight: 18,
+    lineHeight: responsiveSize(18),
     marginVertical: 5,
     width: "95%",
     alignSelf: "center",
@@ -347,24 +363,23 @@ const styles = StyleSheet.create({
   reaccionesResumen: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 7,
-    marginLeft: 1,
-    paddingHorizontal: 6,
-    paddingVertical: 3,
-    borderRadius: 14,
+    gap: responsiveSpacing(7),
+    marginLeft: responsiveSpacing(1),
+    paddingHorizontal: responsiveSpacing(6),
+    paddingVertical: responsiveSpacing(3),
+    borderRadius: responsiveSize(14),
     backgroundColor: "#F6F8F6",
   },
   reaccionGrupo: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
+    gap: responsiveSpacing(4),
   },
-
   reaccionCantidad: {
-    minWidth: 15,
+    minWidth: responsiveSize(15),
     textAlign: "center",
-    fontSize: 11,
-    lineHeight: 15,
+    fontSize: responsiveFont(11),
+    lineHeight: responsiveSize(15),
     fontFamily: "NotoSansMyanmar_700Bold",
     color: COLORS.greyM,
   },
@@ -372,13 +387,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-
-    paddingHorizontal: 3,
-    paddingVertical: 2,
-
-    borderRadius: 10,
+    paddingHorizontal: responsiveSpacing(3),
+    paddingVertical: responsiveSpacing(2),
+    borderRadius: responsiveSize(10),
   },
-
   reaccionCantidadActiva: {
     color: COLORS.greenM,
   },

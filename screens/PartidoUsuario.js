@@ -13,11 +13,18 @@ import { useState, useEffect } from "react";
 import { partidosRepository } from "../infrastructure/partidosRepository";
 import { useAuth } from "../context/AuthContext";
 import { Skeleton } from "../components/Skeleton";
+import {
+  responsiveVerticalSize,
+  responsiveSpacing,
+  responsiveFont,
+  responsiveIcon,
+  responsiveSize,
+} from "../utils/responsive";
 
 export const PartidoUsuario = () => {
   const navigation = useNavigation();
   const { user, setTipoAuth } = useAuth();
-  const [partidoSeleccionado, setPartidoSeleccionado] = useState("");
+  const [partidosSeleccionados, setPartidosSeleccionados] = useState([]);
   const [partidos, setPartidos] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -38,8 +45,17 @@ export const PartidoUsuario = () => {
   };
 
   const renderGridItem = ({ item }) => {
-    const onPress = () => setPartidoSeleccionado(item.id);
-    const isSelected = item.id === partidoSeleccionado;
+    const isSelected = partidosSeleccionados.includes(item.id);
+
+    const onPress = () => {
+      setPartidosSeleccionados((seleccionActual) => {
+        if (seleccionActual.includes(item.id)) {
+          return seleccionActual.filter((partidoId) => partidoId !== item.id);
+        }
+
+        return [...seleccionActual, item.id];
+      });
+    };
 
     return (
       <TouchableOpacity onPress={onPress}>
@@ -50,7 +66,13 @@ export const PartidoUsuario = () => {
 
   const handleContinuar = async () => {
     try {
-      await partidosRepository.savePartidoUsuario(user.id, partidoSeleccionado);
+      if (partidosSeleccionados !== "") {
+        await partidosRepository.savePartidoUsuario(
+          user.id,
+          partidosSeleccionados,
+        );
+      }
+
       setTipoAuth("");
       //navigation.navigate("SelectDistrito");
     } catch (error) {
@@ -59,13 +81,12 @@ export const PartidoUsuario = () => {
   };
 
   const skeletonCard = () => (
-    <View
-      style={{
-        alignSelf: "flex-start",
-        paddingVertical: 8,
-      }}
-    >
-      <Skeleton width={300} height={15} borderRadius={5} />
+    <View style={styles.skeletonContainer}>
+      <Skeleton
+        width="85%"
+        height={responsiveVerticalSize(15)}
+        borderRadius={responsiveSize(5)}
+      />
     </View>
   );
 
@@ -75,39 +96,46 @@ export const PartidoUsuario = () => {
         <Text style={styles.subTitulo}>
           Solo si te sientes parte, si no omítelo,
         </Text>
+
         <Text style={styles.titulo}>Selecciona un partido:</Text>
-        <View marginTop={"3%"}>
-          {loading ? (
-            <FlatList
-              style={styles.flatlist}
-              data={[1, 2, 3, 4, 5]}
-              renderItem={skeletonCard}
-              numColumns={1}
-              keyExtractor={(item) => item.toString()}
-            />
-          ) : (
-            <FlatList
-              style={styles.flatlist}
-              data={partidos}
-              renderItem={renderGridItem}
-              numColumns={1}
-              keyExtractor={(item) => item.id}
-            />
-          )}
-        </View>
-        <View style={styles.containerFinal}>
-          <TouchableOpacity
-            style={styles.buttonIngresar}
-            onPress={handleContinuar}
-          >
-            <Text style={styles.boton}>Continuar</Text>
-            <Ionicons
-              name="chevron-forward-circle"
-              size={30}
-              color={COLORS.back}
-            />
-          </TouchableOpacity>
-        </View>
+      </View>
+
+      <View style={styles.containerLista}>
+        {loading ? (
+          <FlatList
+            style={styles.flatlist}
+            contentContainerStyle={styles.flatlistContent}
+            data={[1, 2, 3, 4, 5]}
+            renderItem={skeletonCard}
+            keyExtractor={(item) => item.toString()}
+            showsVerticalScrollIndicator={false}
+          />
+        ) : (
+          <FlatList
+            style={styles.flatlist}
+            contentContainerStyle={styles.flatlistContent}
+            data={partidos}
+            renderItem={renderGridItem}
+            keyExtractor={(item) => item.id.toString()}
+            showsVerticalScrollIndicator={false}
+          />
+        )}
+      </View>
+
+      <View style={styles.containerFinal}>
+        <TouchableOpacity
+          style={styles.buttonIngresar}
+          onPress={handleContinuar}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.boton}>Continuar</Text>
+
+          <Ionicons
+            name="chevron-forward-circle"
+            size={responsiveIcon(30)}
+            color={COLORS.back}
+          />
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -116,50 +144,66 @@ export const PartidoUsuario = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingVertical: "10%",
-    paddingHorizontal: "5%",
     backgroundColor: COLORS.greenM,
-    alignContent: "center",
+    paddingTop: responsiveVerticalSize(78),
+    paddingHorizontal: responsiveSpacing(20),
+    paddingBottom: responsiveVerticalSize(28),
   },
+
   conteinerTitulo: {
-    top: "7%",
-    marginLeft: "4%",
-    paddingVertical: "2%",
-    position: "relative",
-    justifyContent: "center",
+    marginLeft: responsiveSpacing(17),
+    paddingTop: responsiveVerticalSize(8),
   },
+
   titulo: {
     color: COLORS.back,
-    fontSize: 20,
+    fontSize: responsiveFont(20),
     letterSpacing: 1,
     fontFamily: "NotoSansMyanmar_700Bold",
-    marginVertical: "1%",
+    marginTop: responsiveVerticalSize(3),
   },
+
   subTitulo: {
     color: COLORS.grey,
-    fontSize: 14,
+    fontSize: responsiveFont(14),
     fontFamily: "NotoSansMyanmar_700Bold",
   },
+
+  containerLista: {
+    flex: 1,
+    marginTop: responsiveVerticalSize(22),
+    marginHorizontal: responsiveSpacing(15),
+  },
+
   flatlist: {
-    top: "1%",
+    flex: 1,
+    width: "100%",
+  },
+  flatlistContent: {
+    paddingTop: 0,
+    paddingBottom: responsiveVerticalSize(75),
+  },
+  skeletonContainer: {
+    width: "100%",
+    alignItems: "flex-start",
+    paddingVertical: responsiveVerticalSize(8),
+  },
+  containerFinal: {
+    position: "absolute",
+    right: responsiveSpacing(38),
+    bottom: responsiveVerticalSize(82),
   },
   buttonIngresar: {
-    width: "50%",
-    justifyContent: "center",
-    alignItems: "center",
-    borderRadius: 10,
-    height: "25%",
     flexDirection: "row",
+    justifyContent: "flex-end",
+    alignItems: "center",
+    minHeight: responsiveVerticalSize(40),
   },
   boton: {
     fontFamily: "NotoSansMyanmar_700Bold",
-    fontSize: 18,
+    fontSize: responsiveFont(18),
     color: COLORS.back,
-    marginRight: "2%",
+    marginRight: responsiveSpacing(6),
     letterSpacing: 1,
-  },
-  containerFinal: {
-    alignItems: "flex-end",
-    marginTop: "15%",
   },
 });

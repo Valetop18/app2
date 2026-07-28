@@ -5,21 +5,32 @@ import { useAuth } from "./AuthContext";
 const ReaccionesContext = createContext();
 
 export const ReaccionesProvider = ({ children }) => {
-  const { user } = useAuth();
+  const { user, puedeInteractuar } = useAuth();
+
   const [reaccionesLey, setReaccionesLey] = useState({});
+  const [reaccionesRepresentante, setReaccionesRepresentante] = useState({});
 
   useEffect(() => {
     const cargarReacciones = async () => {
       if (!user?.id) return;
 
-      const data = await reaccionesRepository.getReacciones(user.id, "ley");
+      const [dataLey, dataRepresentante] = await Promise.all([
+        reaccionesRepository.getReacciones(user.id, "ley"),
+        reaccionesRepository.getReacciones(user.id, "representante"),
+      ]);
 
-      const map = {};
-      data?.forEach((r) => {
-        map[r.target_id] = r.tipo_reaccion;
+      const mapLey = {};
+      dataLey?.forEach((r) => {
+        mapLey[r.target_id] = r.tipo_reaccion;
       });
 
-      setReaccionesLey(map);
+      const mapRepresentante = {};
+      dataRepresentante?.forEach((r) => {
+        mapRepresentante[r.target_id] = r.tipo_reaccion;
+      });
+
+      setReaccionesLey(mapLey);
+      setReaccionesRepresentante(mapRepresentante);
     };
 
     cargarReacciones();
@@ -27,6 +38,10 @@ export const ReaccionesProvider = ({ children }) => {
 
   const setReaccionLey = async (idVotacion, tipoReaccion) => {
     if (!user?.id || !idVotacion) return null;
+
+    if (!puedeInteractuar) {
+      return null;
+    }
 
     const actual = reaccionesLey[idVotacion] ?? null;
     const nueva = actual === tipoReaccion ? "null" : tipoReaccion;
@@ -44,11 +59,47 @@ export const ReaccionesProvider = ({ children }) => {
     };
   };
 
+  const setReaccionRepresentante = async (idRepresentante, tipoReaccion) => {
+
+  if (!user?.id || !idRepresentante) {
+    console.log("Reacción detenida: falta usuario o representante");
+    return null;
+  }
+
+  if (!puedeInteractuar) {
+    console.log("Reacción detenida: puedeInteractuar es false");
+    return null;
+  }
+
+  const actual = reaccionesRepresentante[idRepresentante] ?? null;
+  const nueva = actual === tipoReaccion ? "null" : tipoReaccion;
+
+  await reaccionesRepository.setReaccion(
+    user.id,
+    idRepresentante,
+    "representante",
+    nueva,
+  );
+
+  setReaccionesRepresentante((prev) => ({
+    ...prev,
+    [idRepresentante]: nueva,
+  }));
+
+  return {
+    anterior: actual,
+    nueva,
+  };
+};
+
   return (
     <ReaccionesContext.Provider
       value={{
         reaccionesLey,
         setReaccionLey,
+
+        reaccionesRepresentante,
+        setReaccionRepresentante,
       }}
     >
       {children}

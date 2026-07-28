@@ -1,66 +1,108 @@
 import { supabase } from "../constants/supabase";
 
-export class SupabaseAuthRepository{
-    async register(payload){
+export class SupabaseAuthRepository {
+  crearUsuario(authUser, profile = {}) {
+    return {
+      id: authUser.id,
+      email: authUser.email ?? "",
+      nombre: profile.nombre ?? authUser.user_metadata?.nombre ?? "",
+      distrito: profile.distrito ?? null,
+      circunscripcion: profile.circunscripcion ?? null,
+      pais: profile.pais,
+    };
+  }
 
-        console.log('intento registro');
+  async obtenerPerfil(userId) {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("id, nombre, distrito, circunscripcion, pais")
+      .eq("id", userId)
+      .single();
 
-        const { email, password, ...profileData } = payload;
+    if (error) throw error;
 
-        const { data, error } = await supabase.auth.signUp({
-            email,
-            password,
-            options: {
-                data: profileData
-            }
+    return data;
+  }
 
-        });
+  async existeRut(rut) {
+    const { data, error } = await supabase.rpc("existe_rut", {
+      p_rut: rut.trim(),
+    });
 
-        console.log('data: ', data)
-        console.log('error: ', error)
+    if (error) throw error;
 
+    return data === true;
+  }
 
-        if (error) throw error;
-        if (!data.user) throw Error("Usuario no creado") 
-        return data.user
+  async register(payload) {
+    console.log("intento registro");
 
+    const { email, password, ...profileData } = payload;
+
+    const rutExiste = await this.existeRut(profileData.rut);
+
+    console.log("¿El RUT ya existe?:", rutExiste);
+
+    if (rutExiste) {
+      throw new Error("RUT_ALREADY_EXISTS");
     }
 
-    async login(payload){
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: profileData,
+      },
+    });
 
-        console.log('intento login');
+    if (error) throw error;
+    if (!data.user) throw new Error("Usuario no creado");
 
-        const { email, password } = payload;
+    return this.crearUsuario(data.user, {
+      nombre: profileData.nombre,
+      distrito: null,
+      circunscripcion: null,
+    });
+  }
 
-        const { data, error } = await supabase.auth.signInWithPassword({
-            email,
-            password,
-        });
+  async login(payload) {
+    console.log("intento login");
 
-        console.log('data: ', data)
-        console.log('error: ', error)
+    const { email, password } = payload;
 
-        if (error) throw error;
-        if (!data.user) throw Error("Error en login") 
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
 
-        const { data: profile, error: profileError } = await supabase
-            .from('profiles')
-            .select('id, distrito, circunscripcion')
-            .eq('id',data.user.id )
-            .single();
+    if (error) throw error;
+    if (!data.user) throw new Error("Error en login");
 
-        if (profileError) throw error;
+    const profile = await this.obtenerPerfil(data.user.id);
 
+    return this.crearUsuario(data.user, profile);
+  }
 
-        return {
-            ...data.user,
-            ...profile
-        }
+  async getCurrentUser() {
+    const {
+      data: { session },
+      error: sessionError,
+    } = await supabase.auth.getSession();
 
+    if (sessionError) throw sessionError;
+
+    if (!session?.user) {
+      return null;
     }
 
-    async logout(){
-        const { error } = await supabase.auth.signOut();
-        if (error) throw error;
-    }
+    const profile = await this.obtenerPerfil(session.user.id);
+
+    return this.crearUsuario(session.user, profile);
+  }
+
+  async logout() {
+    const { error } = await supabase.auth.signOut();
+
+    if (error) throw error;
+  }
 }

@@ -1,23 +1,22 @@
 import React from "react";
 import GridRepresent from "../components/gridRepresents";
 import { FlatList, StyleSheet, View } from "react-native";
-import { useSelector } from "react-redux";
 import { COLORS } from "../constants/colors";
 import { useAuth } from "../context/AuthContext";
-import { useState, useEffect, useCallback } from "react";
-import { reaccionesRepository } from "../infrastructure/ReaccionesRepository";
-import { legisladoresRepository } from "../infrastructure/legisladoresRepository";
+import { useReacciones } from "../context/ReaccionesContext";
+import { useCallback } from "react";
+import { useData } from "../context/DataContext";
 import { useFocusEffect } from "@react-navigation/native";
 import { Skeleton } from "../components/Skeleton";
+import { responsiveSize, responsiveSpacing } from "../utils/responsive";
 
 export const Diputados = ({ navigation }) => {
   const { user } = useAuth();
 
-  const [diputados, setDiputados] = useState([]);
+  const { reaccionesRepresentante, setReaccionRepresentante } = useReacciones();
 
-  const [reacciones, setReacciones] = useState({});
-  const [loading, setLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(true);
+  const { diputados, loadingDiputados, cargarDiputados, actualizarDiputado } =
+    useData();
 
   const handleSelected = (item) => {
     navigation.navigate("Descripcion", {
@@ -25,103 +24,39 @@ export const Diputados = ({ navigation }) => {
     });
   };
 
-  const cargarLegisladores = async (distrito) => {
-    //await new Promise(resolve => setTimeout(resolve, 1000));
-
-    try {
-      //se podria agregar un spinner
-      setLoading(true);
-      const data =
-        await legisladoresRepository.getDiputadosByDistrito(distrito);
-
-      console.log("diputados distrito:", data);
-      const dataRandom = data.sort(() => Math.random() - 0.5);
-      setDiputados(dataRandom);
-    } catch (error) {
-    } finally {
-      //desactivar spinner'
-      setLoading(false);
-    }
-  };
-
-  const loadReacciones = async () => {
-    try {
-      setIsRefreshing(true);
-
-      const data = await reaccionesRepository.getReacciones(
-        user.id,
-        "representante",
-      );
-
-      const mapReacciones = {};
-
-      (data ?? []).forEach((reaccion) => {
-        mapReacciones[reaccion.target_id] = reaccion.tipo_reaccion;
-      });
-
-      setReacciones(mapReacciones);
-    } catch (error) {
-      console.error("Error al cargar reacciones:", error);
-      setReacciones({});
-    } finally {
-      setIsRefreshing(false);
-    }
-  };
-
   useFocusEffect(
-  useCallback(() => {
-    if (!user?.id || !user?.distrito) return;
+    useCallback(() => {
+      if (!user?.distrito) return;
 
-    const actualizarPantalla = async () => {
-      await Promise.all([
-        loadReacciones(),
-        cargarLegisladores(user.distrito),
-      ]);
-    };
-
-    actualizarPantalla();
-  }, [user?.id, user?.distrito]),
-);
+      cargarDiputados(user.distrito);
+    }, [user?.distrito, cargarDiputados]),
+  );
 
   const handleLike = async (id, tipoReaccion) => {
     try {
-      const actual = reacciones[id];
-      const nueva = actual === tipoReaccion ? "null" : tipoReaccion;
+      const resultado = await setReaccionRepresentante(id, tipoReaccion);
 
-      await reaccionesRepository.setReaccion(
-        user.id,
-        id,
-        "representante",
-        nueva,
-      );
+      if (!resultado) return;
 
-      setReacciones((prev) => ({
-        ...prev,
-        [id]: nueva,
-      }));
+      const { anterior, nueva } = resultado;
 
-      setDiputados((prev) =>
-        prev.map((dipu) => {
-          if (dipu.id !== id) return dipu;
+      actualizarDiputado(id, (dipu) => {
+        let cambio = 0;
 
-          let cambio = 0;
+        if (anterior !== "like" && nueva === "like") cambio = 1;
+        if (anterior === "like" && nueva !== "like") cambio = -1;
 
-          if (actual !== "like" && nueva === "like") cambio = 1;
-          if (actual === "like" && nueva !== "like") cambio = -1;
-
-          return {
-            ...dipu,
-            totalLikes: Math.max((dipu.totalLikes ?? 0) + cambio, 0),
-          };
-        }),
-      );
+        return {
+          totalLikes: Math.max((dipu.totalLikes ?? 0) + cambio, 0),
+        };
+      });
     } catch (error) {
-      console.log(error);
+      console.log("Error al reaccionar al diputado:", error);
     }
   };
 
   const renderGridItem = ({ item }) => {
-    const reaccion = reacciones[item.id];
+    const reaccion = reaccionesRepresentante[item.id];
 
     return (
       <GridRepresent
@@ -139,14 +74,38 @@ export const Diputados = ({ navigation }) => {
         flexDirection: "row",
         width: "90%",
         alignSelf: "center",
-        paddingVertical: 18,
+        paddingVertical: responsiveSpacing(18),
       }}
     >
-      <Skeleton width={76} height={76} borderRadius={100} />
-      <View style={{ marginHorizontal: 15 }}>
-        <Skeleton width={250} height={25} borderRadius={4} />
-        <View style={{ marginHorizontal: 5, marginTop: 12 }}>
-          <Skeleton width={120} height={15} borderRadius={4} />
+      <Skeleton
+        width={responsiveSize(76)}
+        height={responsiveSize(76)}
+        borderRadius={responsiveSize(100)}
+      />
+
+      <View
+        style={{
+          marginHorizontal: responsiveSpacing(15),
+          flex: 1,
+        }}
+      >
+        <Skeleton
+          width="100%"
+          height={responsiveSize(25)}
+          borderRadius={responsiveSize(4)}
+        />
+
+        <View
+          style={{
+            marginHorizontal: responsiveSpacing(5),
+            marginTop: responsiveSpacing(12),
+          }}
+        >
+          <Skeleton
+            width={responsiveSize(120)}
+            height={responsiveSize(15)}
+            borderRadius={responsiveSize(4)}
+          />
         </View>
       </View>
     </View>
@@ -155,7 +114,7 @@ export const Diputados = ({ navigation }) => {
   return (
     <>
       <View style={styles.back}></View>
-      {loading ? (
+      {loadingDiputados ? (
         <FlatList
           style={styles.container}
           data={[1, 2, 3]}

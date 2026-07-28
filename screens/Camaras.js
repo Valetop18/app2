@@ -1,5 +1,4 @@
 import React, { useContext, useState, useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
 import {
   View,
   Text,
@@ -23,12 +22,10 @@ import {
 } from "@material-symbols-react-native/outlined-400";
 import { MsIcon } from "material-symbols-react-native";
 import MaterialIcons from "@react-native-vector-icons/material-icons";
-import { LEYES } from "../data/leyes";
 import Ionicons from "@react-native-vector-icons/ionicons";
 import { FlatList } from "react-native-gesture-handler";
 import RepresentantePartido from "../components/representantePartido";
 import { useNavigation } from "@react-navigation/native";
-import { TouchableWithoutFeedback } from "react-native";
 import { legisladoresRepository } from "../infrastructure/legisladoresRepository";
 import { Skeleton } from "../components/Skeleton";
 import { partidosRepository } from "../infrastructure/partidosRepository";
@@ -38,6 +35,15 @@ import { Calendar, LocaleConfig } from "react-native-calendars";
 import { LinearGradient } from "expo-linear-gradient";
 import { FontAwesome } from "@expo/vector-icons";
 import { useReacciones } from "../context/ReaccionesContext";
+import {
+  responsiveSize,
+  responsiveSpacing,
+  responsiveFont,
+  responsiveIcon,
+  responsiveFontCamara,
+  responsiveHeight,
+  responsiveVerticalSize,
+} from "../utils/responsive";
 
 export const CamaraDipu = () => {
   const { search, setSearch } = useContext(BuscadorContext);
@@ -64,7 +70,6 @@ export const CamaraDipu = () => {
   const [asistenciaPartidosAcumulada, setAsistenciaPartidosAcumulada] =
     useState({});
   const [asistenciaPartidosSesion, setAsistenciaPartidosSesion] = useState({});
-  const [fechaSesion, setFechaSesion] = useState(null);
   const [asistenciaSesionGlobal, setAsistenciaSesionGlobal] = useState(null);
   const [votacionSesionGlobal, setVotacionSesionGlobal] = useState(null);
   const [asistenciaGlobal, setAsistenciaGlobal] = useState(null);
@@ -1007,22 +1012,48 @@ export const CamaraDipu = () => {
   };
 
   const cargarVotacionesPorSesion = async (numeroSesion) => {
-    try {
-      const data =
-        await votacionesRepository.getVotacionesPorSesion(numeroSesion);
-      const data2 =
-        await votacionesRepository.getVotacionesPorSesion2(numeroSesion);
+  try {
+    const data =
+      await votacionesRepository.getVotacionesPorSesion(numeroSesion);
 
-      setVotacionesPorSesion(data);
-      setVotacionesPorSesion2(data2);
+    const data2 =
+      await votacionesRepository.getVotacionesPorSesion2(numeroSesion);
 
-      //console.log(data2)
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    const votacionesPartidosPorId = new Map(
+      data2.map((votacion) => [
+        String(votacion.id),
+        votacion,
+      ]),
+    );
+
+    const data2Ordenada = data.map((votacion) => {
+      const votacionPartidos = votacionesPartidosPorId.get(
+        String(votacion.id),
+      );
+
+      return (
+        votacionPartidos || {
+          id: votacion.id,
+          tipoDocumento: votacion.tipoDocumento,
+          fecha: votacion.fecha,
+          resultado: votacion.resultado,
+          materia_resumen: votacion.materia_resumen,
+          articulo_resumen: votacion.articulo_resumen,
+          partidos: {},
+        }
+      );
+    });
+
+    setVotacionesPorSesion(data);
+    setVotacionesPorSesion2(data2Ordenada);
+  } catch (error) {
+    console.error(error);
+    setVotacionesPorSesion([]);
+    setVotacionesPorSesion2([]);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const cargarVotacionBuscada = async (idVotacion) => {
     try {
@@ -1105,44 +1136,58 @@ export const CamaraDipu = () => {
     setSesionesDia([]);
     setCalendarVisible(false);
   };
-  useEffect(() => {
-    const cargarPorcentajes = async () => {
-      try {
-        const resultados = await Promise.all(
-          partidos.map(async ({ id }) => {
-            try {
-              const porcentajes =
-                await legisladoresRepository.getPorcentajeAsistenciaPartido(id);
-              return { id, ...porcentajes };
-            } catch (error) {
-              return {
-                id,
-                porcentajeAsistenciaHoy: 0,
-                porcentajeAsistenciaHistorica: 0,
-              };
-            }
-          }),
-        );
 
-        const map = resultados.reduce((acc, item) => {
-          acc[item.id] = item;
-          return acc;
-        }, {});
+  const cargarPorcentajes = async () => {
+    try {
+      const resultados = await Promise.all(
+        partidos.map(async ({ id }) => {
+          try {
+            const porcentajes =
+              await legisladoresRepository.getPorcentajeAsistenciaPartido(id);
 
-        setAsistenciaPartidosAcumulada(map);
-      } catch (error) {
-        console.error("Error al cargar porcentajes de asistencia: ", error);
-      }
-    };
+            return {
+              id,
+              ...porcentajes,
+            };
+          } catch (error) {
+            return {
+              id,
+              porcentajeAsistenciaHoy: 0,
+              porcentajeAsistenciaHistorica: 0,
+            };
+          }
+        }),
+      );
 
-    const cargarVotacionesPartidos = async () => {
+      const map = resultados.reduce((acc, item) => {
+        acc[item.id] = item;
+        return acc;
+      }, {});
+
+      setAsistenciaPartidosAcumulada(map);
+
+      return map;
+    } catch (error) {
+      console.error("Error al cargar porcentajes de asistencia:", error);
+
+      setAsistenciaPartidosAcumulada({});
+
+      return {};
+    }
+  };
+
+  const cargarVotacionesPartidos = async () => {
+    try {
       const votaciones = await Promise.all(
-        partidos.map(async (partido) => {
+        partidos.map(async ({ id, partido }) => {
           const porcentajeVotaciones =
-            await partidosRepository.getParticipacionHistoricaPartido(
-              partido.id,
-            );
-          return { ...partido, porcentajeVotaciones };
+            await partidosRepository.getParticipacionHistoricaPartido(id);
+
+          return {
+            id,
+            partido,
+            porcentajeVotaciones,
+          };
         }),
       );
 
@@ -1152,9 +1197,25 @@ export const CamaraDipu = () => {
       }, {});
 
       setVotacionesPartidos(map);
-    };
 
-    const cargarTodo = async () => {
+      return map;
+    } catch (error) {
+      console.error(
+        "Error al cargar votaciones históricas de partidos:",
+        error,
+      );
+
+      setVotacionesPartidos({});
+
+      return {};
+    }
+  };
+
+  const cargarTodo = async () => {
+    try {
+      setLoading(true);
+      setDatosListos(false);
+
       const numeroSesion = await cargarAsistenciaSesionGlobal();
 
       await Promise.all([
@@ -1171,8 +1232,14 @@ export const CamaraDipu = () => {
       ]);
 
       setDatosListos(true);
-    };
+    } catch (error) {
+      console.error("Error al cargar los datos de la Cámara:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     cargarTodo();
   }, []);
 
@@ -1562,6 +1629,19 @@ export const CamaraDipu = () => {
         break;
     }
   };
+  const proyectoActual = votacionesPorSesion[proyectoActivo];
+
+  const esMateriaResumen = !!proyectoActual?.materia_resumen;
+
+  const esArticuloResumen = !!proyectoActual?.articulo_resumen;
+
+  const materiaActual =
+    proyectoActual?.materia_resumen || proyectoActual?.materia || "";
+
+  const articuloActual =
+    proyectoActual?.articulo_resumen || proyectoActual?.articulo || "";
+
+  const tieneArticulo = articuloActual.trim().length > 0;
 
   const getSubtituloEstadistica = () => {
     switch (botonActivo) {
@@ -1588,40 +1668,32 @@ export const CamaraDipu = () => {
         if (esProyectoEspecifico) {
           return (
             <View>
-              {votacionesPorSesion[proyectoActivo]?.materia_resumen ? (
-                <View style={styles.leyesEstilo}>
+              {materiaActual ? (
+                <View
+                  style={[
+                    styles.leyesEstilo,
+                    !tieneArticulo && styles.leyesEstiloSoloMateria,
+                  ]}
+                >
                   <Text style={styles.materia}>
-                    {votacionesPorSesion[proyectoActivo]?.materia_resumen}
-                  </Text>
-                </View>
-              ) : (
-                <View style={styles.leyesEstilo}>
-                  <Text style={styles.materia}>
-                    {votacionesPorSesion[proyectoActivo]?.materia}
-                  </Text>
-                </View>
-              )}
-
-              {votacionesPorSesion[proyectoActivo]?.articulo_resumen ? (
-                <View style={styles.leyesEstilo}>
-                  <Text style={styles.articulo}>
-                    {votacionesPorSesion[proyectoActivo]?.articulo_resumen}
-                  </Text>
-                </View>
-              ) : votacionesPorSesion[proyectoActivo]?.articulo ? (
-                <View style={styles.leyesEstilo}>
-                  <Text style={styles.articulo}>
-                    {votacionesPorSesion[proyectoActivo]?.articulo}
+                    {materiaActual}
+                    {esMateriaResumen && (
+                      <Text style={styles.resumenIA}> ✨Resumen IA</Text>
+                    )}
                   </Text>
                 </View>
               ) : null}
 
-              <View style={styles.sesionProyecto}>
-                <Text style={styles.sesionFecha}>
-                  Sesión {getNumeroSesionActual()}:{" "}
-                  {votacionesPorSesion[0]?.fecha}
-                </Text>
-              </View>
+              {tieneArticulo ? (
+                <View style={styles.leyesEstilo}>
+                  <Text style={styles.articulo}>
+                    {articuloActual}
+                    {esArticuloResumen && (
+                      <Text style={styles.resumenIA}> ✨Resumen IA</Text>
+                    )}
+                  </Text>
+                </View>
+              ) : null}
             </View>
           );
         }
@@ -1651,13 +1723,13 @@ export const CamaraDipu = () => {
                   styles.estadistica2,
                   (botonActivo < 2 || botonActivo === 4) && styles.activeButton,
                 ]}
-                width={105}
-                height={30}
+                width={responsiveSize(105)}
+                height={responsiveSize(30)}
                 onPress={() => handlePress(1)}
               >
                 <MaterialIcons
                   name="event-available"
-                  size={20}
+                  size={responsiveIcon(20)}
                   color={
                     botonActivo < 2 || botonActivo === 4
                       ? COLORS.back
@@ -1673,6 +1745,9 @@ export const CamaraDipu = () => {
                     styles.textHoy,
                     (botonActivo < 2 || botonActivo === 4) && styles.activeText,
                   ]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.82}
                 >
                   Asistencia
                 </Text>
@@ -1682,13 +1757,13 @@ export const CamaraDipu = () => {
                   styles.estadistica2,
                   botonActivo === 2 && styles.activeButton,
                 ]}
-                width={112}
-                height={30}
+                width={responsiveSize(112)}
+                height={responsiveSize(30)}
                 onPress={() => handlePress(2)}
               >
                 <MsIcon
                   icon={msPersonRaisedHand}
-                  size={20}
+                  size={responsiveIcon(20)}
                   color={botonActivo === 2 ? COLORS.back : COLORS.greyM}
                 />
                 <Text
@@ -1696,6 +1771,9 @@ export const CamaraDipu = () => {
                     styles.textHoy,
                     botonActivo === 2 && styles.activeText,
                   ]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.82}
                 >
                   Votaciones
                 </Text>
@@ -1705,13 +1783,13 @@ export const CamaraDipu = () => {
                   styles.estadistica2,
                   botonActivo === 3 && styles.activeButton,
                 ]}
-                width={104}
-                height={30}
+                width={responsiveSize(104)}
+                height={responsiveSize(30)}
                 onPress={() => handlePress(3)}
               >
                 <MsIcon
                   icon={msCloudUpload}
-                  size={20}
+                  size={responsiveIcon(20)}
                   color={botonActivo === 3 ? COLORS.back : COLORS.greyM}
                 />
                 <Text
@@ -1719,6 +1797,9 @@ export const CamaraDipu = () => {
                     styles.textHoy,
                     botonActivo === 3 && styles.activeText,
                   ]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.82}
                 >
                   Proyectos
                 </Text>
@@ -1760,7 +1841,7 @@ export const CamaraDipu = () => {
               >
                 <FontAwesome
                   name="thumbs-down"
-                  size={25}
+                  size={responsiveIcon(25)}
                   color={
                     reaccionActual === "dislike" ? COLORS.greenM : COLORS.grey
                   }
@@ -1774,7 +1855,7 @@ export const CamaraDipu = () => {
               >
                 <FontAwesome
                   name="thumbs-up"
-                  size={25}
+                  size={responsiveIcon(25)}
                   color={
                     reaccionActual === "like" ? COLORS.greenM : COLORS.grey
                   }
@@ -1786,6 +1867,15 @@ export const CamaraDipu = () => {
             {pelotas}
             {infoPartidos}
           </View>
+
+          {esProyectoEspecifico && (
+            <View style={styles.sesionProyecto}>
+              <Text style={styles.sesionFecha}>
+                Sesión {getNumeroSesionActual()}:{" "}
+                {votacionesPorSesion[0]?.fecha}
+              </Text>
+            </View>
+          )}
 
           <Modal visible={modalVisible} transparent animationType="slide">
             <View style={styles.overlay}>
@@ -2146,7 +2236,7 @@ export const CamaraDipu = () => {
                 >
                   <Ionicons
                     name="play-skip-back-circle-outline"
-                    size={28}
+                    size={responsiveIcon(28)}
                     color={COLORS.back}
                   />
                 </TouchableOpacity>
@@ -2158,7 +2248,7 @@ export const CamaraDipu = () => {
                     name={
                       pausado ? "play-circle-outline" : "pause-circle-outline"
                     }
-                    size={35}
+                    size={responsiveIcon(35)}
                     color={COLORS.back}
                   />
                 </TouchableOpacity>
@@ -2168,7 +2258,7 @@ export const CamaraDipu = () => {
                 >
                   <Ionicons
                     name="play-skip-forward-circle-outline"
-                    size={28}
+                    size={responsiveIcon(28)}
                     color={COLORS.back}
                   />
                 </TouchableOpacity>
@@ -2178,7 +2268,11 @@ export const CamaraDipu = () => {
                 style={[styles.containerCalendar, hoyActivo]}
                 onPress={abrirCalendario}
               >
-                <MsIcon icon={msCalendarMonth} size={20} color={COLORS.back} />
+                <MsIcon
+                  icon={msCalendarMonth}
+                  size={responsiveIcon(20)}
+                  color={COLORS.back}
+                />
                 <Text style={[styles.textCalendar, hoyActivo]}>
                   Calendario Sesiones
                 </Text>
@@ -2242,13 +2336,16 @@ const styles = StyleSheet.create({
   leyesEstilo: {
     width: "98%",
   },
+  leyesEstiloSoloMateria: {
+    minHeight: responsiveVerticalSize(96),
+  },
   infoBloque: {
     width: "100%",
     alignItems: "center",
   },
 
   infoBloqueCentrado: {
-    minHeight: 115,
+    minHeight: responsiveVerticalSize(115),
     justifyContent: "center",
   },
 
@@ -2257,9 +2354,10 @@ const styles = StyleSheet.create({
     justifyContent: "flex-start",
   },
   botonCalendar: {
-    alignSelf: "center",
-    marginTop: "158%",
     position: "absolute",
+    bottom: 10,
+    alignSelf: "center",
+    zIndex: 2,
   },
   sesionCardPressed: {
     transform: [{ scale: 0.98 }],
@@ -2278,13 +2376,13 @@ const styles = StyleSheet.create({
   containerCalendar: {
     flexDirection: "row",
     backgroundColor: COLORS.greenM,
-    height: 38,
+    height: responsiveSize(38),
+    paddingHorizontal: responsiveSpacing(14),
     justifyContent: "center",
     alignItems: "center",
-    borderRadius: 8,
+    borderRadius: responsiveSize(8),
     elevation: 3,
     shadowColor: COLORS.black,
-    paddingHorizontal: 14,
     shadowOpacity: 0.18,
   },
   calendarModal: {
@@ -2538,9 +2636,9 @@ const styles = StyleSheet.create({
   },
   containerPlay: {
     flexDirection: "row",
-    borderRadius: 20,
-    height: 40,
-    width: 140,
+    borderRadius: responsiveSize(20),
+    width: responsiveSize(140),
+    height: responsiveSize(40),
     elevation: 3,
     shadowColor: COLORS.black,
     paddingHorizontal: 5,
@@ -2557,9 +2655,7 @@ const styles = StyleSheet.create({
   },
   informacion: {
     flexDirection: "row",
-
     justifyContent: "center",
-
     paddingTop: 12,
   },
   botonPlay: {
@@ -2567,7 +2663,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 4,
   },
   textHoy: {
-    fontSize: 14.7,
+    fontSize: responsiveFont(14.7),
     fontFamily: "NotoSansMyanmar_700Bold",
     color: COLORS.greyM,
     paddingVertical: 0,
@@ -2577,7 +2673,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.25,
   },
   textCalendar: {
-    fontSize: 14.5,
+    fontSize: responsiveFont(14.5),
     fontFamily: "NotoSansMyanmar_700Bold",
     color: COLORS.back,
     paddingVertical: 0,
@@ -2603,29 +2699,29 @@ const styles = StyleSheet.create({
     elevation: 3,
     shadowColor: COLORS.black,
     backgroundColor: COLORS.back,
-    paddingHorizontal: 10,
-    height: 36,
+    paddingHorizontal: responsiveSpacing(10),
+    height: responsiveSize(36),
   },
   subtitulo: {
     fontFamily: "NotoSansMyanmar_700Bold",
-    fontSize: 14.5,
+    fontSize: responsiveFont(14.5),
     color: COLORS.black,
     textAlign: "center",
     lineHeight: 20,
   },
   materia: {
     fontFamily: "NotoSansMyanmar_700Bold",
-    fontSize: 14,
+    fontSize: responsiveFontCamara(13.5, 12),
     color: COLORS.black,
     textAlign: "center",
-    lineHeight: 16,
+    lineHeight: responsiveFontCamara(15, 13),
   },
   articulo: {
     fontFamily: "NotoSansMyanmar_400Regular",
-    paddingTop: 5,
-    fontSize: 13,
+    paddingTop: 3,
+    fontSize: responsiveFontCamara(13, 12),
     color: COLORS.black,
-    lineHeight: 16,
+    lineHeight: responsiveFontCamara(15, 13),
     textAlign: "center",
   },
   resultadoEstilo: {
@@ -2634,15 +2730,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   sesionProyecto: {
+    position: "absolute",
+    bottom: responsiveVerticalSize(56),
+    alignSelf: "center",
     justifyContent: "center",
     alignItems: "center",
-    position: "absolute",
-    top: 565,
-    alignSelf: "center",
+    zIndex: 2,
   },
   resultado: {
     fontFamily: "NotoSansMyanmar_700Bold",
-    fontSize: 15,
+    fontSize: responsiveFont(15),
     color: COLORS.greenM,
     paddingHorizontal: 3,
     textTransform: "uppercase",
@@ -2650,13 +2747,13 @@ const styles = StyleSheet.create({
   },
   sesionFecha: {
     fontFamily: "NotoSansMyanmar_700Bold",
-    fontSize: 15,
+    fontSize: responsiveFont(15),
     color: COLORS.greenM,
     letterSpacing: 0.25,
   },
   infoEstadistica: {
     fontFamily: "NotoSansMyanmar_700Bold",
-    fontSize: 15,
+    fontSize: responsiveFont(15),
     color: COLORS.greenM,
     marginTop: "2%",
   },
@@ -2753,5 +2850,10 @@ const styles = StyleSheet.create({
   },
   conteinerRepresentantes: {
     margin: 10,
+  },
+  resumenIA: {
+    fontFamily: "NotoSansMyanmar_700Bold",
+    fontSize: responsiveFont(11.5),
+    color: COLORS.greyM,
   },
 });

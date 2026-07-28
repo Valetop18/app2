@@ -2,11 +2,15 @@ import React from "react";
 import { View, Text, Image, StyleSheet, TouchableOpacity } from "react-native";
 import { MaterialIcons } from "@react-native-vector-icons/material-icons";
 import { COLORS } from "../constants/colors";
-import { useState, useEffect } from "react";
-import { db } from "../constants/config";
-import { msPersonRaisedHand } from "@material-symbols-react-native/outlined-400";
 import { MsIcon } from "material-symbols-react-native";
 import { useNavigation } from "@react-navigation/native";
+import { FontAwesome } from "@expo/vector-icons";
+import {
+  msPersonRaisedHand,
+  msCloudUpload,
+} from "@material-symbols-react-native/outlined-400";
+import Ionicons from "@react-native-vector-icons/ionicons";
+import { useReacciones } from "../context/ReaccionesContext";
 
 const coloresPorPartido = {
   DES: COLORS.DES,
@@ -33,105 +37,157 @@ const coloresPorPartido = {
 const GridRepresentPartido = ({ item }) => {
   const borderColor = coloresPorPartido[item.partido] || "#000";
   const navigation = useNavigation();
+  const { reaccionesRepresentante } = useReacciones();
 
   const onSelected = () => {
     navigation.navigate("Descripcion", {
       idDiputado: item.id,
-      from: "EstadistaPartidoDiputad",
+      from: "EstadisticaPartido",
     });
   };
 
   return (
     <View style={styles.card}>
-      <TouchableOpacity onPress={onSelected} style={{ ...styles.container }}>
+      <TouchableOpacity
+        onPress={onSelected}
+        activeOpacity={0.85}
+        style={styles.container}
+      >
+        {/* Fotografía y partido */}
         <View style={styles.containImage}>
           <Image
-            style={{
-              borderColor,
-              width: 72,
-              height: 72,
-              borderRadius: 100,
-              borderWidth: 3,
-            }}
+            style={[
+              styles.foto,
+              {
+                borderColor,
+              },
+            ]}
             source={{ uri: item.foto }}
           />
           <Text style={styles.partido}>{item.partido}</Text>
         </View>
+
+        {/* Información del diputado */}
         <View style={styles.infoEscrita}>
-          <View flexDirection={"row"} alignItems={"center"}>
-            <Text style={styles.name}>{item.nombre}</Text>
-            <View style={styles.icono} marginTop={"-1%"}>
-              <View style={styles.dataUsage}>
-                <MaterialIcons
-                  name="data-usage"
-                  size={40}
-                  color={COLORS.verdeclaro}
-                  position={"absolute"}
-                />
-                <Text style={styles.data2}>
-                  {item.representacionDistrital ?? 0}%
-                </Text>
-              </View>
+          {/* Nombre y representación distrital */}
+          <View style={styles.headerCard}>
+            <Text style={styles.name} numberOfLines={1}>
+              {item.nombre}
+            </Text>
+
+            <View style={styles.dataUsage}>
+              <MaterialIcons
+                name="data-usage"
+                size={39}
+                color={COLORS.verdeclaro}
+                style={styles.dataUsageIcon}
+              />
+
+              <Text style={styles.data2}>
+                {item.representacionDistrital ?? 0}%
+              </Text>
             </View>
           </View>
+
+          {/* Dos columnas de estadísticas */}
           <View style={styles.containerInfo}>
-            <View>
-              <View flexDirection={"row"} alignItems={"center"}>
-                <MaterialIcons
-                  name="event-available"
-                  size={17}
-                  color={COLORS.greenM}
-                />
-                <Text style={styles.informacion}>
-                  {item.asistencia ?? 0}% Asistencia
-                </Text>
+            {/* Columna izquierda */}
+            <View style={styles.columnaInfo}>
+              <View style={styles.filaEstadistica}>
+                <View style={styles.iconContainer}>
+                  <MaterialIcons
+                    name="event-available"
+                    size={20}
+                    color={COLORS.greenM}
+                  />
+                </View>
+
+                <View style={styles.textoEstadistica}>
+                  <Text style={styles.valorEstadistica}>
+                    {item.asistencia ?? 0}%
+                  </Text>
+
+                  <Text style={styles.nombreEstadistica}>Asistencia</Text>
+                </View>
               </View>
-              <View
-                flexDirection={"row"}
-                alignItems={"center"}
-                marginTop={"14%"}
-              >
-                <MsIcon
-                  icon={msPersonRaisedHand}
-                  size={18}
-                  color={COLORS.greenM}
-                />
-                <Text style={styles.informacion}>
-                  {item.participacionVotaciones ?? 0}% Votaciones
-                </Text>
+
+              <View style={styles.filaEstadistica}>
+                <View style={styles.iconContainer}>
+                  <MsIcon
+                    icon={msPersonRaisedHand}
+                    size={20}
+                    color={COLORS.greenM}
+                  />
+                </View>
+
+                <View style={styles.textoEstadistica}>
+                  <Text style={styles.valorEstadistica}>
+                    {item.participacionVotaciones ?? 0}%
+                  </Text>
+
+                  <Text style={styles.nombreEstadistica}>Votaciones</Text>
+                </View>
               </View>
             </View>
-            <View style={styles.info}>
-              <View>
-                <View flexDirection={"row"} alignItems={"center"}>
-                  <MaterialIcons
-                    name="diversity-2"
-                    size={17}
+
+            {/* Columna derecha */}
+            <View style={styles.columnaInfoDerecha}>
+              <View style={styles.filaEstadistica}>
+                <View style={styles.iconContainer}>
+                  <FontAwesome
+                    name="handshake-o"
+                    size={19}
                     color={COLORS.greenM}
                   />
-                  <Text
-                    style={styles.informacion}
-                    marginLeft={"1%"}
-                    maxWidth={120}
-                  >
-                    {item.adherenciaPartido ?? 0}% adherencia al partido
-                  </Text>
                 </View>
-                <View
-                  flexDirection={"row"}
-                  alignItems={"center"}
-                  marginTop={"2.5%"}
-                >
-                  <MaterialIcons
-                    name="assignment-turned-in"
-                    size={17}
-                    color={COLORS.greenM}
-                  />
-                  <Text style={styles.informacion}>
-                    {item.fraccionMociones ?? "0/0"} mociones
+
+                <View style={styles.textoEstadistica}>
+                  <Text style={styles.valorEstadistica}>
+                    {item.adherenciaPartido ?? 0}%{" "}
+                    <Text style={styles.nombreEstadistica}>Alineación</Text>
                   </Text>
+
+                  <Text style={styles.nombreEstadistica}>al partido</Text>
                 </View>
               </View>
+
+              <View style={styles.filaEstadistica}>
+                <View style={styles.iconContainer}>
+                  <MsIcon
+                    icon={msCloudUpload}
+                    size={20}
+                    color={COLORS.greenM}
+                  />
+                </View>
+
+                <View style={styles.textoEstadistica}>
+                  <Text style={styles.valorEstadistica}>
+                    {item.fraccionMociones ?? "0/0"}
+                    <Text style={styles.nombreEstadistica}> Mociones</Text>
+                  </Text>
+
+                  <Text style={styles.nombreEstadistica}>Aprob./Pres.</Text>
+                </View>
+              </View>
+            </View>
+            <View style={styles.likesContainer}>
+              <Text style={styles.likesText} numberOfLines={1}>
+                {item.totalLikes ?? 0}
+              </Text>
+
+              <Ionicons
+                name={
+                  reaccionesRepresentante[item.id] === "like"
+                    ? "heart-circle"
+                    : "heart-circle-outline"
+                }
+                size={26}
+                color={
+                  reaccionesRepresentante[item.id] === "like"
+                    ? COLORS.greenM
+                    : COLORS.gray
+                }
+              />
             </View>
           </View>
         </View>
@@ -145,92 +201,157 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: COLORS.back,
   },
+
   container: {
-    marginVertical: "1%",
-    display: "flex",
-    alignContent: "center",
-    flexDirection: "row",
-    borderRadius: 10,
     width: "96%",
+    minHeight: 125,
+    marginVertical: "1.2%",
+    paddingVertical: 3,
+    paddingHorizontal: 5,
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: COLORS.back,
+    borderRadius: 12,
+
     elevation: 3,
     shadowColor: COLORS.black,
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.12,
+    shadowRadius: 4,
   },
+
   containImage: {
-    alignContent: "center",
-    justifyContent: "center",
+    width: 82,
     alignItems: "center",
-    marginHorizontal: "1.5%",
-    marginTop: "4.5%",
-  },
-  infoEscrita: {
-    marginVertical: "2.5%",
-    width: "74%",
-  },
-  info: {
-    marginLeft: "5%",
-  },
-  name: {
-    fontFamily: "NotoSansMyanmar_700Bold",
-    fontSize: 18,
-    marginLeft: "1%",
-    flex: 1,
-    maxWidth: "87%",
-    color: COLORS.black,
-    marginTop: "-1.5%",
-  },
-  icono: {
     justifyContent: "center",
-    alignItems: "center",
-    marginLeft: "5%",
-  },
-  porcentaje: {
-    fontFamily: "NotoSansMyanmar_700Bold",
-    fontSize: 12,
+    alignSelf: "stretch",
   },
   partido: {
+    marginTop: 8,
     fontFamily: "NotoSansMyanmar_700Bold",
-    justifyContent: "center",
-    alignItems: "center",
-    color: COLORS.black,
     fontSize: 14,
-    marginTop: "2%",
-  },
-  parametros: {
-    fontFamily: "NotoSansMyanmar_400Regular",
-  },
-  informacion: {
-    fontFamily: "NotoSansMyanmar_400Regular",
-    fontSize: 14,
+    lineHeight: 18,
     color: COLORS.black,
-    marginLeft: "2%",
-    lineHeight: 16,
-    paddingVertical: 5,
-    paddingLeft: 4,
+    textAlign: "center",
   },
-  informacionProyectos: {
-    fontFamily: "NotoSansMyanmar_400Regular",
-    fontSize: 14,
-    color: COLORS.black,
-    marginLeft: "2%",
+  foto: {
+    width: 72,
+    height: 72,
+    borderRadius: 50,
+    borderWidth: 3,
   },
-  containerInfo: {
-    marginVertical: "1%",
-    marginHorizontal: "2%",
+  infoEscrita: {
+    flex: 1,
+    marginLeft: 4,
+    marginTop: -2,
+  },
+
+  headerCard: {
+    minHeight: 34,
     flexDirection: "row",
-    marginLeft: "0.5%",
-    backgroundColor: 'pink'
-  },
-  dataUsage: {
     alignItems: "center",
-    width: 42,
-    height: 42,
+    justifyContent: "space-between",
+  },
+
+  name: {
+    flex: 1,
+    marginLeft: 5,
+    fontFamily: "NotoSansMyanmar_700Bold",
+    fontSize: 18,
+    lineHeight: 22,
+    color: COLORS.black,
+    marginTop: 10,
+  },
+
+  dataUsage: {
+    width: 38,
+    height: 38,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 5,
+    marginRight: 10,
+  },
+
+  dataUsageIcon: {
+    position: "absolute",
+  },
+
+  data2: {
+    fontFamily: "NotoSansMyanmar_700Bold",
+    fontSize: 12,
+    color: COLORS.greenM,
+  },
+
+  containerInfo: {
+    width: "100%",
+    flexDirection: "row",
+    marginTop: 1,
+    paddingRight: 56,
+    position: "relative",
+  },
+
+  columnaInfo: {
+    width: "46%",
+  },
+
+  columnaInfoDerecha: {
+    width: "54%",
+  },
+  filaEstadistica: {
+    minHeight: 39,
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 1,
+  },
+
+  iconContainer: {
+    width: 27,
+    alignItems: "center",
     justifyContent: "center",
   },
-  data2: {
-    fontSize: 12,
+
+  textoEstadistica: {
+    flex: 1,
+    marginLeft: 3,
+    justifyContent: "center",
+  },
+
+  valorEstadistica: {
     fontFamily: "NotoSansMyanmar_700Bold",
-    color: COLORS.greenM,
+    fontSize: 13.5,
+    lineHeight: 16,
+    color: COLORS.black,
+  },
+
+  nombreEstadistica: {
+    fontFamily: "NotoSansMyanmar_400Regular",
+    fontSize: 12.5,
+    lineHeight: 15,
+    color: COLORS.black,
+  },
+  likesContainer: {
+    position: "absolute",
+    right: 5,
+    top: 0,
+    bottom: 0,
+    width: 56,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-end",
+  },
+
+  likesText: {
+    minWidth: 20,
+    marginRight: 2,
+    fontFamily: "NotoSansMyanmar_700Bold",
+    fontSize: 12.5,
+    lineHeight: 16,
+    color: COLORS.black,
+    textAlign: "right",
+    paddingTop: 2,
   },
 });
 

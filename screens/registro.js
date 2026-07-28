@@ -1,53 +1,106 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
-  Button,
-  Alert,
-  TextInput,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Modal,
 } from "react-native";
 import Input from "../components/input";
-import { useDispatch, useSelector } from "react-redux";
-import { signup, login } from "../store/actions/login.actions";
-import { filteredDiputados } from "../store/actions/diputado.action";
-import { filteredSenadores } from "../store/actions/senador.action";
 import { COLORS } from "../constants/colors";
-import * as SQLite from "expo-sqlite";
-import { FontAwesome } from "@expo/vector-icons";
 import { Ionicons } from "@react-native-vector-icons/ionicons";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import DateTimePicker from "@react-native-community/datetimepicker";
 import { useNavigation } from "@react-navigation/native";
 import { Picker } from "@react-native-picker/picker";
-import { dbFirestore, auth } from "../constants/config";
-import {
-  collection,
-  getDocs,
-  doc,
-  setDoc,
-  query,
-  where,
-} from "firebase/firestore";
-import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
-import { supabase } from "../constants/supabase";
 import { useAuth } from "../context/AuthContext";
+import {
+  responsiveVerticalSize,
+  responsiveSize,
+  responsiveSpacing,
+  responsiveFont,
+  responsiveIcon,
+} from "../utils/responsive";
+import { Calendar, LocaleConfig } from "react-native-calendars";
+import MonthYearPickerModal, {
+  MESES,
+} from "../components/MonthYearPickerModal";
 
-const INITIAL_STATE = {
-  user: "",
-  pass: "",
+LocaleConfig.locales.es = {
+  monthNames: [
+    "Enero",
+    "Febrero",
+    "Marzo",
+    "Abril",
+    "Mayo",
+    "Junio",
+    "Julio",
+    "Agosto",
+    "Septiembre",
+    "Octubre",
+    "Noviembre",
+    "Diciembre",
+  ],
+  monthNamesShort: [
+    "Ene.",
+    "Feb.",
+    "Mar.",
+    "Abr.",
+    "May.",
+    "Jun.",
+    "Jul.",
+    "Ago.",
+    "Sept.",
+    "Oct.",
+    "Nov.",
+    "Dic.",
+  ],
+  dayNames: [
+    "Domingo",
+    "Lunes",
+    "Martes",
+    "Miércoles",
+    "Jueves",
+    "Viernes",
+    "Sábado",
+  ],
+  dayNamesShort: ["Dom.", "Lun.", "Mar.", "Mié.", "Jue.", "Vie.", "Sáb."],
+  today: "Hoy",
+};
+
+LocaleConfig.defaultLocale = "es";
+
+const CampoRegistro = ({ label, children, error }) => {
+  return (
+    <View style={styles.containerCampo}>
+      <View style={styles.textoCampo}>
+        <Text style={styles.label}>{label}</Text>
+      </View>
+
+      <View style={styles.inputCampo}>{children}</View>
+
+      <View style={styles.errorContainer}>
+        {error ? <Text style={styles.inputErrors}>{error}</Text> : null}
+      </View>
+    </View>
+  );
 };
 
 const Registro = () => {
-  const dispatch = useDispatch();
   const { register } = useAuth();
 
-  const [input, setInput] = useState(INITIAL_STATE);
+  const [date, setDate] = useState(null);
+  const [calendarVisible, setCalendarVisible] = useState(false);
 
-  const [date, setDate] = useState(new Date());
-  const [mode, setMode] = useState("date");
-  const [show, setShow] = useState(false);
+  const [selectorMesAnioVisible, setSelectorMesAnioVisible] = useState(false);
+
+  const [mesCalendario, setMesCalendario] = useState(1);
+
+  const [anioCalendario, setAnioCalendario] = useState(1990);
+
+  const [fechaCalendario, setFechaCalendario] = useState("1990-01-01");
+
   const [email, setEmail] = useState("juan123@gmail.com");
   const [pass, setPass] = useState("12345678");
   const [confirmPass, setConfirmPass] = useState("12345678");
@@ -55,108 +108,133 @@ const Registro = () => {
   const [genero, setGenero] = useState("");
   const [pais, setPais] = useState("Chile");
   const [rut, setRut] = useState("11.111.111-1");
-  const [minLengthPass, setMinLengthPass] = useState(false);
-
-  const onChangeDate = (event, selectedDate) => {
-    const currentDate = selectedDate;
-    console.log(currentDate);
-    setShow(false);
-    setDate(currentDate);
-  };
-
-  const showMode = (currentMode) => {
-    setShow(true);
-    setMode(currentMode);
-  };
-
-  const showDatepicker = () => {
-    showMode("date");
-  };
-
-  const [isEmailValid, setIsEmailValid] = useState({
-    touched: false,
-    isValid: false,
-  });
-  const [isPassValid, setIsPassValid] = useState({
-    touched: false,
-    isValid: false,
-  });
 
   const [errores, setErrores] = useState({});
+  const [registrando, setRegistrando] = useState(false);
 
   const navigation = useNavigation();
 
-  const onHandleValidationEmail = (currentEmail) => {
-    const emailRegex2 = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    let isValid = true;
-    if (!emailRegex2.test(currentEmail.trim().toLowerCase())) isValid = false;
-    setIsEmailValid({
-      touched: true,
-      isValid: isValid,
-    });
-    return {
-      touched: true,
-      isValid: isValid,
-    };
+  const formatearFechaLocal = (fecha) => {
+    const year = fecha.getFullYear();
+    const month = String(fecha.getMonth() + 1).padStart(2, "0");
+    const day = String(fecha.getDate()).padStart(2, "0");
+
+    return `${year}-${month}-${day}`;
   };
 
-  const setEmailChange = (text) => {
-    setEmail(text);
-    //onHandleValidationEmail();
+  const aceptarMesAnio = (nuevoMes, nuevoAnio) => {
+    setMesCalendario(nuevoMes);
+    setAnioCalendario(nuevoAnio);
+
+    setFechaCalendario(`${nuevoAnio}-${String(nuevoMes).padStart(2, "0")}-01`);
+
+    setSelectorMesAnioVisible(false);
   };
 
-  const setRutNuevo = (float) => {
-    setRut(float);
+  const obtenerFechaMaximaNacimiento = () => {
+    const fechaMaxima = new Date();
+
+    fechaMaxima.setMonth(fechaMaxima.getMonth() - 6);
+
+    return fechaMaxima;
   };
 
-  const onHandleValidationPassword = (currentPass = "") => {
-    const passRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
-    let isValid = true;
-    if (!passRegex.test(currentPass.toLowerCase())) isValid = false;
-    setIsPassValid({
-      touched: true,
-      isValid: isValid,
-    });
-    return {
-      touched: true,
-      isValid: isValid,
-    };
+  const seleccionarFechaNacimiento = (dia) => {
+    const [year, month, day] = dia.dateString.split("-").map(Number);
+
+    const nuevaFecha = new Date(year, month - 1, day);
+
+    setDate(nuevaFecha);
+
+    setMesCalendario(month);
+    setAnioCalendario(year);
+
+    setFechaCalendario(`${year}-${String(month).padStart(2, "0")}-01`);
+
+    setCalendarVisible(false);
+
+    if (errores.fechaNacimiento) {
+      setErrores((erroresActuales) => ({
+        ...erroresActuales,
+        fechaNacimiento: false,
+      }));
+    }
   };
+
+  const fechaSeleccionada = date ? formatearFechaLocal(date) : undefined;
+
+  const fechaMaximaNacimiento = formatearFechaLocal(
+    obtenerFechaMaximaNacimiento(),
+  );
 
   const validarFecha = () => {
-    const hoy = new Date();
-    const fechaValida = date <= hoy;
-    return fechaValida;
+    if (!date) return false;
+
+    const fechaMaximaNacimiento = obtenerFechaMaximaNacimiento();
+
+    return date <= fechaMaximaNacimiento;
   };
 
   const validarRut = (rut = "") => {
-    rut = rut.replace(/\./g, "").replace("-", "");
-    if (rut.length < 8) return false;
-    let cuerpo = rut.slice(0, -1);
-    let dv = rut.slice(-1).toUpperCase();
+    const rutLimpio = rut
+      .trim()
+      .replace(/\./g, "")
+      .replace(/-/g, "")
+      .toUpperCase();
+
+    if (rutLimpio.length < 8) {
+      return false;
+    }
+
+    const cuerpo = rutLimpio.slice(0, -1);
+    const dv = rutLimpio.slice(-1);
+
+    if (!/^\d+$/.test(cuerpo)) {
+      return false;
+    }
+
+    if (!/^[0-9K]$/.test(dv)) {
+      return false;
+    }
+
     let suma = 0;
     let multiplo = 2;
 
-    for (let i = 1; i <= cuerpo.length; i++) {
-      let index = multiplo * rut.charAt(cuerpo.length - i);
-      suma = suma + index;
+    for (let i = cuerpo.length - 1; i >= 0; i--) {
+      suma += Number(cuerpo[i]) * multiplo;
       multiplo = multiplo < 7 ? multiplo + 1 : 2;
     }
 
-    let dvEsperado = 11 - (suma % 11);
-    dvEsperado =
-      dvEsperado === 11 ? "0" : dvEsperado === 10 ? "K" : dvEsperado.toString();
+    const resultado = 11 - (suma % 11);
+
+    const dvEsperado =
+      resultado === 11 ? "0" : resultado === 10 ? "K" : resultado.toString();
+
     return dv === dvEsperado;
   };
 
-  const validarEmail = () => {
-    const emailRegex2 = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return !emailRegex2.test(email.trim().toLowerCase());
+  const validarEmail = (correo = "") => {
+    const email = correo.trim().toLowerCase();
+
+    const partes = email.split("@");
+
+    if (partes.length !== 2) return false;
+
+    if (partes[0].length < 3) return false;
+
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    return regex.test(email);
+  };
+
+  const validarPassword = (password = "") => {
+    const regex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
+
+    return regex.test(password);
   };
 
   const validarCampos = () => {
-    console.log("inicio validacion");
-    let nuevosErrores = {};
+    const nuevosErrores = {};
 
     try {
       if (nombre?.trim().length < 2) {
@@ -176,123 +254,103 @@ const Registro = () => {
       }
 
       if (rut?.trim() === "") {
-        nuevosErrores.rut = true;
+        nuevosErrores.rut = "Introduce un RUT válido";
+      } else if (pais === "Chile" && !validarRut(rut)) {
+        nuevosErrores.rut = "Introduce un RUT válido";
+      } else if (pais === "Extranjero" && rut.trim().length < 3) {
+        nuevosErrores.rut = "Introduce un documento válido";
       }
 
-      if (pais === "Chile" || !validarRut(rut)) {
-        //nuevosErrores.rut = true;
+      if (!validarEmail(email)) {
+        nuevosErrores.email = "Correo electrónico inválido";
       }
 
-      if (pais === "Extranjero" || rut.length < 3) {
-        nuevosErrores.rut = true;
-      }
-
-      if (!validarEmail()) {
-        //nuevosErrores.email = true;
-      }
+      // ==============================================
+      // VALIDACIÓN DE CONTRASEÑA (ACTIVAR EN PRODUCCIÓN)
+      // ==============================================
+      //
+      // const resultadoPassword = onHandleValidationPassword(pass);
+      //
+      // if (!resultadoPassword.isValid) {
+      //   nuevosErrores.password = true;
+      // }
 
       if (pass !== confirmPass) {
         nuevosErrores.confirmPass = true;
       }
     } catch (error) {
-      console.error(error);
+      console.error("Error al validar los campos:", error);
+      return false;
     }
-
-    console.log("errores:");
-    console.log(nuevosErrores);
 
     setErrores(nuevosErrores);
 
-    if (Object.keys(nuevosErrores).length === 0) {
-      return true;
-    } else {
-      return false;
-    }
+    return Object.keys(nuevosErrores).length === 0;
   };
 
-  const onSignUpHandler = async () => {
-    //to-do: validaciones
+  const handleSignUp = async () => {
     const camposValidos = validarCampos();
 
     if (!camposValidos) {
       return;
     }
 
+    if (registrando) {
+      return;
+    }
+
+    setRegistrando(true);
+
     try {
-      //validar duplicacion de rut
-      const q = query(
-        collection(dbFirestore, "usuarios"),
-        where("rut", "==", rut),
-      );
+      const fechaFormateada = formatearFechaLocal(date);
 
-      const userQuery = await getDocs(q);
+      const payload = {
+        email: email.trim().toLowerCase(),
+        password: pass,
+        nombre: nombre.trim(),
+        fecha_nacimiento: fechaFormateada,
+        genero,
+        pais,
+        rut: rut.trim(),
+      };
 
-      if (!userQuery.empty) {
-        Alert.alert("rut ya registrado");
+      const resultadoRegistro = await register(payload);
+
+      if (resultadoRegistro === "RUT_ALREADY_EXISTS") {
+        setErrores((erroresActuales) => ({
+          ...erroresActuales,
+          rut: "Este RUT ya se encuentra registrado.",
+        }));
+
         return;
       }
 
-      const userCredential = await createUserWithEmailAndPassword(
-        auth,
-        email,
-        pass,
-      );
-      const user = userCredential.user;
+      if (resultadoRegistro === "EMAIL_ALREADY_EXISTS") {
+        setErrores((erroresActuales) => ({
+          ...erroresActuales,
+          email: "Este correo electrónico ya se encuentra registrado.",
+        }));
 
-      await updateProfile(user, { displayName: nombre });
+        return;
+      }
 
-      await setDoc(doc(dbFirestore, "usuarios", user.uid), {
-        nombre,
-        email,
-        fechaNacimiento: date,
-        genero,
-        pais,
-        rut,
-        creadoEn: new Date(),
-      });
-
-      navigation.navigate("TopicosInteres", { uid: user.uid });
-    } catch (error) {
-      console.error(error);
+      if (!resultadoRegistro) {
+        return;
+      }
+    } finally {
+      setRegistrando(false);
     }
-  };
-
-  const handleSignUp = async () => {
-    const fechaFormateada = date.toISOString().split("T")[0];
-
-    const payload = {
-      email,
-      password: pass,
-      nombre,
-      email,
-      fecha_nacimiento: fechaFormateada,
-      genero,
-      pais,
-      rut,
-    };
-
-    register(payload);
   };
 
   const onLogInHandler = () => {
-    navigation.navigate("TopicosInteres");
+    navigation.navigate("Login");
   };
 
-  useEffect(() => {
-    if (email !== "") {
-      onHandleValidationEmail(email);
-    }
-  }, [email]);
-
-  useEffect(() => {
-    if (pass.length > 7) {
-      setMinLengthPass(true);
-    } else {
-      setMinLengthPass(false);
-    }
-  }, [pass]);
-
   const displayDate = () => {
+    if (!date) {
+      return "Selecciona una fecha";
+    }
+
     const opciones = {
       year: "numeric",
       month: "2-digit",
@@ -303,69 +361,188 @@ const Registro = () => {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.containerTitle}>
-        <Text style={styles.title}>Registro</Text>
-        <Text style={styles.subtitle}>Crea tu cuenta</Text>
-      </View>
-      <View style={styles.containerlogin}>
-        <View style={styles.containercorreo}>
-          <View style={styles.textoCorreo}>
-            <Text style={styles.label}>Nombre:</Text>
-          </View>
-          <View style={styles.inputcorreo}>
-            <Input
-              id="user"
-              label="Usuario"
-              setInput={setNombre}
-              value={nombre}
-              keyboardType="default"
-              textAlign="left"
-              paddingHorizontal={12}
-              fontFamily="NotoSansMyanmar_400Regular"
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      style={styles.keyboardContainer}
+    >
+      <Modal
+        visible={calendarVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setCalendarVisible(false)}
+      >
+        <View style={styles.calendarOverlay}>
+          <View style={styles.calendarContainer}>
+            <View style={styles.calendarHeader}>
+              <Text style={styles.calendarTitle}>
+                Selecciona tu fecha de nacimiento
+              </Text>
+
+              <TouchableOpacity
+                onPress={() => setCalendarVisible(false)}
+                hitSlop={{
+                  top: 10,
+                  bottom: 10,
+                  left: 10,
+                  right: 10,
+                }}
+              >
+                <Ionicons
+                  name="close-circle"
+                  size={responsiveIcon(22)}
+                  color={COLORS.grey}
+                />
+              </TouchableOpacity>
+            </View>
+            <Calendar
+              key={fechaCalendario}
+              current={fechaCalendario}
+              renderHeader={() => (
+                <TouchableOpacity
+                  style={styles.calendarMonthHeader}
+                  onPress={() => setSelectorMesAnioVisible(true)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.calendarMonthHeaderText}>
+                    {MESES[mesCalendario - 1].label} {anioCalendario}
+                  </Text>
+
+                  <Ionicons
+                    name="chevron-down"
+                    size={responsiveIcon(17)}
+                    color={COLORS.greenM}
+                  />
+                </TouchableOpacity>
+              )}
+              firstDay={1}
+              onMonthChange={(mes) => {
+                setMesCalendario(mes.month);
+                setAnioCalendario(mes.year);
+                setFechaCalendario(mes.dateString);
+              }}
+              maxDate={fechaMaximaNacimiento}
+              onDayPress={seleccionarFechaNacimiento}
+              dayComponent={({ date: calendarDate, state }) => {
+                const seleccionado =
+                  calendarDate.dateString === fechaSeleccionada;
+
+                const deshabilitado = state === "disabled";
+
+                return (
+                  <TouchableOpacity
+                    disabled={deshabilitado}
+                    onPress={() => seleccionarFechaNacimiento(calendarDate)}
+                    style={[
+                      styles.calendarDay,
+                      seleccionado && styles.calendarDaySelected,
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.calendarDayText,
+                        deshabilitado && styles.calendarDayTextDisabled,
+                        seleccionado && styles.calendarDayTextSelected,
+                      ]}
+                    >
+                      {calendarDate.day}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              }}
+              theme={{
+                backgroundColor: COLORS.back,
+                calendarBackground: COLORS.back,
+
+                dayTextColor: COLORS.black,
+                textDisabledColor: COLORS.grey,
+
+                todayTextColor: COLORS.greenM,
+
+                monthTextColor: COLORS.greenM,
+                arrowColor: COLORS.greenM,
+
+                textSectionTitleColor: COLORS.greyM,
+
+                textDayFontFamily: "NotoSansMyanmar_400Regular",
+                textMonthFontFamily: "NotoSansMyanmar_700Bold",
+                textDayHeaderFontFamily: "NotoSansMyanmar_700Bold",
+
+                textDayFontSize: responsiveFont(14),
+                textMonthFontSize: responsiveFont(17),
+                textDayHeaderFontSize: responsiveFont(12),
+              }}
             />
           </View>
-          {errores.nombre ? (
-            <Text style={styles.inputErrors}>Introduce un nombre válido</Text>
-          ) : null}
         </View>
-        <View style={styles.containercorreo}>
-          <View style={styles.textoCorreo}>
-            <Text style={styles.label}>Fecha de Nacimiento:</Text>
-          </View>
-          <View style={styles.inputcorreo}>
-            <TouchableOpacity
-              style={styles.butonFecha}
-              color={COLORS.verdeclaro}
-              onPress={showDatepicker}
-            >
-              <Text>{displayDate()}</Text>
-            </TouchableOpacity>
+      </Modal>
 
-            {show && (
-              <DateTimePicker
-                testID="dateTimePicker"
-                value={date}
-                mode={mode}
-                is24Hour={true}
-                onChange={onChangeDate}
-                style={styles.butonFecha}
-              />
-            )}
-            {errores.fechaNacimiento ? (
-              <Text style={styles.inputErrors}>Introduce un fecha válida</Text>
-            ) : null}
-          </View>
+      <MonthYearPickerModal
+        visible={selectorMesAnioVisible}
+        month={mesCalendario}
+        year={anioCalendario}
+        onAccept={aceptarMesAnio}
+        onClose={() => setSelectorMesAnioVisible(false)}
+      />
+
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.container}
+        keyboardShouldPersistTaps="handled"
+        contentInsetAdjustmentBehavior="never"
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.containerTitle}>
+          <Text style={styles.title}>Registro</Text>
+          <Text style={styles.subtitle}>Crea tu cuenta</Text>
         </View>
-        <View style={styles.containercorreo}>
-          <View style={styles.textoCorreo}>
-            <Text style={styles.label}>Género:</Text>
-          </View>
-          <View style={styles.inputcorreo}>
-            <View flex={1}>
+        <View style={styles.containerlogin}>
+          <CampoRegistro
+            label="Nombre:"
+            error={errores.nombre ? "Introduce un nombre válido" : null}
+          >
+            <View style={styles.contenidoInput}>
+              <Input
+                id="nombre"
+                label="Usuario"
+                setInput={setNombre}
+                value={nombre}
+                keyboardType="default"
+                textAlign="left"
+                paddingHorizontal={12}
+                fontFamily="NotoSansMyanmar_400Regular"
+              />
+            </View>
+          </CampoRegistro>
+          <CampoRegistro
+            label="Fecha de Nacimiento:"
+            error={
+              errores.fechaNacimiento ? "Introduce una fecha válida" : null
+            }
+          >
+            <TouchableOpacity
+              style={styles.botonFecha}
+              onPress={() => setCalendarVisible(true)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.textoFecha}>{displayDate()}</Text>
+
+              <Ionicons
+                name="calendar-outline"
+                size={responsiveIcon(19)}
+                color={COLORS.greenM}
+              />
+            </TouchableOpacity>
+          </CampoRegistro>
+          <CampoRegistro
+            label="Género:"
+            error={errores.genero ? "Selecciona un género" : null}
+          >
+            <View style={styles.pickerContainer}>
               <Picker
                 selectedValue={genero}
-                onValueChange={(itemValue, itemIndex) => setGenero(itemValue)}
+                onValueChange={(itemValue) => setGenero(itemValue)}
+                style={styles.picker}
+                mode="dropdown"
               >
                 <Picker.Item label="" value="" />
                 <Picker.Item label="Femenino" value="Femenino" />
@@ -373,103 +550,78 @@ const Registro = () => {
                 <Picker.Item label="LGTBIQ+" value="LGTBIQ+" />
               </Picker>
             </View>
-          </View>
-          {errores.genero ? (
-            <Text style={styles.inputErrors}>Selecciona un género</Text>
-          ) : null}
-        </View>
-        <View style={styles.containercorreo}>
-          <View style={styles.textoCorreo}>
-            <Text style={styles.label}>Nacionalidad:</Text>
-          </View>
-          <View style={styles.inputcorreo}>
-            <View flex={1}>
+          </CampoRegistro>
+          <CampoRegistro
+            label="Nacionalidad:"
+            error={errores.pais ? "Introduce una nacionalidad" : null}
+          >
+            <View style={styles.pickerContainer}>
               <Picker
                 selectedValue={pais}
-                onValueChange={(itemValue, itemIndex) => setPais(itemValue)}
+                onValueChange={(itemValue) => setPais(itemValue)}
+                style={styles.picker}
+                mode="dropdown"
               >
                 <Picker.Item label="" value="" />
                 <Picker.Item label="Chile" value="Chile" />
                 <Picker.Item label="Extranjero" value="Extranjero" />
               </Picker>
             </View>
-          </View>
-          {errores.nacionalidad ? (
-            <Text style={styles.inputErrors}>Introduce una nacionalidad</Text>
-          ) : null}
-        </View>
-        <View style={styles.containercorreo}>
-          <View style={styles.textoCorreo}>
-            <Text style={styles.label}>RUT:</Text>
-          </View>
-          <View style={styles.inputcorreo}>
-            <View width={"90%"}>
+          </CampoRegistro>
+          <CampoRegistro label="RUT:" error={errores.rut ?? null}>
+            <View style={styles.contenidoInput}>
               <Input
-                id="user"
+                id="rut"
                 label="Usuario"
-                setInput={setRutNuevo}
+                setInput={setRut}
                 value={rut}
                 keyboardType="default"
                 paddingHorizontal={12}
               />
             </View>
-          </View>
-          {errores.rut ? (
-            <Text style={styles.inputErrors}>Introduce un rut válido</Text>
-          ) : null}
-        </View>
-        <View style={styles.containercorreo}>
-          <View style={styles.textoCorreo}>
-            <Text style={styles.label}>Correo electrónico:</Text>
-          </View>
-          <View style={styles.inputcorreo}>
-            <View width={"90%"}>
+          </CampoRegistro>
+          <CampoRegistro
+            label="Correo electrónico:"
+            error={errores.email ?? null}
+          >
+            <View style={styles.contenidoInput}>
               <Input
-                id="user"
+                id="email"
                 label="Usuario"
-                setInput={setEmailChange}
+                setInput={setEmail}
                 value={email}
                 keyboardType="email-address"
                 paddingHorizontal={12}
               />
             </View>
-          </View>
-          {errores.email ? (
-            <Text style={styles.inputErrors}>Introduce un email válido</Text>
-          ) : null}
-        </View>
-        <View style={styles.containercorreo}>
-          <View style={styles.textoPass}>
-            <Text style={styles.label}>Contraseña:</Text>
-          </View>
-          <View style={styles.inputpass}>
-            <View width={"90%"}>
+          </CampoRegistro>
+          <CampoRegistro
+            label="Contraseña:"
+            error={
+              errores.password
+                ? "Debe tener al menos 8 caracteres, letras y números"
+                : null
+            }
+          >
+            <View style={styles.contenidoInput}>
               <Input
-                id="pass"
+                id="password"
                 label="Clave"
                 minLength={8}
                 secureTextEntry
                 setInput={setPass}
                 value={pass}
                 paddingHorizontal={12}
-                // onSelectionChange={onHandleValidationPassword}
               />
             </View>
-            {isPassValid.touched && !isPassValid.isValid && (
-              <Text style={styles.inputErrors}>
-                Mínimo 8 caracteres, mayúsculas y minúsculas
-              </Text>
-            )}
-          </View>
-        </View>
-        <View style={styles.containercorreo}>
-          <View style={styles.textoPass}>
-            <Text style={styles.label}>Confirmación Contraseña:</Text>
-          </View>
-          <View style={styles.inputpass}>
-            <View width={"90%"}>
+          </CampoRegistro>
+          <CampoRegistro
+            label="Confirmación Contraseña:"
+            error={errores.confirmPass ? "Las contraseñas no coinciden" : null}
+          >
+            <View style={styles.contenidoInput}>
               <Input
-                id="pass"
+                id="confirmPassword"
                 label="Clave"
                 minLength={8}
                 secureTextEntry
@@ -478,49 +630,57 @@ const Registro = () => {
                 paddingHorizontal={12}
               />
             </View>
+          </CampoRegistro>
+        </View>
+        <View style={styles.boton}>
+          <View style={styles.Ingresar}>
+            <TouchableOpacity
+              style={styles.buttonIngresar}
+              activeOpacity={0.8}
+              onPress={handleSignUp}
+              disabled={registrando}
+            >
+              <Text style={styles.IngresarText}>
+                {registrando ? "REGISTRANDO..." : "REGISTRAR"}
+              </Text>
+            </TouchableOpacity>
           </View>
-          {errores.confirmPass && (
-            <Text style={styles.inputErrors}>Contraseñas no coinciden</Text>
-          )}
-        </View>
-      </View>
-      <View style={styles.boton}>
-        <View style={styles.Ingresar}>
-          <TouchableOpacity
-            style={styles.buttonIngresar}
-            activeOpacity={0.8}
-            onPress={handleSignUp}
-          >
-            <Text style={styles.IngresarText}>REGISTRAR</Text>
-          </TouchableOpacity>
-        </View>
-        <View style={styles.Registro}>
-          <View style={styles.crearCuenta}>
-            <Text style={styles.labelcuenta}>Ya tienes cuenta?</Text>
+          <View style={styles.Registro}>
+            <View style={styles.crearCuenta}>
+              <Text style={styles.labelcuenta}>Ya tienes cuenta?</Text>
+            </View>
+            <TouchableOpacity
+              style={styles.buttonRegistro}
+              activeOpacity={0.8}
+              onPress={onLogInHandler}
+            >
+              <Text style={styles.RegistroText}>Ingresa Aquí</Text>
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity
-            style={styles.buttonRegistro}
-            activeOpacity={0.8}
-            onPress={onLogInHandler}
-          >
-            <Text style={styles.RegistroText}>Ingresa Aquí</Text>
-          </TouchableOpacity>
         </View>
-      </View>
-    </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 };
 
 export default Registro;
 
 const styles = StyleSheet.create({
-  container: {
+  keyboardContainer: {
     flex: 1,
+    backgroundColor: COLORS.back,
+  },
+  container: {
+    flexGrow: 1,
     paddingVertical: "10%",
     paddingHorizontal: "5%",
     backgroundColor: COLORS.back,
     alignContent: "center",
-    justifyContent: 'center'
+    justifyContent: "center",
+  },
+  scrollView: {
+    flex: 1,
+    backgroundColor: COLORS.back,
   },
   containerTitle: {
     alignItems: "center",
@@ -542,82 +702,15 @@ const styles = StyleSheet.create({
   containerlogin: {
     alignSelf: "center",
     width: "100%",
-    paddingTop: '3%'
-  },
-  textoCorreo: {
-    width: "85%",
-  },
-  containercorreo: {
-    flexDirection: "column",
-    textAlign: "center",
-    alignItems: "center",
-    justifyContent: "center",
-    alignSelf: "center",
-    height: 80,
-    width: "95%",
-  },
-  butonFecha: {
-    backgroundColor: COLORS.verdeclaro,
-    textAlign: "center",
-    width: "90%",
-    borderRadius: 10,
-    marginLeft: 20,
-    fontFamily: "NotoSansMyanmar_600SemiBold",
-    fontWeight: "bold",
-  },
-  inputcorreo: {
-    backgroundColor: COLORS.verdeclaro,
-    textAlign: "center",
-    width: "92%",
-    height: 42,
-    borderRadius: 10,
-    marginTop: 4,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  conteinerpass: {
-    flexDirection: "column",
-    textAlign: "center",
-    alignItems: "center",
-    height: "12%",
-  },
-  textoPass: {
-    width: "85%",
-  },
-  inputErrors: {
-    color: COLORS.falso,
-    textAlign: "center",
-    fontFamily: "NotoSansMyanmar_300Light",
-    fontSize: 12,
-    marginTop: "-1%",
-  },
-  inputpass: {
-    backgroundColor: COLORS.verdeclaro,
-    textAlign: "center",
-    width: "92%",
-    height: 42,
-    borderRadius: 10,
-    marginTop: 4,
-    flexDirection: "row",
-    alignSelf: "center",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  label: {
-    color: COLORS.greenM,
-    fontSize: 15,
-    fontFamily: "NotoSansMyanmar_600SemiBold",
-    fontWeight: "bold",
+    paddingTop: "3%",
   },
   boton: {
-    paddingTop: '10%',
+    paddingTop: "10%",
     height: "10%",
     alignSelf: "center",
     width: "100%",
   },
   Ingresar: {
-    justifyContent: "space-around",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -641,7 +734,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignSelf: "center",
     width: "52%",
-    marginTop: -2, 
+    marginTop: -2,
   },
   buttonRegistro: {
     justifyContent: "center",
@@ -662,5 +755,135 @@ const styles = StyleSheet.create({
   crearCuenta: {
     justifyContent: "center",
     alignItems: "center",
+  },
+  containerCampo: {
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    alignSelf: "center",
+    height: responsiveVerticalSize(80),
+    width: "95%",
+  },
+  textoCampo: {
+    width: "85%",
+  },
+  inputCampo: {
+    backgroundColor: COLORS.verdeclaro,
+    width: "92%",
+    height: responsiveVerticalSize(42),
+    borderRadius: responsiveSize(10),
+    marginTop: responsiveSpacing(4),
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  contenidoInput: {
+    width: "90%",
+  },
+  pickerContainer: {
+    flex: 1,
+    width: "100%",
+    height: "100%",
+    justifyContent: "center",
+    overflow: "hidden",
+  },
+  calendarOverlay: {
+    flex: 1,
+    justifyContent: "flex-end",
+    backgroundColor: "rgba(0,0,0,0.35)",
+  },
+  picker: {
+    width: "100%",
+    height: responsiveVerticalSize(50),
+    color: COLORS.black,
+    marginTop: responsiveVerticalSize(-5),
+  },
+  botonFecha: {
+    width: "100%",
+    height: "100%",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: responsiveSpacing(12),
+  },
+  textoFecha: {
+    color: COLORS.black,
+    fontSize: responsiveFont(15),
+    fontFamily: "NotoSansMyanmar_400Regular",
+  },
+  label: {
+    color: COLORS.greenM,
+    fontSize: responsiveFont(15),
+    fontFamily: "NotoSansMyanmar_600SemiBold",
+    fontWeight: "bold",
+  },
+  inputErrors: {
+    color: COLORS.falso,
+    textAlign: "center",
+    fontFamily: "NotoSansMyanmar_300Light",
+    fontSize: responsiveFont(12),
+    marginTop: "-1%",
+  },
+  calendarContainer: {
+    backgroundColor: COLORS.back,
+    borderTopLeftRadius: responsiveSize(16),
+    borderTopRightRadius: responsiveSize(16),
+    paddingTop: responsiveVerticalSize(14),
+    paddingHorizontal: responsiveSpacing(12),
+    paddingBottom: responsiveVerticalSize(22),
+  },
+
+  calendarHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: responsiveSpacing(10),
+    marginBottom: responsiveVerticalSize(4),
+  },
+
+  calendarTitle: {
+    color: COLORS.greenM,
+    fontSize: responsiveFont(17),
+    fontFamily: "NotoSansMyanmar_700Bold",
+  },
+
+  calendarDay: {
+    width: responsiveSize(31),
+    height: responsiveSize(31),
+    borderRadius: responsiveSize(16),
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  calendarDaySelected: {
+    backgroundColor: COLORS.greenM,
+  },
+
+  calendarDayText: {
+    color: COLORS.black,
+    fontSize: responsiveFont(14),
+    fontFamily: "NotoSansMyanmar_400Regular",
+  },
+
+  calendarDayTextDisabled: {
+    color: COLORS.grey,
+  },
+
+  calendarDayTextSelected: {
+    color: COLORS.back,
+    fontFamily: "NotoSansMyanmar_700Bold",
+  },
+  calendarMonthHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: responsiveSpacing(8),
+    paddingVertical: responsiveVerticalSize(4),
+  },
+  calendarMonthHeaderText: {
+    color: COLORS.greenM,
+    fontSize: responsiveFont(17),
+    fontFamily: "NotoSansMyanmar_700Bold",
+    marginRight: responsiveSpacing(4),
   },
 });

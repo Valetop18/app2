@@ -4,7 +4,6 @@ import { useFonts } from "expo-font";
 import MainNavigation from "./navigation/index";
 import store from "./store";
 import { Provider } from "react-redux";
-import { init } from "./db";
 import { Sedan_400Regular } from "@expo-google-fonts/sedan";
 import {
   NotoSansMyanmar_100Thin,
@@ -17,18 +16,11 @@ import {
   NotoSansMyanmar_800ExtraBold,
   NotoSansMyanmar_900Black,
 } from "@expo-google-fonts/noto-sans-myanmar";
-import { ActivityIndicator } from "react-native";
 import { BuscadorProvider } from "./context/BuscadorContext";
 import { AuthProvider } from "./context/AuthContext";
 import { TooltipProvider } from "./context/TooltipProvider";
 import { ReaccionesProvider } from "./context/ReaccionesContext";
-
-init()
-  .then(() => console.log("database initialized"))
-  .catch((err) => {
-    console.log("database fail connect");
-    console.log(err.message);
-  });
+import { DataProvider } from "./context/DataContext";
 
 export default function App() {
   //const [loaded] = useFonts({
@@ -64,7 +56,9 @@ export default function App() {
         <BuscadorProvider>
           <TooltipProvider>
             <ReaccionesProvider>
-              <MainNavigation />
+              <DataProvider>
+                <MainNavigation />
+              </DataProvider>
             </ReaccionesProvider>
           </TooltipProvider>
         </BuscadorProvider>
