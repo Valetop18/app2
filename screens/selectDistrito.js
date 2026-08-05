@@ -8,12 +8,10 @@ import { useAuth } from "../context/AuthContext";
 import { profilesRepository } from "../infrastructure/profilesRepository";
 import { useNavigation } from "@react-navigation/native";
 import {
-  responsiveVerticalSize,
-  responsiveSpacing,
-  responsiveFont,
-  responsiveIcon,
-  responsiveSize,
+  responsiveWidthScale,
+  responsiveHeightScale,
 } from "../utils/responsive";
+import { FONTS } from "../constants/fonts";
 
 const SelectDistrito = () => {
   const [regionSelect, setRegionSelect] = useState();
@@ -137,6 +135,16 @@ const SelectDistrito = () => {
     }
   };
 
+  const responsiveBoth = (baseValue, minValue = 0) => {
+    return Math.max(
+      minValue,
+      Math.min(
+        responsiveWidthScale(baseValue),
+        responsiveHeightScale(baseValue),
+      ),
+    );
+  };
+
   return (
     <View style={styles.container}>
       {comunaSelect ? (
@@ -145,7 +153,10 @@ const SelectDistrito = () => {
             <Text
               style={[
                 styles.distritoTitulo,
-                { textAlign: distritoSelect < 10 ? "right" : "center" },
+                {
+                  textAlign: distritoSelect < 10 ? "right" : "center",
+                  fontSize: responsiveBoth(60),
+                },
               ]}
             >
               DISTRITO
@@ -154,7 +165,11 @@ const SelectDistrito = () => {
           <Text
             style={[
               styles.distrito,
-              { paddingRight: distritoSelect < 10 ? 15 : 0 },
+              {
+                paddingRight:
+                  distritoSelect < 10 ? responsiveWidthScale(15) : 0,
+                fontSize: responsiveBoth(290),
+              },
             ]}
           >
             {distritoSelect}
@@ -170,6 +185,7 @@ const SelectDistrito = () => {
           <Picker
             selectedValue={regionSelect}
             onValueChange={(itemValue) => setRegionSelect(itemValue)}
+            style={styles.picker}
           >
             <Picker.Item
               label="Selecciona tu región"
@@ -185,13 +201,12 @@ const SelectDistrito = () => {
             ))}
           </Picker>
         </View>
-        <Text style={styles.label} marginTop={"8%"}>
-          Comuna:
-        </Text>
+        <Text style={[styles.label, styles.comunaLabel]}>Comuna:</Text>
         <View style={styles.input}>
           <Picker
             selectedValue={comunaSelect}
             onValueChange={handlerSelectDistrito}
+            style={styles.picker}
           >
             <Picker.Item label="Selecciona tu comuna" value={null} />
             {COMUNASSELECTED.map((comuna) => (
@@ -218,93 +233,133 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     backgroundColor: COLORS.back,
-    justifyContent: "center",
+    justifyContent: "flex-start",
+    paddingTop: responsiveHeightScale(420),
   },
+
   containerTitle: {
     width: "80%",
     alignItems: "center",
-    alignContent: "center",
-    paddingVertical: responsiveVerticalSize(8),
-    marginTop: "120%",
+    justifyContent: "center",
+    paddingVertical: responsiveHeightScale(8),
   },
+
   title: {
     color: COLORS.greenM,
-    fontSize: responsiveFont(30),
-    fontWeight: "bold",
-    letterSpacing: 2,
-    fontFamily: "NotoSansMyanmar-Regular",
+    fontSize: Math.max(
+      11,
+      Math.min(
+        responsiveWidthScale(30),
+        responsiveHeightScale(30),
+      ),
+    ),
+    letterSpacing: responsiveWidthScale(2),
+    fontFamily: FONTS.bold,
+    textAlign: "center",
   },
+
   containerSelect: {
-    marginTop: "5%",
-    height: "30%",
+    marginTop: responsiveHeightScale(55),
     justifyContent: "center",
     width: "85%",
   },
-  input: {
-    width: "100%",
-    fontFamily: "NotoSansMyanmar-Regular",
-    fontSize: responsiveFont(20),
-    marginVertical: responsiveVerticalSize(5),
-    marginTop: responsiveVerticalSize(5),
-    borderRadius: 10,
-    backgroundColor: COLORS.verdeclaro,
-    color: COLORS.black,
-  },
+
   label: {
     color: COLORS.greenM,
-    fontSize: responsiveFont(15),
-    fontFamily: "NotoSansMyanmar_600SemiBold",
-    fontWeight: "bold",
-    marginVertical: responsiveVerticalSize(4),
-    marginLeft: responsiveSpacing(4),
+    fontSize: Math.max(
+      11,
+      Math.min(
+        responsiveWidthScale(15),
+        responsiveHeightScale(15),
+      ),
+    ),
+    fontFamily: FONTS.bold,
+    marginVertical: responsiveHeightScale(4),
+    marginLeft: responsiveWidthScale(4),
   },
+
+  comunaLabel: {
+    marginTop: responsiveHeightScale(30),
+  },
+
+  input: {
+    width: "100%",
+    height: responsiveHeightScale(54),
+    marginTop: responsiveHeightScale(5),
+    borderRadius: responsiveWidthScale(10),
+    backgroundColor: COLORS.verdeclaro,
+    overflow: "hidden",
+    justifyContent: "center",
+  },
+
+  picker: {
+    width: "100%",
+    height: responsiveHeightScale(54),
+    color: COLORS.black,
+    fontFamily: FONTS.regular,
+    fontSize: Math.max(
+      11,
+      Math.min(
+        responsiveWidthScale(16),
+        responsiveHeightScale(16),
+      ),
+    ),
+  },
+
+  containerButon: {
+    alignItems: "center",
+    width: "95%",
+    marginTop: responsiveHeightScale(70),
+  },
+
   buton: {
     backgroundColor: COLORS.greenM,
     width: "45%",
     justifyContent: "center",
     alignItems: "center",
-    borderRadius: 20,
-    height: "15%",
+    borderRadius: responsiveWidthScale(20),
+    height: responsiveHeightScale(44),
   },
-  containerButon: {
-    alignItems: "center",
-    top: "3%",
-    width: "95%",
-    height: "30%",
-},
+
   ingresar: {
-    color: "#ffffff",
-    fontFamily: "NotoSansMyanmar-Regular",
-    fontSize: 16,
-    letterSpacing: 1.5,
-    fontWeight: "bold",
+    color: COLORS.back,
+    fontFamily: FONTS.bold,
+    fontSize: Math.max(
+      11,
+      Math.min(
+        responsiveWidthScale(16),
+        responsiveHeightScale(16),
+      ),
+    ),
+    letterSpacing: responsiveWidthScale(1.5),
   },
-  distrito: {
-    color: COLORS.verdeclaro,
-    fontSize: responsiveFont(290),
-    fontWeight: "bold",
-    letterSpacing: -20,
-    marginTop: "-40%",
-  },
+
   containerDistrito: {
-    paddingRight: 10,
-    width: "76%",
-    height: "36%",
-    alignSelf: "flex-end",
-    alignItems: "flex-end",
-    alignContent: "stretch",
-    top: "5%",
     position: "absolute",
+    top: responsiveHeightScale(75),
+    right: 0,
+    paddingRight: responsiveWidthScale(10),
+    width: "76%",
+    height: responsiveHeightScale(360),
+    alignItems: "flex-end",
   },
+
   distritoLabel: {
     width: "100%",
   },
+
   distritoTitulo: {
     color: COLORS.verdeclaro,
-    fontSize: responsiveFont(60),
-    fontWeight: "bold",
-    letterSpacing: -2,
-    marginTop: "3%",
+    fontFamily: FONTS.bold,
+    letterSpacing: responsiveWidthScale(-2),
+    marginTop: responsiveHeightScale(3),
+  },
+
+  distrito: {
+    color: COLORS.verdeclaro,
+    fontFamily: FONTS.bold,
+    letterSpacing: responsiveWidthScale(-20),
+    marginTop: responsiveHeightScale(-45),
   },
 });
 export default SelectDistrito;

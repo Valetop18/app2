@@ -2,11 +2,12 @@ import React from "react";
 import { View, Text, Image, StyleSheet, TouchableOpacity } from "react-native";
 import { MaterialIcons } from "@react-native-vector-icons/material-icons";
 import { COLORS } from "../constants/colors";
+import { FONTS } from "../constants/fonts";
 import Ionicons from "@react-native-vector-icons/ionicons";
 import { useState, useEffect } from "react";
 import { msPersonRaisedHand } from "@material-symbols-react-native/outlined-400";
 import { MsIcon } from "material-symbols-react-native";
-import { responsiveSize, responsiveFont, responsiveIcon } from "../utils/responsive";
+import { responsiveWidthScale } from "../utils/responsive";
 
 const coloresPorPartido = {
   DES: COLORS.DES,
@@ -44,10 +45,10 @@ const GridRepresent = ({ item, reaccion, onSelected, handleLike }) => {
           <Image
             style={{
               borderColor,
-              width: responsiveSize(76),
-              height: responsiveSize(76),
-              borderRadius: responsiveSize(100),
-              borderWidth: responsiveSize(3),
+              width: responsiveWidthScale(76),
+              height: responsiveWidthScale(76),
+              borderRadius: responsiveWidthScale(100),
+              borderWidth: responsiveWidthScale(3),
             }}
             source={{ uri: item.foto }}
           />
@@ -76,31 +77,31 @@ const GridRepresent = ({ item, reaccion, onSelected, handleLike }) => {
             >
               <Ionicons
                 name="heart-circle-outline"
-                size={responsiveIcon(26)}
+                size={responsiveWidthScale(26)}
                 color={reaccion === "like" ? COLORS.greenM : COLORS.grey}
               />
             </TouchableOpacity>
           </View>
           <View style={styles.containerInfo}>
             <View>
-              <View flexDirection={"row"} alignItems={"center"}>
+              <View
+                flexDirection={"row"}
+                alignItems={"center"}
+                marginVertical={responsiveWidthScale(6)}
+              >
                 <MaterialIcons
                   name="event-available"
-                  size={responsiveIcon(17)}
+                  size={responsiveWidthScale(17)}
                   color={COLORS.greenM}
                 />
                 <Text style={styles.informacion}>
                   {item.asistencia ?? 0}% Asistencia{" "}
                 </Text>
               </View>
-              <View
-                flexDirection={"row"}
-                alignItems={"center"}
-                marginTop={"2.5%"}
-              >
+              <View flexDirection={"row"} alignItems={"center"} marginTop={responsiveWidthScale(3)}>
                 <MsIcon
                   icon={msPersonRaisedHand}
-                  size={responsiveIcon(18)}
+                  size={responsiveWidthScale(17)}
                   color={COLORS.greenM}
                 />
                 <Text style={styles.informacion}>
@@ -110,24 +111,24 @@ const GridRepresent = ({ item, reaccion, onSelected, handleLike }) => {
             </View>
             <View style={styles.info}>
               <View>
-                <View flexDirection={"row"} alignItems={"center"}>
+                <View
+                  flexDirection={"row"}
+                  alignItems={"center"}
+                  marginVertical={responsiveWidthScale(6)}
+                >
                   <MaterialIcons
                     name="assignment-late"
-                    size={responsiveIcon(18)}
+                    size={responsiveWidthScale(17)}
                     color={COLORS.greenM}
                   />
                   <Text style={styles.informacion} marginLeft={"1%"}>
                     {item.oficios ?? 0} oficios
                   </Text>
                 </View>
-                <View
-                  flexDirection={"row"}
-                  alignItems={"center"}
-                  marginTop={"2.5%"}
-                >
+                <View flexDirection={"row"} alignItems={"center"} marginTop={responsiveWidthScale(3)}>
                   <MaterialIcons
                     name="addchart"
-                    size={responsiveIcon(17)}
+                    size={responsiveWidthScale(17)}
                     color={COLORS.greenM}
                   />
                   <Text style={styles.informacion}>
@@ -139,7 +140,7 @@ const GridRepresent = ({ item, reaccion, onSelected, handleLike }) => {
             <View style={styles.dataUsage}>
               <MaterialIcons
                 name="data-usage"
-                size={responsiveIcon(40)}
+                size={responsiveWidthScale(40)}
                 color={COLORS.verdeclaro}
                 position={"absolute"}
               />
@@ -159,96 +160,118 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: COLORS.back,
   },
+
   container: {
     marginVertical: "1%",
     display: "flex",
     alignContent: "center",
     flexDirection: "row",
-    borderRadius: 10,
+    borderRadius: responsiveWidthScale(10),
     width: "96%",
     backgroundColor: COLORS.back,
     elevation: 3,
     shadowColor: COLORS.black,
   },
+
   containImage: {
     alignContent: "center",
     justifyContent: "center",
     alignItems: "center",
     marginHorizontal: "1.8%",
-    marginTop: "4.5%",
+    marginTop: "3.5%",
   },
+
   infoEscrita: {
     marginVertical: "2.5%",
     width: "74%",
   },
+
   info: {
-    marginLeft: "6.5%",
+    marginLeft: "5%",
+    transform: [
+      {
+        translateY: responsiveWidthScale(1),
+      },
+    ],
   },
+
   name: {
-    fontFamily: "NotoSansMyanmar_700Bold",
-    fontSize: responsiveFont(20),
+    fontFamily: FONTS.bold,
+    fontSize: responsiveWidthScale(20),
     marginLeft: "1%",
     flex: 1,
     maxWidth: "87%",
     color: COLORS.black,
     marginTop: "-1.5%",
   },
+
   totLikes: {
-    fontFamily: "NotoSansMyanmar_700Bold",
-    fontSize: responsiveFont(12),
+    fontFamily: FONTS.bold,
+    fontSize: responsiveWidthScale(12),
     color: COLORS.greyM,
     right: "-2%",
+    top: responsiveWidthScale(-1.5),
   },
+
   icono: {
     justifyContent: "center",
     alignItems: "center",
     marginLeft: "4%",
   },
+
   porcentaje: {
-    fontFamily: "NotoSansMyanmar_700Bold",
-    fontSize: 12,
+    fontFamily: FONTS.bold,
+    fontSize: responsiveWidthScale(12),
   },
+
   partido: {
-    fontFamily: "NotoSansMyanmar_700Bold",
+    fontFamily: FONTS.bold,
     justifyContent: "center",
     alignItems: "center",
     color: COLORS.black,
-    fontSize: responsiveFont(14),
-    marginTop: "2%",
+    fontSize: responsiveWidthScale(14),
+    marginVertical: "4%",
   },
+
   parametros: {
-    fontFamily: "NotoSansMyanmar_400Regular",
+    fontFamily: FONTS.regular,
   },
+
   informacion: {
-    fontFamily: "NotoSansMyanmar_400Regular",
-    fontSize: responsiveFont(14),
+    fontFamily: FONTS.regular,
+    fontSize: responsiveWidthScale(14),
     color: COLORS.black,
-    marginLeft: 5,
+    marginLeft: responsiveWidthScale(5),
   },
+
   informacionProyectos: {
-    fontFamily: "NotoSansMyanmar_400Regular",
-    fontSize: 14,
+    fontFamily: FONTS.regular,
+    fontSize: responsiveWidthScale(14),
     color: COLORS.black,
     marginLeft: "2%",
   },
+
   containerInfo: {
-    marginVertical: "2%",
+    marginVertical: "2.5%",
     marginHorizontal: "3%",
     flexDirection: "row",
     marginLeft: "3%",
   },
+
   dataUsage: {
     alignItems: "center",
-    width: responsiveSize(42),
-    height: responsiveSize(42),
+    width: responsiveWidthScale(42),
+    height: responsiveWidthScale(42),
     justifyContent: "center",
-    right: -12,
-    marginTop: 5,
+    right: responsiveWidthScale(-12),
+    marginTop: responsiveWidthScale(5),
   },
+
   data2: {
-    fontSize: responsiveFont(12),
-    fontFamily: "NotoSansMyanmar_700Bold",
+    fontSize: responsiveWidthScale(12),
+    fontFamily: FONTS.bold,
     color: COLORS.greenM,
+    top: responsiveWidthScale(-1),
   },
 });
 

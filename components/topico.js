@@ -1,61 +1,33 @@
-import { View, Text, StyleSheet, useWindowDimensions } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
 import { COLORS } from "../constants/colors";
 import {
-  responsiveVerticalSize,
-  responsiveSpacing,
-  responsiveFont,
-  responsiveSize,
+  responsiveWidthScale,
+  responsiveHeightScale,
 } from "../utils/responsive";
+import { FONTS } from "../constants/fonts";
 
 export const Topicos = ({ item, selected }) => {
-  const { width } = useWindowDimensions();
-
-  const pantallaPequena = width < 390;
-  const pantallaMuyPequena = width < 350;
-
   const borderColor = COLORS.back;
   const backgroundColor = selected ? COLORS.verdeclaro : COLORS.greenM;
   const color = selected ? COLORS.greenM : COLORS.back;
 
-  const fontSize = pantallaMuyPequena
-    ? responsiveFont(12.5)
-    : pantallaPequena
-      ? responsiveFont(13.5)
-      : responsiveFont(15);
-
-  const paddingHorizontal = pantallaMuyPequena
-    ? responsiveSpacing(5)
-    : pantallaPequena
-      ? responsiveSpacing(7)
-      : responsiveSpacing(9);
-
   return (
-    <View
-      style={[
-        styles.container,
-        pantallaPequena && styles.containerPequeno,
-      ]}
-    >
+    <View style={styles.container}>
       <View
         style={[
           styles.containerTopico,
           {
             borderColor,
             backgroundColor,
-            paddingHorizontal,
           },
-          pantallaPequena && styles.containerTopicoPequeno,
         ]}
       >
         <Text
           numberOfLines={1}
-          adjustsFontSizeToFit
-          minimumFontScale={0.82}
           style={[
             styles.topico,
             {
               color,
-              fontSize,
             },
           ]}
         >
@@ -68,32 +40,23 @@ export const Topicos = ({ item, selected }) => {
 
 const styles = StyleSheet.create({
   container: {
-    paddingVertical: responsiveVerticalSize(4),
-    paddingHorizontal: responsiveSpacing(2),
-  },
-
-  containerPequeno: {
-    paddingVertical: responsiveVerticalSize(3),
-    paddingHorizontal: responsiveSpacing(1),
+    paddingVertical: responsiveHeightScale(4),
+    paddingHorizontal: responsiveWidthScale(2),
   },
 
   containerTopico: {
-    minHeight: responsiveVerticalSize(38),
-    paddingVertical: responsiveVerticalSize(2.1),
+    minHeight: responsiveHeightScale(38),
+    paddingVertical: responsiveHeightScale(2.1),
+    paddingHorizontal: responsiveWidthScale(9),
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: responsiveSize(2),
-    borderRadius: responsiveSize(10),
-  },
-
-  containerTopicoPequeno: {
-    minHeight: responsiveVerticalSize(34),
-    paddingVertical: responsiveVerticalSize(2),
-    borderRadius: responsiveSize(9),
+    borderWidth: responsiveWidthScale(2),
+    borderRadius: responsiveWidthScale(10),
   },
 
   topico: {
-    fontFamily: "NotoSansMyanmar_600SemiBold",
+    fontFamily: FONTS.medium,
+    fontSize: Math.max(11, responsiveWidthScale(15)),
     textAlign: "center",
     includeFontPadding: false,
   },

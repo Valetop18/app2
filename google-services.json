@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "745839911933",
+    "project_id": "nawi-ece53",
+    "storage_bucket": "nawi-ece53.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:745839911933:android:f5b260c7410980c4e86f94",
+        "android_client_info": {
+          "package_name": "com.nawi.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCa6W6Fj6u32VCCX4BYfN2aU8MXS998BtE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

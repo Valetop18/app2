@@ -1,6 +1,8 @@
 import React, { useState } from 'react'
 import { View, TextInput, StyleSheet } from 'react-native'
 import { COLORS } from '../constants/colors';
+import { FONTS } from '../constants/fonts';
+import { responsiveWidthScale } from "../utils/responsive";
 
 const Input = (props) => {
     const { id, value, setInput } = props;
@@ -31,14 +33,17 @@ const Input = (props) => {
 export default Input
 
 const styles = StyleSheet.create({
-    input:{
-        color: COLORS.black,
-        fontFamily: 'NotoSansMyanmar_500Medium',
-        fontSize: 16,
-        marginLeft: '2%',
-        height: '100%',
-        paddingVertical: 0,
-        paddingBottom: 0,
-        paddingTop: 0,
-    }
-})
+  input: {
+    width: "100%",
+    height: "100%",
+    color: COLORS.black,
+    fontFamily: FONTS.medium,
+    fontSize: Math.max(11, responsiveWidthScale(16)),
+    marginLeft: "2%",
+    paddingVertical: 0,
+    paddingBottom: 0,
+    paddingTop: 0,
+    textAlignVertical: "center",
+    includeFontPadding: false,
+  },
+});

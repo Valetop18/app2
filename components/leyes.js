@@ -6,6 +6,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import MaterialIcons from "@react-native-vector-icons/material-icons";
 import { MsIcon } from "material-symbols-react-native";
 import { FontAwesome } from "@expo/vector-icons";
+import { FONTS } from "../constants/fonts";
 
 export const GridLeyes = ({ item }) => {
   return (
@@ -71,14 +72,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   votacion: {
-    fontFamily: "NotoSansMyanmar_400Regular",
+    fontFamily: FONTS.regular,
     fontSize: 12,
     color: COLORS.black,
     marginHorizontal: "1%",
   },
   camara: {
     fontSize: 16,
-    fontFamily: "NotoSansMyanmar_700Bold",
+    fontFamily: FONTS.bold,
     color: COLORS.greenM,
     marginLeft: 10,
     marginRight: 7,
@@ -94,11 +95,11 @@ const styles = StyleSheet.create({
   },
   data2: {
     fontSize: 12,
-    fontFamily: "NotoSansMyanmar_700Bold",
+    fontFamily: FONTS.bold,
     color: COLORS.greenM,
   },
   nombre: {
-    fontFamily: "Sedan_400Regular",
+    fontFamily: FONTS.bold,
     fontSize: 18,
     color: COLORS.greenM,
     marginHorizontal: 10,
@@ -116,7 +117,7 @@ const styles = StyleSheet.create({
   },
   data2: {
     fontSize: 10,
-    fontFamily: "NotoSansMyanmar_700Bold",
+    fontFamily: FONTS.bold,
     color: COLORS.greenM,
   },
   estadistica: {
@@ -127,7 +128,7 @@ const styles = StyleSheet.create({
   },
   fecha: {
     fontSize: 12,
-    fontFamily: "NotoSansMyanmar_700Bold",
+    fontFamily: FONTS.bold,
     color: COLORS.greenM,
     marginRight: 7,
   },
@@ -139,7 +140,7 @@ const styles = StyleSheet.create({
 
   },
   descripcion: {
-    fontFamily: "NotoSansMyanmar_400Regular",
+    fontFamily: FONTS.regular,
     fontSize: 12,
     color: COLORS.black,
     textAlign: "justify",

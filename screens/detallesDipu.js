@@ -35,19 +35,14 @@ import { Skeleton } from "../components/Skeleton";
 import { votacionesRepository } from "../infrastructure/votacionesRepository";
 import Tooltip, { TOOLTIPS } from "../components/tooltip";
 import { ActivityIndicator } from "react-native";
-import {
-  responsiveFont,
-  responsiveSize,
-  responsiveIcon,
-} from "../utils/responsive";
+import { responsiveWidthScale } from "../utils/responsive";
 import { useReacciones } from "../context/ReaccionesContext";
 import { useData } from "../context/DataContext";
+import { FONTS } from "../constants/fonts";
 
 const SEMANAS_VISIBLES_GRAFICO = 8;
 
-const ESPACIO_EJES_GRAFICO = 120;
-
-const anchoGrafico = Dimensions.get("window").width - ESPACIO_EJES_GRAFICO;
+const anchoGrafico = responsiveWidthScale(312);
 
 const coloresPorPartido = {
   DES: COLORS.DES,
@@ -86,7 +81,12 @@ export const DescripcionDiputado = ({ route }) => {
 
   const idDiputado = route.params?.idDiputado;
 
-  const diputado = obtenerDiputado(idDiputado);
+  const diputadoCache = obtenerDiputado(idDiputado);
+
+  const [diputado, setDiputado] = useState(
+    diputadoCache ?? route.params?.diputadoInicial,
+  );
+
   const [porcentajeVotaciones, setPorcentajeVotaciones] = useState("");
   const [atrasosDiputado, setAtrasosDiputado] = useState("");
 
@@ -124,6 +124,15 @@ export const DescripcionDiputado = ({ route }) => {
     totalReacciones: 0,
     usuariosParticipantes: 0,
   });
+
+  useEffect(() => {
+    if (!diputadoCache) return;
+
+    setDiputado((anterior) => ({
+      ...anterior,
+      ...diputadoCache,
+    }));
+  }, [diputadoCache]);
 
   const formatearFechaGrafico = (fecha) => {
     if (!fecha) return "";
@@ -216,13 +225,13 @@ export const DescripcionDiputado = ({ route }) => {
     },
   );
 
-  const anchoGraficoPequeno = 175;
+  const anchoGraficoPequeno = responsiveWidthScale(173);
 
   const spacingGraficoPequeno =
     dataRepresentacionGraficoPequeno.length > 1
-      ? (anchoGraficoPequeno - 24) /
+      ? (anchoGraficoPequeno - responsiveWidthScale(24)) /
         (dataRepresentacionGraficoPequeno.length - 1)
-      : 40;
+      : responsiveWidthScale(40);
 
   useEffect(() => {
     const texto = search.trim();
@@ -312,6 +321,7 @@ export const DescripcionDiputado = ({ route }) => {
     ]);
 
     return {
+      diputadoCompleto: data,
       idDiputadoCamara,
       comisiones: data?.comisiones ?? [],
       atrasosDiputado,
@@ -474,9 +484,20 @@ export const DescripcionDiputado = ({ route }) => {
   const aplicarDetalleDiputado = (detalle) => {
     if (!detalle) return;
 
-    actualizarDiputado(idDiputado, () => ({
-      comisiones: detalle.comisiones ?? [],
-    }));
+    if (detalle.diputadoCompleto) {
+      setDiputado((anterior) => ({
+        ...anterior,
+        ...detalle.diputadoCompleto,
+        comisiones: detalle.comisiones ?? [],
+      }));
+
+      if (diputadoCache) {
+        actualizarDiputado(idDiputado, () => ({
+          ...detalle.diputadoCompleto,
+          comisiones: detalle.comisiones ?? [],
+        }));
+      }
+    }
 
     setIdDiputadoCamara(detalle.idDiputadoCamara);
     setAtrasosDiputado(detalle.atrasosDiputado);
@@ -527,6 +548,7 @@ export const DescripcionDiputado = ({ route }) => {
     fetchAll();
   }, []);
 
+  console.log("Diputado:", diputado);
   const borderColor = coloresPorPartido[diputado.partido] || "#000";
 
   const filtrarVotaciones = (texto) => {
@@ -540,8 +562,9 @@ export const DescripcionDiputado = ({ route }) => {
 
   const spacingGrafico =
     dataRepresentacion.length > 1
-      ? (anchoGrafico - 36) / (dataRepresentacion.length - 1)
-      : 50;
+      ? (anchoGrafico - responsiveWidthScale(36)) /
+        (dataRepresentacion.length - 1)
+      : responsiveWidthScale(50);
 
   const renderGridItem = (item) => {
     return (
@@ -549,11 +572,11 @@ export const DescripcionDiputado = ({ route }) => {
         <Text
           style={{
             color: COLORS.black,
-            fontSize: 15,
-            fontFamily: "NotoSansMyanmar_700Bold",
-            marginLeft: 20,
-            lineHeight: 30,
-            marginTop: 8,
+            fontSize: Math.max(11, responsiveWidthScale(15)),
+            fontFamily: FONTS.bold,
+            marginLeft: responsiveWidthScale(20),
+            lineHeight: responsiveWidthScale(30),
+            marginTop: responsiveWidthScale(8),
           }}
         >
           {item.titulo}:
@@ -572,28 +595,34 @@ export const DescripcionDiputado = ({ route }) => {
               {dataActual.cumplimiento ? (
                 <MaterialIcons
                   name="check-circle"
-                  size={15}
+                  size={responsiveWidthScale(15)}
                   color={COLORS.greenM}
-                  style={{ alignSelf: "center", marginTop: -2 }}
+                  style={{
+                    alignSelf: "center",
+                    marginTop: responsiveWidthScale(-2),
+                  }}
                 />
               ) : (
                 <Ionicons
                   name="chevron-forward-circle"
-                  size={15}
+                  size={responsiveWidthScale(15)}
                   color={COLORS.grey}
-                  style={{ alignSelf: "center", marginTop: -2 }}
+                  style={{
+                    alignSelf: "center",
+                    marginTop: responsiveWidthScale(-2),
+                  }}
                 />
               )}
 
               <Text
                 style={{
                   color: COLORS.black,
-                  fontSize: 13,
-                  fontFamily: "NotoSansMyanmar_400Regular",
-                  lineHeight: 16,
+                  fontSize: Math.max(11, responsiveWidthScale(13)),
+                  fontFamily: FONTS.regular,
+                  lineHeight: responsiveWidthScale(16),
                   textAlign: "justify",
-                  marginLeft: 8,
-                  marginVertical: 3,
+                  marginLeft: responsiveWidthScale(8),
+                  marginVertical: responsiveWidthScale(3),
                   width: "96%",
                 }}
               >
@@ -606,6 +635,9 @@ export const DescripcionDiputado = ({ route }) => {
     );
   };
 
+  const puedeDarLikeDistrito =
+    puedeInteractuar && Number(user?.distrito) === Number(diputado?.distrito);
+
   return (
     <KeyboardAvoidingView
       style={styles.keyboardView}
@@ -616,46 +648,85 @@ export const DescripcionDiputado = ({ route }) => {
         <View
           style={{
             alignSelf: "flex-start",
-            paddingVertical: 18,
-            paddingHorizontal: 10,
+            paddingVertical: responsiveWidthScale(18),
+            paddingHorizontal: responsiveWidthScale(10),
           }}
         >
           <View
             style={{
-              paddingLeft: 40,
+              paddingLeft: responsiveWidthScale(40),
             }}
           >
-            <Skeleton width={250} height={25} borderRadius={4} />
+            <Skeleton
+              width={responsiveWidthScale(250)}
+              height={responsiveWidthScale(25)}
+              borderRadius={responsiveWidthScale(4)}
+            />
           </View>
+
           <View
             style={{
-              marginHorizontal: 15,
+              marginHorizontal: responsiveWidthScale(15),
               flexDirection: "row",
-              paddingTop: 15,
+              paddingTop: responsiveWidthScale(15),
             }}
           >
-            <Skeleton width={100} height={100} borderRadius={100} />
-            <View style={{ marginHorizontal: 15, marginTop: 12 }}>
-              <Skeleton width={120} height={80} borderRadius={4} />
+            <Skeleton
+              width={responsiveWidthScale(100)}
+              height={responsiveWidthScale(100)}
+              borderRadius={responsiveWidthScale(100)}
+            />
+
+            <View
+              style={{
+                marginHorizontal: responsiveWidthScale(15),
+                marginTop: responsiveWidthScale(12),
+              }}
+            >
+              <Skeleton
+                width={responsiveWidthScale(120)}
+                height={responsiveWidthScale(80)}
+                borderRadius={responsiveWidthScale(4)}
+              />
             </View>
           </View>
-          <View style={{ marginHorizontal: 15, marginTop: 12 }}>
-            <Skeleton width={360} height={50} borderRadius={4} />
-          </View>
+
           <View
             style={{
-              paddingLeft: 30,
-              paddingVertical: 20,
+              marginHorizontal: responsiveWidthScale(15),
+              marginTop: responsiveWidthScale(12),
             }}
           >
-            <Skeleton width={220} height={20} borderRadius={4} />
+            <Skeleton
+              width={responsiveWidthScale(360)}
+              height={responsiveWidthScale(50)}
+              borderRadius={responsiveWidthScale(4)}
+            />
           </View>
+
           <View
             style={{
-              paddingLeft: 15,
+              paddingLeft: responsiveWidthScale(30),
+              paddingVertical: responsiveWidthScale(20),
             }}
           >
-            <Skeleton width={360} height={170} borderRadius={4} />
+            <Skeleton
+              width={responsiveWidthScale(220)}
+              height={responsiveWidthScale(20)}
+              borderRadius={responsiveWidthScale(4)}
+            />
+          </View>
+
+          <View
+            style={{
+              paddingLeft: responsiveWidthScale(15),
+            }}
+          >
+            <Skeleton
+              width={responsiveWidthScale(360)}
+              height={responsiveWidthScale(170)}
+              borderRadius={responsiveWidthScale(4)}
+            />
           </View>
         </View>
       ) : (
@@ -672,13 +743,10 @@ export const DescripcionDiputado = ({ route }) => {
               </Text>
               <TouchableOpacity
                 style={styles.favorite}
+                hitSlop={8}
+                activeOpacity={puedeDarLikeDistrito ? 0.2 : 1}
                 onPress={async () => {
-                  if (!puedeInteractuar) return;
-
-                  const distritoUsuario = Number(user?.distrito);
-                  const distritoDiputado = Number(diputado?.distrito);
-
-                  if (distritoUsuario !== distritoDiputado) return;
+                  if (!puedeDarLikeDistrito) return;
 
                   const resultado = await setReaccionRepresentante(
                     idDiputado,
@@ -704,13 +772,22 @@ export const DescripcionDiputado = ({ route }) => {
                 <Text style={styles.interes}>
                   {diputado?.totalLikes > 0 ? diputado.totalLikes : ""}
                 </Text>
+
                 <Ionicons
                   name="heart-circle-outline"
-                  size={responsiveIcon(34)}
+                  size={responsiveWidthScale(34)}
                   color={
                     reaccionActual === "like" ? COLORS.greenM : COLORS.grey
                   }
                 />
+
+                {!puedeDarLikeDistrito && (
+                  <View style={styles.favoriteTooltipOverlay}>
+                    <Tooltip text={TOOLTIPS.reaccionFueraDistrito}>
+                      <View style={styles.favoriteTooltipTouchArea} />
+                    </Tooltip>
+                  </View>
+                )}
               </TouchableOpacity>
             </View>
             <View style={styles.container2}>
@@ -718,10 +795,10 @@ export const DescripcionDiputado = ({ route }) => {
                 <Image
                   style={{
                     borderColor,
-                    width: responsiveSize(100),
-                    height: responsiveSize(100),
-                    borderRadius: 100,
-                    borderWidth: responsiveSize(4),
+                    width: responsiveWidthScale(100),
+                    height: responsiveWidthScale(100),
+                    borderRadius: responsiveWidthScale(100),
+                    borderWidth: responsiveWidthScale(4),
                   }}
                   source={{ uri: diputado.foto }}
                 />
@@ -735,7 +812,7 @@ export const DescripcionDiputado = ({ route }) => {
                   <View flexDirection={"row"} alignItems={"center"}>
                     <MaterialIcons
                       name="event-available"
-                      size={responsiveIcon(17)}
+                      size={responsiveWidthScale(17)}
                       color={COLORS.black}
                     />
                     <Text style={styles.informacion}>
@@ -747,7 +824,7 @@ export const DescripcionDiputado = ({ route }) => {
                   <View flexDirection={"row"} alignItems={"center"}>
                     <MsIcon
                       icon={msPersonRaisedHand}
-                      size={responsiveIcon(18)}
+                      size={responsiveWidthScale(18)}
                       color={COLORS.black}
                     />
                     <Text style={styles.informacion}>
@@ -759,7 +836,7 @@ export const DescripcionDiputado = ({ route }) => {
                   <View flexDirection={"row"} alignItems={"center"}>
                     <MaterialIcons
                       name="assignment-late"
-                      size={responsiveIcon(18)}
+                      size={responsiveWidthScale(18)}
                       color={COLORS.black}
                     />
                     <Text style={styles.informacion} marginLeft={"1%"}>
@@ -771,7 +848,7 @@ export const DescripcionDiputado = ({ route }) => {
                   <View flexDirection={"row"} alignItems={"center"}>
                     <MaterialIcons
                       name="addchart"
-                      size={responsiveIcon(17)}
+                      size={responsiveWidthScale(17)}
                       color={COLORS.black}
                     />
                     <Text style={styles.informacion}>
@@ -783,7 +860,7 @@ export const DescripcionDiputado = ({ route }) => {
                   <View flexDirection={"row"} alignItems={"center"}>
                     <MsIcon
                       icon={msAlarm}
-                      size={responsiveIcon(18)}
+                      size={responsiveWidthScale(18)}
                       color={COLORS.black}
                     />
                     <Text style={styles.informacion}>
@@ -795,7 +872,7 @@ export const DescripcionDiputado = ({ route }) => {
               <View style={styles.datausage}>
                 <MaterialIcons
                   name="data-usage"
-                  size={responsiveIcon(50)}
+                  size={responsiveWidthScale(50)}
                   color={COLORS.verdeclaro}
                   position="absolute"
                 />
@@ -817,7 +894,7 @@ export const DescripcionDiputado = ({ route }) => {
             <View style={styles.infoComisiones}>
               <MaterialIcons
                 name="diversity-2"
-                size={responsiveIcon(17)}
+                size={responsiveWidthScale(17)}
                 color={COLORS.black}
               />
               <Text style={styles.informacion}>Comisiones que integra:</Text>
@@ -834,7 +911,11 @@ export const DescripcionDiputado = ({ route }) => {
             <View style={styles.container4}>
               {dataGrafico.length > 0 ? (
                 <View style={styles.containerAvances}>
-                  <View width={90} marginVertical={"5%"} alignSelf={"center"}>
+                  <View
+                    width={responsiveWidthScale(90)}
+                    marginVertical={"5%"}
+                    alignSelf={"center"}
+                  >
                     <Text style={styles.label}>
                       Avances del programa presentado.
                     </Text>
@@ -845,21 +926,24 @@ export const DescripcionDiputado = ({ route }) => {
                   >
                     <PieChart
                       strokeColor={COLORS.back}
-                      strokeWidth={1}
+                      strokeWidth={responsiveWidthScale(1)}
                       donut
                       data={dataGrafico}
                       showValuesAsLabels={true}
-                      innerRadius={18}
-                      radius={45}
-                      textSize={18}
+                      innerRadius={responsiveWidthScale(18)}
+                      radius={responsiveWidthScale(45)}
+                      textSize={responsiveWidthScale(18)}
                       centerLabelComponent={() => {
                         return (
                           <View>
                             <Text
                               style={{
                                 color: COLORS.greenM,
-                                fontSize: 14,
-                                fontFamily: "NotoSansMyanmar_700Bold",
+                                fontSize: Math.max(
+                                  11,
+                                  responsiveWidthScale(14),
+                                ),
+                                fontFamily: FONTS.bold,
                               }}
                             >
                               0%
@@ -877,10 +961,19 @@ export const DescripcionDiputado = ({ route }) => {
                   alignSelf={"center"}
                   alignItems={"center"}
                 >
-                  <View marginVertical={"1%"} top={-6}>
-                    <MsIcon icon={msBlock} size={18} color={COLORS.greenM} />
+                  <View marginVertical={"1%"} top={responsiveWidthScale(-6)}>
+                    <MsIcon
+                      icon={msBlock}
+                      size={responsiveWidthScale(18)}
+                      color={COLORS.greenM}
+                    />
                   </View>
-                  <Text style={styles.label} width={170} top={-3}>
+
+                  <Text
+                    style={styles.label}
+                    width={responsiveWidthScale(170)}
+                    top={responsiveWidthScale(-3)}
+                  >
                     No se encontró programa, propuestas o compromisos de
                     campaña.
                   </Text>
@@ -897,12 +990,11 @@ export const DescripcionDiputado = ({ route }) => {
                 >
                   <LineChart
                     areaChart
-                    height={53}
+                    height={responsiveWidthScale(53)}
                     width={anchoGraficoPequeno}
-                    // Eje izquierdo: representación distrital
                     data={dataRepresentacionGraficoPequeno}
                     color={COLORS.verdeclaro}
-                    thickness={2}
+                    thickness={responsiveWidthScale(2)}
                     hideDataPoints
                     curved
                     startFillColor={COLORS.verdeclaro}
@@ -913,15 +1005,15 @@ export const DescripcionDiputado = ({ route }) => {
                     noOfSections={2}
                     yAxisColor={COLORS.grey}
                     yAxisThickness={0}
-                    yAxisLabelWidth={15}
+                    yAxisLabelWidth={responsiveWidthScale(15)}
                     formatYLabel={(value) => `${Math.round(Number(value))}`}
                     yAxisTextStyle={{
                       color: COLORS.greyM,
-                      fontFamily: "NotoSansMyanmar_600SemiBold",
-                      fontSize: 7.5,
-                      width: 15,
+                      fontFamily: FONTS.medium,
+                      fontSize: responsiveWidthScale(7.5),
+                      width: responsiveWidthScale(15),
                       textAlign: "right",
-                      marginRight: -4,
+                      marginRight: responsiveWidthScale(-4),
                     }}
                     yAxisLabelContainerStyle={{
                       paddingLeft: 0,
@@ -929,14 +1021,12 @@ export const DescripcionDiputado = ({ route }) => {
                       marginLeft: 0,
                       marginRight: 0,
                     }}
-                    // Eje derecho: likes
                     secondaryData={dataLikes}
                     secondaryLineConfig={{
                       color: COLORS.greenM,
-                      thickness: 2,
+                      thickness: responsiveWidthScale(2),
                       curved: true,
                       hideDataPoints: true,
-
                       startFillColor: COLORS.greenM,
                       startOpacity: 0.45,
                       endFillColor: COLORS.back,
@@ -947,16 +1037,16 @@ export const DescripcionDiputado = ({ route }) => {
                       noOfSections: 2,
                       yAxisColor: COLORS.grey,
                       yAxisThickness: 0,
-                      yAxisLabelWidth: 15,
+                      yAxisLabelWidth: responsiveWidthScale(15),
 
                       formatYLabel: (value) => `${Math.round(Number(value))}`,
 
                       yAxisTextStyle: {
                         color: COLORS.greyM,
-                        fontFamily: "NotoSansMyanmar_600SemiBold",
-                        fontSize: 7.5,
+                        fontFamily: FONTS.medium,
+                        fontSize: responsiveWidthScale(7.5),
                         textAlign: "left",
-                        marginLeft: -4,
+                        marginLeft: responsiveWidthScale(-4),
                       },
 
                       yAxisLabelContainerStyle: {
@@ -966,19 +1056,18 @@ export const DescripcionDiputado = ({ route }) => {
                         marginRight: 0,
                       },
                     }}
-                    // Sin líneas de grilla
                     hideRules
-                    xAxisThickness={1}
+                    xAxisThickness={responsiveWidthScale(1)}
                     xAxisColor={COLORS.grey}
                     xAxisLabelTextStyle={{
                       color: COLORS.greyM,
-                      fontFamily: "NotoSansMyanmar_600SemiBold",
-                      fontSize: 7,
+                      fontFamily: FONTS.medium,
+                      fontSize: responsiveWidthScale(7),
                       textAlign: "center",
-                      marginTop: 2,
+                      marginTop: responsiveWidthScale(2),
                     }}
-                    initialSpacing={8}
-                    endSpacing={8}
+                    initialSpacing={responsiveWidthScale(8)}
+                    endSpacing={responsiveWidthScale(8)}
                     spacing={spacingGraficoPequeno}
                     disableScroll
                     isAnimated
@@ -998,7 +1087,11 @@ export const DescripcionDiputado = ({ route }) => {
                   </View>
 
                   <View
-                    style={{ width: 130, marginVertical: "3%", marginLeft: 5 }}
+                    style={{
+                      width: responsiveWidthScale(135),
+                      marginVertical: "3%",
+                      marginLeft: responsiveWidthScale(5),
+                    }}
                   >
                     <Text style={styles.label2}>
                       Proyectos aprobados/presentados
@@ -1010,7 +1103,13 @@ export const DescripcionDiputado = ({ route }) => {
                     <View style={styles.circulo}>
                       <Text style={styles.data2}>{adherenciaPartido}%</Text>
                     </View>
-                    <View width={130} marginLeft={5}>
+
+                    <View
+                      style={{
+                        width: responsiveWidthScale(135),
+                        marginLeft: responsiveWidthScale(5),
+                      }}
+                    >
                       <Text style={styles.label2}>
                         Adherencia al partido político
                       </Text>
@@ -1026,7 +1125,14 @@ export const DescripcionDiputado = ({ route }) => {
                         {compatibilidadUsuario.compatibilidad}%
                       </Text>
                     </View>
-                    <View width={140} marginVertical={"3%"} marginLeft={5}>
+
+                    <View
+                      style={{
+                        width: responsiveWidthScale(140),
+                        marginVertical: "3%",
+                        marginLeft: responsiveWidthScale(5),
+                      }}
+                    >
                       <Text style={styles.label2}>
                         Compatibilidad con el representante
                       </Text>
@@ -1040,9 +1146,16 @@ export const DescripcionDiputado = ({ route }) => {
                         {diputado.rankingEstadistico ?? "-"}
                       </Text>
                     </View>
-                    <View width={145} marginVertical={"3%"} marginLeft={5}>
+
+                    <View
+                      style={{
+                        width: responsiveWidthScale(147),
+                        marginVertical: "3%",
+                        marginLeft: responsiveWidthScale(5),
+                      }}
+                    >
                       <Text style={styles.label2}>
-                        Lugar estadístico de todos los representantes
+                        Lugar estadístico entre los representantes
                       </Text>
                     </View>
                   </View>
@@ -1188,7 +1301,7 @@ export const DescripcionDiputado = ({ route }) => {
               <View style={styles.modalEvolucionIcon}>
                 <MaterialIcons
                   name="show-chart"
-                  size={24}
+                  size={responsiveWidthScale(24)}
                   color={COLORS.greenM}
                 />
               </View>
@@ -1208,7 +1321,11 @@ export const DescripcionDiputado = ({ route }) => {
                 onPress={() => setModalEvolucionVisible(false)}
                 hitSlop={10}
               >
-                <Ionicons name="close" size={18} color={COLORS.greenM} />
+                <Ionicons
+                  name="close"
+                  size={responsiveWidthScale(18)}
+                  color={COLORS.greenM}
+                />
               </TouchableOpacity>
             </View>
 
@@ -1260,25 +1377,23 @@ export const DescripcionDiputado = ({ route }) => {
               >
                 <LineChart
                   areaChart
-                  height={220}
+                  height={responsiveWidthScale(220)}
                   width={anchoGrafico}
-                  // Eje izquierdo: representación distrital
                   data={dataRepresentacion}
                   color={COLORS.verdeclaro}
                   dataPointsColor1={COLORS.verdeclaro}
-                  dataPointsRadius={4}
-                  thickness={3}
+                  dataPointsRadius={responsiveWidthScale(4)}
+                  thickness={responsiveWidthScale(3)}
                   startFillColor={COLORS.verdeclaro}
                   startOpacity={0.55}
                   endFillColor={COLORS.back}
                   endOpacity={0.04}
-                  // Eje derecho: likes
                   secondaryData={dataLikes}
                   secondaryLineConfig={{
                     color: COLORS.greenM,
                     dataPointsColor: COLORS.greenM,
-                    dataPointsRadius: 4,
-                    thickness: 3,
+                    dataPointsRadius: responsiveWidthScale(4),
+                    thickness: responsiveWidthScale(3),
                     curved: true,
                     startFillColor: COLORS.greenM,
                     startOpacity: 0.28,
@@ -1294,9 +1409,9 @@ export const DescripcionDiputado = ({ route }) => {
                     yAxisTextStyle: {
                       ...styles.modalGraficoEjeY,
                       textAlign: "left",
-                      marginLeft: -4,
+                      marginLeft: responsiveWidthScale(-4),
                     },
-                    yAxisLabelWidth: 18,
+                    yAxisLabelWidth: responsiveWidthScale(18),
                     yAxisLabelContainerStyle: {
                       paddingRight: 0,
                       paddingLeft: 0,
@@ -1313,14 +1428,14 @@ export const DescripcionDiputado = ({ route }) => {
                   yAxisThickness={0}
                   yAxisTextStyle={{
                     ...styles.modalGraficoEjeY,
-                    width: 18,
+                    width: responsiveWidthScale(18),
                     textAlign: "right",
-                    marginRight: -4,
+                    marginRight: responsiveWidthScale(-4),
                   }}
-                  xAxisThickness={1}
+                  xAxisThickness={responsiveWidthScale(1)}
                   xAxisColor={COLORS.grey}
                   xAxisLabelTextStyle={styles.modalGraficoEjeX}
-                  initialSpacing={12}
+                  initialSpacing={responsiveWidthScale(12)}
                   spacing={spacingGrafico}
                   showVerticalLines
                   verticalLinesColor="#F0F2F0"
@@ -1328,8 +1443,8 @@ export const DescripcionDiputado = ({ route }) => {
                   isAnimated
                   curved
                   animationDuration={700}
-                  yAxisLabelWidth={18}
-                  endSpacing={12}
+                  yAxisLabelWidth={responsiveWidthScale(18)}
+                  endSpacing={responsiveWidthScale(12)}
                   yAxisLabelContainerStyle={{
                     paddingRight: 0,
                     paddingLeft: 0,
@@ -1344,7 +1459,7 @@ export const DescripcionDiputado = ({ route }) => {
             <View style={styles.modalEvolucionFooter}>
               <Ionicons
                 name="information-circle-outline"
-                size={16}
+                size={responsiveWidthScale(16)}
                 color={COLORS.greyM}
               />
 
@@ -1386,15 +1501,15 @@ const styles = StyleSheet.create({
     borderWidth: 3.8,
   },
   title: {
-    fontSize: responsiveFont(21),
-    fontFamily: "NotoSansMyanmar_700Bold",
+    fontSize: Math.max(11, responsiveWidthScale(21)),
+    fontFamily: FONTS.bold,
     color: COLORS.black,
   },
   comentarioModal: {
-    fontSize: 14,
-    fontFamily: "NotoSansMyanmar_400Regular",
+    fontSize: Math.max(11, responsiveWidthScale(14)),
+    fontFamily: FONTS.regular,
     color: COLORS.greenM,
-    lineHeight: 18,
+    lineHeight: responsiveWidthScale(18),
     textAlign: "right",
   },
   favorite: {
@@ -1404,15 +1519,28 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     marginTop: "3%",
   },
+  favoriteTooltipOverlay: {
+    position: "absolute",
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    zIndex: 10,
+  },
+
+  favoriteTooltipTouchArea: {
+    width: "100%",
+    height: "100%",
+  },
   interes: {
-    fontSize: 12,
-    fontFamily: "NotoSansMyanmar_700Bold",
+    fontSize: Math.max(11, responsiveWidthScale(12)),
+    fontFamily: FONTS.bold,
     color: COLORS.greyM,
-    paddingRight: 8,
+    paddingRight: responsiveWidthScale(8),
   },
   title2: {
-    fontSize: 16,
-    fontFamily: "NotoSansMyanmar_700Bold",
+    fontSize: Math.max(11, responsiveWidthScale(16)),
+    fontFamily: FONTS.bold,
     color: COLORS.black,
     marginLeft: "3%",
   },
@@ -1434,7 +1562,7 @@ const styles = StyleSheet.create({
   container5: {
     alignItems: "center",
     flexDirection: "row",
-    marginHorizontal: 5,
+    marginHorizontal: responsiveWidthScale(4),
   },
   container6: {
     flexDirection: "row",
@@ -1444,36 +1572,36 @@ const styles = StyleSheet.create({
   infoComisiones: {
     marginHorizontal: "3.5%",
     flexDirection: "row",
-    paddingTop: 10,
-    paddingVertical: 5,
+    paddingTop: responsiveWidthScale(10),
+    paddingVertical: responsiveWidthScale(5),
     alignItems: "center",
   },
   descripcion: {
-    fontFamily: "NotoSansMyanmar_400Regular",
-    fontSize: 13,
+    fontFamily: FONTS.regular,
+    fontSize: Math.max(11, responsiveWidthScale(13)),
     textAlign: "justify",
     marginHorizontal: "2.5%",
-    lineHeight: 18,
+    lineHeight: responsiveWidthScale(18),
     top: "1%",
   },
   comisiones: {
-    fontFamily: "NotoSansMyanmar_400Regular",
-    fontSize: 13,
+    fontFamily: FONTS.regular,
+    fontSize: Math.max(11, responsiveWidthScale(13)),
     marginHorizontal: "2.5%",
     marginLeft: "6%",
-    lineHeight: 20,
+    lineHeight: responsiveWidthScale(20),
   },
   label: {
-    fontFamily: "NotoSansMyanmar_400Regular",
-    fontSize: 12.5,
+    fontFamily: FONTS.regular,
+    fontSize: Math.max(11, responsiveWidthScale(12.5)),
     textAlign: "center",
-    lineHeight: 16,
+    lineHeight: responsiveWidthScale(16),
   },
   label2: {
-    fontFamily: "NotoSansMyanmar_400Regular",
-    fontSize: 12.5,
+    fontFamily: FONTS.regular,
+    fontSize: Math.max(11, responsiveWidthScale(12.5)),
     textAlign: "auto",
-    lineHeight: 16,
+    lineHeight: responsiveWidthScale(16),
   },
   containerInfo: {
     flexDirection: "row",
@@ -1483,20 +1611,20 @@ const styles = StyleSheet.create({
   },
   info: {},
   informacion: {
-    fontFamily: "NotoSansMyanmar_400Regular",
-    fontSize: 13.5,
+    fontFamily: FONTS.regular,
+    fontSize: Math.max(11, responsiveWidthScale(13.5)),
     color: COLORS.black,
     maxWidth: "98%",
     marginLeft: "2%",
-    lineHeight: 25,
+    lineHeight: responsiveWidthScale(25),
   },
   datausage: {
     position: "relative",
     marginTop: "8%",
     marginRight: "1%",
     alignItems: "center",
-    width: responsiveSize(52),
-    height: responsiveSize(52),
+    width: responsiveWidthScale(52),
+    height: responsiveWidthScale(52),
     justifyContent: "center",
   },
   datausageTooltip: {
@@ -1507,25 +1635,25 @@ const styles = StyleSheet.create({
     height: "100%",
     zIndex: 10,
   },
-
   datausageTouchArea: {
-    width: responsiveSize(52),
-    height: responsiveSize(52),
+    width: responsiveWidthScale(52),
+    height: responsiveWidthScale(52),
   },
   circulo: {
     marginVertical: "4%",
     marginHorizontal: "1%",
     alignItems: "center",
-    width: responsiveSize(40),
-    height: responsiveSize(40),
+    width: responsiveWidthScale(40),
+    height: responsiveWidthScale(40),
     justifyContent: "center",
     backgroundColor: COLORS.verdeclaro,
-    borderRadius: 100,
+    borderRadius: responsiveWidthScale(100),
   },
   data2: {
-    fontSize: 12,
-    fontFamily: "NotoSansMyanmar_700Bold",
+    fontSize: Math.max(11, responsiveWidthScale(12)),
+    fontFamily: FONTS.bold,
     color: COLORS.greenM,
+    top: responsiveWidthScale(-1.5),
   },
   container2: {
     maxWidth: "98%",
@@ -1536,8 +1664,8 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   partido: {
-    fontFamily: "NotoSansMyanmar_700Bold",
-    fontSize: 15,
+    fontFamily: FONTS.bold,
+    fontSize: Math.max(11, responsiveWidthScale(15)),
     alignSelf: "center",
     marginTop: "2%",
   },
@@ -1560,10 +1688,11 @@ const styles = StyleSheet.create({
     width: "93%",
     maxHeight: MODAL_HEIGHT,
     backgroundColor: COLORS.back,
-    borderRadius: 10,
+    borderRadius: responsiveWidthScale(10),
     display: "flex",
     flexDirection: "column",
     alignSelf: "center",
+    overflow: "hidden",
   },
   modalBody: {
     flexShrink: 1,
@@ -1572,35 +1701,34 @@ const styles = StyleSheet.create({
     flexGrow: 0,
   },
   modalScrollContent: {
-    paddingVertical: 20,
+    paddingVertical: responsiveWidthScale(20),
   },
   modalFooter: {
-    paddingVertical: 10,
+    paddingVertical: responsiveWidthScale(10),
     marginHorizontal: "4%",
   },
-
   tituloContainer: {
-    height: 60,
+    height: responsiveWidthScale(60),
     width: "100%",
     backgroundColor: COLORS.greenM,
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    borderTopEndRadius: 10,
-    borderTopLeftRadius: 10,
-    paddingTop: 4,
+    borderTopEndRadius: responsiveWidthScale(10),
+    borderTopLeftRadius: responsiveWidthScale(10),
+    paddingTop: responsiveWidthScale(4),
   },
   tituloText: {
-    fontFamily: "NotoSansMyanmar_700Bold",
-    fontSize: 20,
+    fontFamily: FONTS.bold,
+    fontSize: Math.max(11, responsiveWidthScale(20)),
     color: COLORS.back,
-    lineHeight: 22,
-    letterSpacing: 2,
+    lineHeight: responsiveWidthScale(22),
+    letterSpacing: responsiveWidthScale(2),
     alignSelf: "center",
-    paddingTop: 2,
+    paddingTop: responsiveWidthScale(2),
   },
   conteiner2: {
-    paddingTop: 10,
+    paddingTop: responsiveWidthScale(10),
     flexShrink: 1,
     alignItems: "center",
     alignContent: "center",
@@ -1618,87 +1746,75 @@ const styles = StyleSheet.create({
     width: "88%",
     maxHeight: "88%",
     backgroundColor: COLORS.back,
-    borderRadius: 10,
+    borderRadius: responsiveWidthScale(10),
     overflow: "hidden",
   },
-
   loadingMociones: {
-    paddingVertical: 40,
+    paddingVertical: responsiveWidthScale(40),
     alignItems: "center",
   },
-
   listaMociones: {
-    padding: 14,
+    padding: responsiveWidthScale(14),
   },
-
   mocionCard: {
-    marginBottom: 16,
-    paddingBottom: 14,
-    borderBottomWidth: 1,
+    marginBottom: responsiveWidthScale(16),
+    paddingBottom: responsiveWidthScale(14),
+    borderBottomWidth: responsiveWidthScale(1),
     borderBottomColor: COLORS.verdeclaro,
   },
-
   mocionBoletin: {
-    fontFamily: "NotoSansMyanmar_700Bold",
-    fontSize: 14,
+    fontFamily: FONTS.bold,
+    fontSize: Math.max(11, responsiveWidthScale(14)),
     color: COLORS.greenM,
   },
-
   mocionTitulo: {
-    fontFamily: "NotoSansMyanmar_700Bold",
-    fontSize: 14,
+    fontFamily: FONTS.bold,
+    fontSize: Math.max(11, responsiveWidthScale(14)),
     color: COLORS.black,
-    lineHeight: 18,
-    marginTop: 4,
+    lineHeight: responsiveWidthScale(18),
+    marginTop: responsiveWidthScale(4),
   },
-
   mocionSinVotacion: {
-    fontFamily: "NotoSansMyanmar_400Regular",
-    fontSize: 13,
+    fontFamily: FONTS.regular,
+    fontSize: Math.max(11, responsiveWidthScale(13)),
     color: COLORS.greyM,
-    marginTop: 8,
+    marginTop: responsiveWidthScale(8),
   },
-
   votacionMocion: {
-    marginTop: 10,
-    padding: 10,
-    borderRadius: 8,
+    marginTop: responsiveWidthScale(10),
+    padding: responsiveWidthScale(10),
+    borderRadius: responsiveWidthScale(8),
     backgroundColor: COLORS.verdeclaro,
   },
-
   votacionResultado: {
-    fontFamily: "NotoSansMyanmar_700Bold",
-    fontSize: 13,
+    fontFamily: FONTS.bold,
+    fontSize: Math.max(11, responsiveWidthScale(13)),
     color: COLORS.greenM,
     textTransform: "uppercase",
   },
-
   votacionMateria: {
-    fontFamily: "NotoSansMyanmar_600SemiBold",
-    fontSize: 13,
+    fontFamily: FONTS.medium,
+    fontSize: Math.max(11, responsiveWidthScale(13)),
     color: COLORS.black,
-    lineHeight: 17,
-    marginTop: 4,
+    lineHeight: responsiveWidthScale(17),
+    marginTop: responsiveWidthScale(4),
   },
-
   votacionArticulo: {
-    fontFamily: "NotoSansMyanmar_400Regular",
-    fontSize: 12.5,
+    fontFamily: FONTS.regular,
+    fontSize: Math.max(11, responsiveWidthScale(12.5)),
     color: COLORS.black,
-    lineHeight: 17,
-    marginTop: 4,
+    lineHeight: responsiveWidthScale(17),
+    marginTop: responsiveWidthScale(4),
   },
-
   votacionSesion: {
-    fontFamily: "NotoSansMyanmar_600SemiBold",
-    fontSize: 12,
+    fontFamily: FONTS.medium,
+    fontSize: Math.max(11, responsiveWidthScale(12)),
     color: COLORS.greyM,
-    marginTop: 8,
+    marginTop: responsiveWidthScale(8),
   },
-
   votacionFecha: {
-    fontFamily: "NotoSansMyanmar_400Regular",
-    fontSize: 12,
+    fontFamily: FONTS.regular,
+    fontSize: Math.max(11, responsiveWidthScale(12)),
     color: COLORS.greyM,
   },
   graficoEvolucionPreview: {
@@ -1720,163 +1836,140 @@ const styles = StyleSheet.create({
 
   graficoEjeTextoPequeno: {
     color: COLORS.black,
-    fontFamily: "NotoSansMyanmar_700Bold",
+    fontFamily: FONTS.bold,
     fontSize: 8,
   },
-
   modalEvolucionContainer: {
     width: "91%",
     maxHeight: "86%",
     backgroundColor: COLORS.back,
-    borderRadius: 22,
+    borderRadius: responsiveWidthScale(22),
     overflow: "hidden",
-
     elevation: 12,
     shadowColor: COLORS.black,
     shadowOffset: {
       width: 0,
-      height: 6,
+      height: responsiveWidthScale(6),
     },
     shadowOpacity: 0.2,
-    shadowRadius: 14,
+    shadowRadius: responsiveWidthScale(14),
   },
-
   modalEvolucionHeader: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 18,
-    paddingTop: 18,
-    paddingBottom: 14,
+    paddingHorizontal: responsiveWidthScale(18),
+    paddingTop: responsiveWidthScale(18),
+    paddingBottom: responsiveWidthScale(14),
     backgroundColor: COLORS.back,
   },
-
   modalEvolucionIcon: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
+    width: responsiveWidthScale(46),
+    height: responsiveWidthScale(46),
+    borderRadius: responsiveWidthScale(23),
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: COLORS.verdeclaro,
   },
-
   modalEvolucionTitulos: {
     flex: 1,
-    marginLeft: 12,
+    marginLeft: responsiveWidthScale(12),
   },
-
   modalEvolucionTitulo: {
     color: COLORS.greenM,
-    fontSize: 17,
-    lineHeight: 23,
-    fontFamily: "NotoSansMyanmar_700Bold",
+    fontSize: Math.max(11, responsiveWidthScale(17)),
+    lineHeight: responsiveWidthScale(23),
+    fontFamily: FONTS.bold,
   },
-
   modalEvolucionSubtitulo: {
     color: COLORS.greyM,
-    fontSize: 12.5,
-    lineHeight: 18,
-    fontFamily: "NotoSansMyanmar_400Regular",
+    fontSize: Math.max(11, responsiveWidthScale(12.5)),
+    lineHeight: responsiveWidthScale(18),
+    fontFamily: FONTS.regular,
   },
-
   modalEvolucionCerrar: {
     position: "absolute",
-    top: 12,
-    right: 12,
-
-    width: 24,
-    height: 24,
-    borderRadius: 14,
-
+    top: responsiveWidthScale(12),
+    right: responsiveWidthScale(12),
+    width: responsiveWidthScale(24),
+    height: responsiveWidthScale(24),
+    borderRadius: responsiveWidthScale(14),
     justifyContent: "center",
     alignItems: "center",
-
     backgroundColor: COLORS.verdeclaro,
     zIndex: 10,
   },
-
   modalEvolucionLeyenda: {
-    marginHorizontal: 16,
-    padding: 13,
-    borderRadius: 14,
+    marginHorizontal: responsiveWidthScale(16),
+    padding: responsiveWidthScale(13),
+    borderRadius: responsiveWidthScale(14),
     backgroundColor: "#F7FAF8",
-    borderWidth: 1,
+    borderWidth: responsiveWidthScale(1),
     borderColor: "#E7ECE8",
   },
-
   leyendaItem: {
     flexDirection: "row",
     alignItems: "flex-start",
-    marginVertical: 5,
+    marginVertical: responsiveWidthScale(5),
   },
-
   leyendaLinea: {
-    width: 24,
-    height: 4,
-    borderRadius: 3,
-    marginTop: 7,
-    marginRight: 10,
+    width: responsiveWidthScale(24),
+    height: responsiveWidthScale(4),
+    borderRadius: responsiveWidthScale(3),
+    marginTop: responsiveWidthScale(7),
+    marginRight: responsiveWidthScale(10),
   },
-
   leyendaTextos: {
     flex: 1,
   },
-
   leyendaTitulo: {
     color: COLORS.black,
-    fontSize: 13,
-    lineHeight: 18,
-    fontFamily: "NotoSansMyanmar_700Bold",
+    fontSize: Math.max(11, responsiveWidthScale(13)),
+    lineHeight: responsiveWidthScale(18),
+    fontFamily: FONTS.bold,
   },
-
   leyendaDescripcion: {
     color: COLORS.greyM,
-    fontSize: 11.5,
-    lineHeight: 16,
-    fontFamily: "NotoSansMyanmar_400Regular",
+    fontSize: Math.max(11, responsiveWidthScale(11.5)),
+    lineHeight: responsiveWidthScale(16),
+    fontFamily: FONTS.regular,
   },
-
   modalGraficoContainer: {
-    marginHorizontal: 16,
-    marginTop: 15,
-    paddingTop: 14,
-    paddingBottom: 5,
-    borderWidth: 1,
+    marginHorizontal: responsiveWidthScale(16),
+    marginTop: responsiveWidthScale(15),
+    paddingTop: responsiveWidthScale(14),
+    paddingBottom: responsiveWidthScale(5),
+    borderWidth: responsiveWidthScale(1),
     borderColor: "#E7ECE8",
-    borderRadius: 16,
+    borderRadius: responsiveWidthScale(16),
     backgroundColor: COLORS.back,
     overflow: "hidden",
   },
-
   modalGraficoScroll: {
     paddingLeft: 0,
     paddingRight: 0,
   },
-
   modalGraficoEjeY: {
     color: COLORS.greyM,
-    fontFamily: "NotoSansMyanmar_600SemiBold",
-    fontSize: 10,
+    fontFamily: FONTS.medium,
+    fontSize: responsiveWidthScale(10),
   },
-
   modalGraficoEjeX: {
     color: COLORS.greyM,
-    fontFamily: "NotoSansMyanmar_600SemiBold",
-    fontSize: 9,
-    marginTop: 4,
+    fontFamily: FONTS.medium,
+    fontSize: responsiveWidthScale(9),
+    marginTop: responsiveWidthScale(4),
   },
-
   modalEvolucionFooter: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 18,
-    paddingVertical: 14,
+    paddingHorizontal: responsiveWidthScale(18),
+    paddingVertical: responsiveWidthScale(14),
   },
-
   modalEvolucionNota: {
-    marginLeft: 6,
+    marginLeft: responsiveWidthScale(6),
     color: COLORS.greyM,
-    fontSize: 10.5,
-    fontFamily: "NotoSansMyanmar_400Regular",
+    fontSize: Math.max(11, responsiveWidthScale(10.5)),
+    fontFamily: FONTS.regular,
   },
 });

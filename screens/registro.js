@@ -16,16 +16,19 @@ import { useNavigation } from "@react-navigation/native";
 import { Picker } from "@react-native-picker/picker";
 import { useAuth } from "../context/AuthContext";
 import {
-  responsiveVerticalSize,
+  responsiveWidthScale,
+  responsiveHeightScale,
   responsiveSize,
+  responsiveVerticalSize,
   responsiveSpacing,
   responsiveFont,
-  responsiveIcon,
+  responsiveIcon
 } from "../utils/responsive";
 import { Calendar, LocaleConfig } from "react-native-calendars";
 import MonthYearPickerModal, {
   MESES,
 } from "../components/MonthYearPickerModal";
+import { FONTS } from "../constants/fonts";
 
 LocaleConfig.locales.es = {
   monthNames: [
@@ -101,13 +104,13 @@ const Registro = () => {
 
   const [fechaCalendario, setFechaCalendario] = useState("1990-01-01");
 
-  const [email, setEmail] = useState("juan123@gmail.com");
-  const [pass, setPass] = useState("12345678");
-  const [confirmPass, setConfirmPass] = useState("12345678");
-  const [nombre, setNombre] = useState("juan");
+  const [email, setEmail] = useState("");
+  const [pass, setPass] = useState("");
+  const [confirmPass, setConfirmPass] = useState("");
+  const [nombre, setNombre] = useState("");
   const [genero, setGenero] = useState("");
-  const [pais, setPais] = useState("Chile");
-  const [rut, setRut] = useState("11.111.111-1");
+  const [pais, setPais] = useState("");
+  const [rut, setRut] = useState("");
 
   const [errores, setErrores] = useState({});
   const [registrando, setRegistrando] = useState(false);
@@ -463,9 +466,9 @@ const Registro = () => {
 
                 textSectionTitleColor: COLORS.greyM,
 
-                textDayFontFamily: "NotoSansMyanmar_400Regular",
-                textMonthFontFamily: "NotoSansMyanmar_700Bold",
-                textDayHeaderFontFamily: "NotoSansMyanmar_700Bold",
+                textDayFontFamily: FONTS.regular,
+                textMonthFontFamily: FONTS.bold,
+                textDayHeaderFontFamily: FONTS.bold,
 
                 textDayFontSize: responsiveFont(14),
                 textMonthFontSize: responsiveFont(17),
@@ -509,7 +512,7 @@ const Registro = () => {
                 keyboardType="default"
                 textAlign="left"
                 paddingHorizontal={12}
-                fontFamily="NotoSansMyanmar_400Regular"
+                fontFamily={FONTS.regular}
               />
             </View>
           </CampoRegistro>
@@ -528,7 +531,7 @@ const Registro = () => {
 
               <Ionicons
                 name="calendar-outline"
-                size={responsiveIcon(19)}
+                size={responsiveWidthScale(19)}
                 color={COLORS.greenM}
               />
             </TouchableOpacity>
@@ -672,7 +675,7 @@ const styles = StyleSheet.create({
   },
   container: {
     flexGrow: 1,
-    paddingVertical: "10%",
+    paddingVertical: responsiveHeightScale(40),
     paddingHorizontal: "5%",
     backgroundColor: COLORS.back,
     alignContent: "center",
@@ -688,25 +691,22 @@ const styles = StyleSheet.create({
   },
   title: {
     color: COLORS.greenM,
-    fontSize: 32,
-    fontWeight: "bold",
-    letterSpacing: 2,
-    fontFamily: "NotoSansMyanmar_400Regular",
+    fontSize: Math.max(11, responsiveWidthScale(32)),
+    letterSpacing: responsiveWidthScale(2),
+    fontFamily: FONTS.bold,
   },
   subtitle: {
     color: COLORS.grey,
-    fontSize: 15,
-    fontWeight: "bold",
-    fontFamily: "NotoSansMyanmar_400Regular",
+    fontSize: Math.max(11, responsiveWidthScale(15)),
+    fontFamily: FONTS.bold,
   },
   containerlogin: {
     alignSelf: "center",
     width: "100%",
-    paddingTop: "3%",
+    paddingTop: responsiveHeightScale(12),
   },
   boton: {
-    paddingTop: "10%",
-    height: "10%",
+    paddingTop: responsiveHeightScale(40),
     alignSelf: "center",
     width: "100%",
   },
@@ -719,22 +719,21 @@ const styles = StyleSheet.create({
     width: "60%",
     justifyContent: "center",
     alignItems: "center",
-    borderRadius: 15,
-    height: 46,
+    borderRadius: responsiveWidthScale(15),
+    height: responsiveHeightScale(46),
   },
   IngresarText: {
-    color: "#ffffff",
-    fontFamily: "NotoSansMyanmar_600SemiBold",
-    fontSize: 16,
-    letterSpacing: 1.6,
-    fontWeight: "bold",
+    color: COLORS.back,
+    fontFamily: FONTS.bold,
+    fontSize: Math.max(11, responsiveWidthScale(16)),
+    letterSpacing: responsiveWidthScale(1.6),
   },
   Registro: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignSelf: "center",
-    width: "52%",
-    marginTop: -2,
+    width: "53%",
+    marginTop: responsiveHeightScale(2),
   },
   buttonRegistro: {
     justifyContent: "center",
@@ -742,15 +741,14 @@ const styles = StyleSheet.create({
   },
   RegistroText: {
     color: COLORS.greenM,
-    fontFamily: "NotoSansMyanmar_400Regular",
-    fontSize: 13,
-    fontWeight: "bold",
+    fontFamily: FONTS.bold,
+    fontSize: Math.max(11, responsiveWidthScale(13)),
     textDecorationLine: "underline",
   },
   labelcuenta: {
     color: COLORS.black,
-    fontSize: 14,
-    fontFamily: "NotoSansMyanmar_400Regular",
+    fontSize: Math.max(11, responsiveWidthScale(14)),
+    fontFamily: FONTS.regular,
   },
   crearCuenta: {
     justifyContent: "center",
@@ -761,7 +759,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     alignSelf: "center",
-    height: responsiveVerticalSize(80),
+    height: responsiveHeightScale(80),
     width: "95%",
   },
   textoCampo: {
@@ -770,9 +768,9 @@ const styles = StyleSheet.create({
   inputCampo: {
     backgroundColor: COLORS.verdeclaro,
     width: "92%",
-    height: responsiveVerticalSize(42),
-    borderRadius: responsiveSize(10),
-    marginTop: responsiveSpacing(4),
+    height: responsiveHeightScale(42),
+    borderRadius: responsiveWidthScale(10),
+    marginTop: responsiveHeightScale(4),
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
@@ -794,9 +792,9 @@ const styles = StyleSheet.create({
   },
   picker: {
     width: "100%",
-    height: responsiveVerticalSize(50),
+    height: responsiveHeightScale(50),
     color: COLORS.black,
-    marginTop: responsiveVerticalSize(-5),
+    marginTop: responsiveHeightScale(-5),
   },
   botonFecha: {
     width: "100%",
@@ -804,25 +802,29 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: responsiveSpacing(12),
+    paddingHorizontal: responsiveWidthScale(12),
   },
   textoFecha: {
     color: COLORS.black,
-    fontSize: responsiveFont(15),
-    fontFamily: "NotoSansMyanmar_400Regular",
+    fontSize: Math.max(11, responsiveWidthScale(15)),
+    fontFamily: FONTS.regular,
   },
   label: {
     color: COLORS.greenM,
-    fontSize: responsiveFont(15),
-    fontFamily: "NotoSansMyanmar_600SemiBold",
-    fontWeight: "bold",
+    fontSize: Math.max(11, responsiveWidthScale(15)),
+    fontFamily: FONTS.bold,
   },
   inputErrors: {
     color: COLORS.falso,
     textAlign: "center",
-    fontFamily: "NotoSansMyanmar_300Light",
-    fontSize: responsiveFont(12),
-    marginTop: "-1%",
+    fontFamily: FONTS.regular,
+    fontSize: Math.max(11, responsiveWidthScale(12)),
+    lineHeight: Math.max(11, responsiveHeightScale(14)),
+  },
+  errorContainer: {
+    height: responsiveHeightScale(14),
+    alignItems: "center",
+    justifyContent: "center",
   },
   calendarContainer: {
     backgroundColor: COLORS.back,
@@ -844,7 +846,7 @@ const styles = StyleSheet.create({
   calendarTitle: {
     color: COLORS.greenM,
     fontSize: responsiveFont(17),
-    fontFamily: "NotoSansMyanmar_700Bold",
+    fontFamily: FONTS.bold,
   },
 
   calendarDay: {
@@ -862,7 +864,7 @@ const styles = StyleSheet.create({
   calendarDayText: {
     color: COLORS.black,
     fontSize: responsiveFont(14),
-    fontFamily: "NotoSansMyanmar_400Regular",
+    fontFamily: FONTS.regular,
   },
 
   calendarDayTextDisabled: {
@@ -871,7 +873,7 @@ const styles = StyleSheet.create({
 
   calendarDayTextSelected: {
     color: COLORS.back,
-    fontFamily: "NotoSansMyanmar_700Bold",
+    fontFamily: FONTS.bold,
   },
   calendarMonthHeader: {
     flexDirection: "row",
@@ -883,7 +885,7 @@ const styles = StyleSheet.create({
   calendarMonthHeaderText: {
     color: COLORS.greenM,
     fontSize: responsiveFont(17),
-    fontFamily: "NotoSansMyanmar_700Bold",
+    fontFamily: FONTS.bold,
     marginRight: responsiveSpacing(4),
   },
 });

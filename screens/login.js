@@ -4,10 +4,6 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  Alert,
-  Button,
-  TextInput,
-  Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -28,12 +24,10 @@ import { msGppMaybe } from "@material-symbols-react-native/outlined-400";
 import { MsIcon } from "material-symbols-react-native";
 import MaterialIcons from "@react-native-vector-icons/material-icons";
 import {
-  responsiveSize,
-  responsiveFont,
-  responsiveIcon,
-  responsiveSpacing,
-  responsiveVerticalSize,
+  responsiveWidthScale,
+  responsiveHeightScale,
 } from "../utils/responsive";
+import { FONTS } from "../constants/fonts";
 
 const INITIAL_STATE = {
   user: "",
@@ -161,41 +155,36 @@ const Login = () => {
       <Modal
         isVisible={modalVisible}
         onBackdropPress={() => setModalVisible(false)}
-        style={{ margin: 0, justifyContent: "flex-end" }}
+        style={{
+          margin: 0,
+          justifyContent: "flex-end",
+        }}
       >
-        <View
-          style={{
-            height: "16%",
-            width: "100%",
-            backgroundColor: COLORS.back,
-            justifyContent: "center",
-            alignItems: "center",
-            borderTopRightRadius: responsiveSize(5),
-            borderTopLeftRadius: responsiveSize(5),
-            paddingHorizontal: responsiveSpacing(25),
-          }}
-        >
-          <View style={{ alignSelf: "flex-end" }}>
-            <TouchableOpacity onPress={() => setModalVisible(false)}>
+        <View style={styles.modalCredenciales}>
+          <View style={styles.modalCerrarContainer}>
+            <TouchableOpacity
+              onPress={() => setModalVisible(false)}
+              hitSlop={8}
+            >
               <MaterialIcons
                 name="cancel"
-                size={responsiveIcon(20)}
+                size={responsiveWidthScale(20)}
                 color={COLORS.grey}
               />
             </TouchableOpacity>
           </View>
-          <View style={{ alignItems: "center", justifyContent: "center" }}>
+
+          <View style={styles.modalContenido}>
             <MsIcon
               icon={msGppMaybe}
-              size={responsiveIcon(45)}
+              size={responsiveWidthScale(45)}
               color={COLORS.greenM}
             />
+
             <Text style={styles.textModal}>Credenciales incorrectas</Text>
           </View>
         </View>
       </Modal>
-
-      {/* <View style={styles.container}> */}
 
       <ScrollView
         contentContainerStyle={styles.scrollContainer}
@@ -245,7 +234,7 @@ const Login = () => {
             >
               <Ionicons
                 name="checkmark-circle"
-                size={responsiveIcon(20)}
+                size={responsiveWidthScale(20)}
                 color={recuerdame ? COLORS.greenM : COLORS.grey}
               />
               <Text style={styles.labelforget}>Recordarme</Text>
@@ -287,7 +276,7 @@ export default Login;
 const styles = StyleSheet.create({
   scrollContainer: {
     flexGrow: 1,
-    paddingTop: responsiveVerticalSize(100),
+    paddingTop: responsiveHeightScale(320),
   },
   container: {
     flex: 1,
@@ -298,27 +287,23 @@ const styles = StyleSheet.create({
   },
   containerTitle: {
     alignItems: "center",
-    top: "28%",
-    paddingVertical: responsiveSpacing(15),
+    paddingVertical: responsiveHeightScale(15),
     justifyContent: "center",
   },
   title: {
     color: COLORS.greenM,
-    fontSize: responsiveFont(35),
-    fontWeight: "bold",
-    letterSpacing: responsiveSpacing(2),
-    fontFamily: "NotoSansMyanmar_700Bold",
-    marginVertical: "1%",
+    fontSize: Math.max(11, responsiveWidthScale(35)),
+    letterSpacing: responsiveWidthScale(2),
+    fontFamily: FONTS.bold,
+    marginVertical: responsiveHeightScale(4),
   },
   subtitle: {
     color: COLORS.grey,
-    fontSize: responsiveFont(16),
-    fontWeight: "bold",
-    fontFamily: "NotoSansMyanmar_700Bold",
+    fontSize: Math.max(11, responsiveWidthScale(16)),
+    fontFamily: FONTS.bold,
   },
   containerlogin: {
-    marginTop: "72%",
-    height: "24%",
+    marginTop: responsiveHeightScale(95),
     alignSelf: "center",
     width: "100%",
   },
@@ -327,16 +312,14 @@ const styles = StyleSheet.create({
   },
   containercorreo: {
     flexDirection: "column",
-    textAlign: "center",
     alignItems: "center",
-    height: "50%",
   },
   inputcorreo: {
     backgroundColor: COLORS.verdeclaro,
     textAlign: "center",
     width: "85%",
-    height: responsiveVerticalSize(50),
-    borderRadius: responsiveSize(10),
+    height: responsiveHeightScale(50),
+    borderRadius: responsiveWidthScale(10),
     flexDirection: "row",
     alignSelf: "center",
     justifyContent: "space-between",
@@ -344,66 +327,51 @@ const styles = StyleSheet.create({
   },
   conteinerpass: {
     flexDirection: "column",
-    textAlign: "center",
     alignItems: "center",
-    height: responsiveVerticalSize(94),
-    marginTop: responsiveSpacing(10),
+    marginTop: responsiveHeightScale(10),
   },
   textoPass: {
     width: "80%",
-  },
-  inputErrors: {
-    color: COLORS.falso,
-    fontSize: responsiveFont(13),
-    textAlign: "center",
-    fontFamily: "NotoSansMyanmar_400Regular",
   },
   inputpass: {
     backgroundColor: COLORS.verdeclaro,
     textAlign: "center",
     width: "85%",
-    fontSize: responsiveFont(13),
-    height: responsiveVerticalSize(50),
-    borderRadius: responsiveSize(10),
+    fontSize: Math.max(11, responsiveWidthScale(13)),
+    height: responsiveHeightScale(50),
+    borderRadius: responsiveWidthScale(10),
   },
   label: {
     color: COLORS.greenM,
-    fontSize: responsiveFont(15),
-    fontFamily: "NotoSansMyanmar_600SemiBold",
-    fontWeight: "bold",
-    marginVertical: "3%",
+    fontSize: Math.max(11, responsiveWidthScale(15)),
+    fontFamily: FONTS.bold,
+    marginVertical: responsiveHeightScale(8),
   },
   Ingresar: {
-    justifyContent: "space-around",
     alignItems: "center",
-    marginTop: "20%",
     justifyContent: "center",
+    marginTop: responsiveHeightScale(55),
   },
   buttonIngresar: {
     backgroundColor: COLORS.greenM,
     width: "56%",
     justifyContent: "center",
     alignItems: "center",
-    borderRadius: responsiveSize(20),
-    height: responsiveVerticalSize(47),
+    borderRadius: responsiveWidthScale(25),
+    height: responsiveHeightScale(47),
   },
   IngresarText: {
-    color: "#ffffff",
-    fontFamily: "NotoSansMyanmar_700Bold",
-    fontSize: responsiveFont(16),
-    letterSpacing: responsiveSpacing(1.5),
-    fontWeight: "bold",
-  },
-  textModal: {
-    fontFamily: "NotoSansMyanmar_700Bold",
-    color: COLORS.black,
-    fontSize: responsiveFont(15),
+    color: COLORS.back,
+    fontFamily: FONTS.bold,
+    fontSize: Math.max(11, responsiveWidthScale(16)),
+    letterSpacing: responsiveWidthScale(1.5),
   },
   Registro: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignSelf: "center",
-    width: "51%",
+    width: "54%",
+    marginTop: responsiveHeightScale(8),
   },
   buttonRegistro: {
     justifyContent: "center",
@@ -411,15 +379,14 @@ const styles = StyleSheet.create({
   },
   RegistroText: {
     color: COLORS.greenM,
-    fontFamily: "NotoSansMyanmar_400Regular",
-    fontSize: responsiveFont(13),
-    fontWeight: "bold",
+    fontFamily: FONTS.bold,
+    fontSize: Math.max(11, responsiveWidthScale(13)),
     textDecorationLine: "underline",
   },
   labelcuenta: {
     color: COLORS.black,
-    fontSize: responsiveFont(14),
-    fontFamily: "NotoSansMyanmar_400Regular",
+    fontSize: Math.max(11, responsiveWidthScale(14)),
+    fontFamily: FONTS.regular,
   },
   crearCuenta: {
     justifyContent: "center",
@@ -427,22 +394,21 @@ const styles = StyleSheet.create({
   },
   rememberForget: {
     alignSelf: "center",
-    textAlign: "center",
     flexDirection: "row",
     width: "80%",
-    marginTop: 3,
+    marginTop: responsiveHeightScale(5),
+    alignItems: "center",
   },
   labelforget: {
     color: COLORS.black,
-    fontSize: responsiveFont(14),
-    marginLeft: "3%",
-    fontFamily: "NotoSansMyanmar_400Regular",
+    fontSize: Math.max(11, responsiveWidthScale(14)),
+    marginLeft: responsiveWidthScale(5),
+    fontFamily: FONTS.regular,
   },
   forgetText: {
     color: COLORS.greenM,
-    fontFamily: "NotoSansMyanmar_400Regular",
-    fontSize: responsiveFont(13),
-    fontWeight: "bold",
+    fontFamily: FONTS.bold,
+    fontSize: Math.max(11, responsiveWidthScale(13)),
     textDecorationLine: "underline",
   },
   remember: {
@@ -453,5 +419,34 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "flex-end",
     alignSelf: "center",
+  },
+  modalCredenciales: {
+    height: responsiveHeightScale(154),
+    width: "100%",
+    backgroundColor: COLORS.back,
+    justifyContent: "center",
+    alignItems: "center",
+    borderTopRightRadius: responsiveWidthScale(5),
+    borderTopLeftRadius: responsiveWidthScale(5),
+    paddingHorizontal: responsiveWidthScale(25),
+  },
+
+  modalCerrarContainer: {
+    position: "absolute",
+    top: responsiveHeightScale(14),
+    right: responsiveWidthScale(25),
+    zIndex: 2,
+  },
+
+  modalContenido: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  textModal: {
+    fontFamily: FONTS.bold,
+    color: COLORS.black,
+    fontSize: Math.max(11, responsiveWidthScale(15)),
+    marginTop: responsiveHeightScale(6),
   },
 });

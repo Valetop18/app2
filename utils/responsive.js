@@ -11,12 +11,16 @@ const BASE_HEIGHT = 960;
 const MIN_WIDTH = 350;
 const MAX_WIDTH = 480;
 
-const limitedWidth = Math.min(
-  Math.max(width, MIN_WIDTH),
-  MAX_WIDTH
-);
+const limitedWidth = Math.min(Math.max(width, MIN_WIDTH), MAX_WIDTH);
 
 const widthRatio = limitedWidth / BASE_WIDTH;
+
+const MIN_HEIGHT = 720;
+const MAX_HEIGHT = 1040;
+
+const limitedHeight = Math.min(Math.max(height, MIN_HEIGHT), MAX_HEIGHT);
+
+const heightRatio = limitedHeight / BASE_HEIGHT;
 
 /**
  * Limita un número entre un mínimo y un máximo.
@@ -35,11 +39,7 @@ const clamp = (value, min, max) => {
  * - En pantallas pequeñas disminuye moderadamente.
  * - En pantallas grandes aumenta moderadamente.
  */
-export const responsiveSize = (
-  baseValue,
-  minScale = 0.88,
-  maxScale = 1.1
-) => {
+export const responsiveSize = (baseValue, minScale = 0.88, maxScale = 1.1) => {
   const scale = clamp(widthRatio, minScale, maxScale);
 
   return PixelRatio.roundToNearestPixel(baseValue * scale);
@@ -51,11 +51,7 @@ export const responsiveSize = (
  * Se reduce menos que otros elementos para mantener
  * la legibilidad y conservar el diseño actual.
  */
-export const responsiveFont = (
-  baseValue,
-  minScale = 0.86,
-  maxScale = 1.06
-) => {
+export const responsiveFont = (baseValue, minScale = 0.86, maxScale = 1.06) => {
   const scale = clamp(widthRatio, minScale, maxScale);
 
   return PixelRatio.roundToNearestPixel(baseValue * scale);
@@ -70,7 +66,7 @@ export const responsiveFont = (
 export const responsiveSpacing = (
   baseValue,
   minScale = 0.9,
-  maxScale = 1.08
+  maxScale = 1.08,
 ) => {
   const scale = clamp(widthRatio, minScale, maxScale);
 
@@ -78,13 +74,47 @@ export const responsiveSpacing = (
 };
 
 /**
+ * Escalado continuo para márgenes y separaciones verticales.
+ *
+ * Cada teléfono recibe un valor propio según su altura.
+ * La reducción es mayor que el crecimiento para aprovechar
+ * mejor las pantallas bajas sin separar demasiado las altas.
+ */
+export const responsiveVerticalSpacing = (
+  baseValue,
+  minScale = 0.82,
+  maxScale = 1.06,
+) => {
+  const scale = clamp(heightRatio, minScale, maxScale);
+
+  return PixelRatio.roundToNearestPixel(baseValue * scale);
+};
+
+/**
+ * Escalado equilibrado que considera ancho y alto.
+ *
+ * El ancho tiene mayor peso porque normalmente determina
+ * si los componentes caben horizontalmente.
+ */
+export const responsiveBalancedSize = (
+  baseValue,
+  minScale = 0.88,
+  maxScale = 1.08,
+  widthWeight = 0.7,
+) => {
+  const heightWeight = 1 - widthWeight;
+
+  const combinedRatio = widthRatio * widthWeight + heightRatio * heightWeight;
+
+  const scale = clamp(combinedRatio, minScale, maxScale);
+
+  return PixelRatio.roundToNearestPixel(baseValue * scale);
+};
+
+/**
  * Escalado para iconos.
  */
-export const responsiveIcon = (
-  baseValue,
-  minScale = 0.9,
-  maxScale = 1.08
-) => {
+export const responsiveIcon = (baseValue, minScale = 0.9, maxScale = 1.08) => {
   const scale = clamp(widthRatio, minScale, maxScale);
 
   return PixelRatio.roundToNearestPixel(baseValue * scale);
@@ -124,9 +154,7 @@ export const PHONE = {
  * responsiveWidth(50) devuelve el 50% del ancho.
  */
 export const responsiveWidth = (percentage) => {
-  return PixelRatio.roundToNearestPixel(
-    width * (percentage / 100)
-  );
+  return PixelRatio.roundToNearestPixel(width * (percentage / 100));
 };
 
 /**
@@ -136,9 +164,7 @@ export const responsiveWidth = (percentage) => {
  * responsiveHeight(10) devuelve el 10% del alto.
  */
 export const responsiveHeight = (percentage) => {
-  return PixelRatio.roundToNearestPixel(
-    height * (percentage / 100)
-  );
+  return PixelRatio.roundToNearestPixel(height * (percentage / 100));
 };
 
 /**
@@ -164,3 +190,51 @@ export const responsiveVerticalSize = (size) => {
 
   return PixelRatio.roundToNearestPixel(size * scale);
 };
+
+/**
+ * Escalado proporcional exacto según el ancho del teléfono.
+ *
+ * Se utiliza en componentes horizontales que deben conservar
+ * sus proporciones completas para caber en pantallas angostas.
+ *
+ * En 432 px devuelve el valor original.
+ * En 350 px devuelve aproximadamente el 81 %.
+ * En 480 px devuelve aproximadamente el 111 %.
+ */
+export const responsiveWidthScale = (
+  baseValue,
+  minWidth = 350,
+  maxWidth = 480,
+) => {
+  const effectiveWidth = Math.min(Math.max(width, minWidth), maxWidth);
+
+  const scale = effectiveWidth / BASE_WIDTH;
+
+  return PixelRatio.roundToNearestPixel(baseValue * scale);
+};
+
+/**
+ * Escalado proporcional exacto según el alto del teléfono.
+ *
+ * Se utiliza en bloques verticales que deben conservar sus
+ * proporciones completas para caber en teléfonos más bajos.
+ *
+ * En 960 px devuelve el valor original.
+ * En 720 px devuelve el 75 %.
+ * En 1040 px devuelve aproximadamente el 108,3 %.
+ */
+export const responsiveHeightScale = (
+  baseValue,
+  minHeight = 720,
+  maxHeight = 1040,
+) => {
+  const effectiveHeight = Math.min(
+    Math.max(height, minHeight),
+    maxHeight,
+  );
+
+  const scale = effectiveHeight / BASE_HEIGHT;
+
+  return PixelRatio.roundToNearestPixel(baseValue * scale);
+};
+

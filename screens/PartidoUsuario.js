@@ -14,12 +14,10 @@ import { partidosRepository } from "../infrastructure/partidosRepository";
 import { useAuth } from "../context/AuthContext";
 import { Skeleton } from "../components/Skeleton";
 import {
-  responsiveVerticalSize,
-  responsiveSpacing,
-  responsiveFont,
-  responsiveIcon,
-  responsiveSize,
+  responsiveWidthScale,
+  responsiveHeightScale,
 } from "../utils/responsive";
+import { FONTS } from "../constants/fonts";
 
 export const PartidoUsuario = () => {
   const navigation = useNavigation();
@@ -80,12 +78,17 @@ export const PartidoUsuario = () => {
     }
   };
 
+  const iconoContinuar = Math.min(
+  responsiveWidthScale(30),
+  responsiveHeightScale(30),
+);
+
   const skeletonCard = () => (
     <View style={styles.skeletonContainer}>
       <Skeleton
         width="85%"
-        height={responsiveVerticalSize(15)}
-        borderRadius={responsiveSize(5)}
+        height={responsiveHeightScale(15)}
+        borderRadius={responsiveWidthScale(5)}
       />
     </View>
   );
@@ -108,6 +111,7 @@ export const PartidoUsuario = () => {
             data={[1, 2, 3, 4, 5]}
             renderItem={skeletonCard}
             keyExtractor={(item) => item.toString()}
+            scrollEnabled={false}
             showsVerticalScrollIndicator={false}
           />
         ) : (
@@ -117,6 +121,7 @@ export const PartidoUsuario = () => {
             data={partidos}
             renderItem={renderGridItem}
             keyExtractor={(item) => item.id.toString()}
+            scrollEnabled={false}
             showsVerticalScrollIndicator={false}
           />
         )}
@@ -132,7 +137,7 @@ export const PartidoUsuario = () => {
 
           <Ionicons
             name="chevron-forward-circle"
-            size={responsiveIcon(30)}
+            size={iconoContinuar}
             color={COLORS.back}
           />
         </TouchableOpacity>
@@ -145,65 +150,89 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.greenM,
-    paddingTop: responsiveVerticalSize(78),
-    paddingHorizontal: responsiveSpacing(20),
-    paddingBottom: responsiveVerticalSize(28),
+    paddingTop: responsiveHeightScale(94),
+    paddingHorizontal: responsiveWidthScale(20),
+    paddingBottom: responsiveHeightScale(28),
   },
 
   conteinerTitulo: {
-    marginLeft: responsiveSpacing(17),
-    paddingTop: responsiveVerticalSize(8),
+    marginLeft: responsiveWidthScale(17),
+    paddingTop: responsiveHeightScale(8),
   },
 
   titulo: {
     color: COLORS.back,
-    fontSize: responsiveFont(20),
-    letterSpacing: 1,
-    fontFamily: "NotoSansMyanmar_700Bold",
-    marginTop: responsiveVerticalSize(3),
+    fontSize: Math.max(
+      11,
+      Math.min(
+        responsiveWidthScale(20),
+        responsiveHeightScale(20),
+      ),
+    ),
+    letterSpacing: responsiveWidthScale(1),
+    fontFamily: FONTS.bold,
+    marginTop: responsiveHeightScale(3),
   },
 
   subTitulo: {
     color: COLORS.grey,
-    fontSize: responsiveFont(14),
-    fontFamily: "NotoSansMyanmar_700Bold",
+    fontSize: Math.max(
+      11,
+      Math.min(
+        responsiveWidthScale(15),
+        responsiveHeightScale(15),
+      ),
+    ),
+    fontFamily: FONTS.bold,
   },
 
   containerLista: {
     flex: 1,
-    marginTop: responsiveVerticalSize(22),
-    marginHorizontal: responsiveSpacing(15),
+    marginTop: responsiveHeightScale(35),
+    marginHorizontal: responsiveWidthScale(15),
   },
 
   flatlist: {
     flex: 1,
     width: "100%",
   },
+
   flatlistContent: {
     paddingTop: 0,
-    paddingBottom: responsiveVerticalSize(75),
+    paddingBottom: responsiveHeightScale(75),
   },
+
   skeletonContainer: {
     width: "100%",
     alignItems: "flex-start",
-    paddingVertical: responsiveVerticalSize(8),
+    paddingVertical: responsiveHeightScale(8),
   },
+
   containerFinal: {
     position: "absolute",
-    right: responsiveSpacing(38),
-    bottom: responsiveVerticalSize(82),
+    right: responsiveWidthScale(38),
+    bottom: responsiveHeightScale(82),
   },
+
   buttonIngresar: {
     flexDirection: "row",
     justifyContent: "flex-end",
     alignItems: "center",
-    minHeight: responsiveVerticalSize(40),
+    minHeight: responsiveHeightScale(40),
   },
+
   boton: {
-    fontFamily: "NotoSansMyanmar_700Bold",
-    fontSize: responsiveFont(18),
+    fontFamily: FONTS.bold,
+    fontSize: Math.max(
+      11,
+      Math.min(
+        responsiveWidthScale(20),
+        responsiveHeightScale(20),
+      ),
+    ),
     color: COLORS.back,
-    marginRight: responsiveSpacing(6),
-    letterSpacing: 1,
+    marginRight: responsiveWidthScale(6),
+    letterSpacing: responsiveWidthScale(1),
+    top: responsiveHeightScale(-4),
   },
 });

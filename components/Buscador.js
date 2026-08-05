@@ -3,6 +3,7 @@ import { View, Text, TextInput, StyleSheet, KeyboardAvoidingView } from 'react-n
 import { BuscadorContext } from '../context/BuscadorContext'
 import Ionicons from '@react-native-vector-icons/ionicons'
 import { COLORS } from '../constants/colors'
+import { FONTS } from '../constants/fonts'
 
 const Buscador = ({value, onChange}) => {
 
@@ -34,7 +35,7 @@ const styles = StyleSheet.create({
         height: 38,
     },
     input: {
-        fontFamily: "NotoSansMyanmar_400Regular",
+        fontFamily: FONTS.regular,
         fontSize: 13,
         color: COLORS.black,
         height: 32,

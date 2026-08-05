@@ -43,7 +43,40 @@ import {
   responsiveFontCamara,
   responsiveHeight,
   responsiveVerticalSize,
+  responsiveWidthScale,
+  responsiveHeightScale,
+  screenWidth,
+  screenHeight,
 } from "../utils/responsive";
+import Tooltip from "../components/tooltip";
+import { TOOLTIPS } from "../components/tooltip";
+import { TooltipProvider } from "../context/TooltipProvider";
+import { FONTS } from "../constants/fonts";
+
+const responsiveCamaraText = (baseValue, minValue = 11) => {
+  return Math.max(
+    minValue,
+    Math.min(responsiveWidthScale(baseValue), responsiveHeightScale(baseValue)),
+  );
+};
+
+const responsiveProyectoText = (baseValue) => {
+  return responsiveCamaraText(baseValue, 10.5);
+};
+
+const responsiveCamaraLineHeight = (baseValue) => {
+  return Math.min(
+    responsiveWidthScale(baseValue),
+    responsiveHeightScale(baseValue),
+  );
+};
+
+const responsiveCamaraSize = (baseValue) => {
+  return Math.min(
+    responsiveWidthScale(baseValue),
+    responsiveHeightScale(baseValue),
+  );
+};
 
 export const CamaraDipu = () => {
   const { search, setSearch } = useContext(BuscadorContext);
@@ -113,6 +146,21 @@ export const CamaraDipu = () => {
   const [mocionesPorPartido, setMocionesPorPartido] = useState({});
   const { reaccionesLey, setReaccionLey } = useReacciones();
   const [proyectoActivo, setProyectoActivo] = useState(0);
+
+  const effectiveWidth = Math.min(Math.max(screenWidth, 350), 480);
+  const effectiveHeight = Math.min(Math.max(screenHeight, 720), 1040);
+
+  const escalaHemiciclo = Math.min(effectiveWidth / 432, effectiveHeight / 960);
+
+  const HEMICICLO_CANVAS = 500;
+  const HEMICICLO_BASE_WIDTH = 345.6;
+  const HEMICICLO_BASE_TOP = 164;
+
+  const anchoHemiciclo = HEMICICLO_BASE_WIDTH * escalaHemiciclo;
+  const altoHemiciclo = HEMICICLO_CANVAS * escalaHemiciclo;
+
+  const compensacionEscala =
+    (HEMICICLO_CANVAS - HEMICICLO_CANVAS * escalaHemiciclo) / 2;
 
   const MODO_DATA = {
     ESPECIFICA: "especifica",
@@ -1012,48 +1060,45 @@ export const CamaraDipu = () => {
   };
 
   const cargarVotacionesPorSesion = async (numeroSesion) => {
-  try {
-    const data =
-      await votacionesRepository.getVotacionesPorSesion(numeroSesion);
+    try {
+      const data =
+        await votacionesRepository.getVotacionesPorSesion(numeroSesion);
 
-    const data2 =
-      await votacionesRepository.getVotacionesPorSesion2(numeroSesion);
+      const data2 =
+        await votacionesRepository.getVotacionesPorSesion2(numeroSesion);
 
-    const votacionesPartidosPorId = new Map(
-      data2.map((votacion) => [
-        String(votacion.id),
-        votacion,
-      ]),
-    );
-
-    const data2Ordenada = data.map((votacion) => {
-      const votacionPartidos = votacionesPartidosPorId.get(
-        String(votacion.id),
+      const votacionesPartidosPorId = new Map(
+        data2.map((votacion) => [String(votacion.id), votacion]),
       );
 
-      return (
-        votacionPartidos || {
-          id: votacion.id,
-          tipoDocumento: votacion.tipoDocumento,
-          fecha: votacion.fecha,
-          resultado: votacion.resultado,
-          materia_resumen: votacion.materia_resumen,
-          articulo_resumen: votacion.articulo_resumen,
-          partidos: {},
-        }
-      );
-    });
+      const data2Ordenada = data.map((votacion) => {
+        const votacionPartidos = votacionesPartidosPorId.get(
+          String(votacion.id),
+        );
 
-    setVotacionesPorSesion(data);
-    setVotacionesPorSesion2(data2Ordenada);
-  } catch (error) {
-    console.error(error);
-    setVotacionesPorSesion([]);
-    setVotacionesPorSesion2([]);
-  } finally {
-    setLoading(false);
-  }
-};
+        return (
+          votacionPartidos || {
+            id: votacion.id,
+            tipoDocumento: votacion.tipoDocumento,
+            fecha: votacion.fecha,
+            resultado: votacion.resultado,
+            materia_resumen: votacion.materia_resumen,
+            articulo_resumen: votacion.articulo_resumen,
+            partidos: {},
+          }
+        );
+      });
+
+      setVotacionesPorSesion(data);
+      setVotacionesPorSesion2(data2Ordenada);
+    } catch (error) {
+      console.error(error);
+      setVotacionesPorSesion([]);
+      setVotacionesPorSesion2([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const cargarVotacionBuscada = async (idVotacion) => {
     try {
@@ -1572,15 +1617,28 @@ export const CamaraDipu = () => {
     <View
       style={{
         flexDirection: "row",
-        width: 240,
+        width: responsiveWidthScale(240),
         alignSelf: "flex-start",
         alignItems: "center",
-        marginVertical: 4,
+        marginVertical: responsiveCamaraSize(4),
       }}
     >
-      <Skeleton width={26} height={26} borderRadius={100} />
-      <View style={{ marginHorizontal: 12 }}>
-        <Skeleton width={100} height={15} borderRadius={4} />
+      <Skeleton
+        width={responsiveCamaraSize(26)}
+        height={responsiveCamaraSize(26)}
+        borderRadius={100}
+      />
+
+      <View
+        style={{
+          marginHorizontal: responsiveWidthScale(12),
+        }}
+      >
+        <Skeleton
+          width={responsiveWidthScale(100)}
+          height={responsiveCamaraSize(15)}
+          borderRadius={responsiveCamaraSize(4)}
+        />
       </View>
     </View>
   );
@@ -1592,7 +1650,11 @@ export const CamaraDipu = () => {
         if (!datosListos) {
           return (
             <View style={styles.infoEstadistica}>
-              <Skeleton width={220} height={24} borderRadius={4} />
+              <Skeleton
+                width={responsiveWidthScale(220)}
+                height={responsiveCamaraSize(24)}
+                borderRadius={responsiveCamaraSize(4)}
+              />
             </View>
           );
         }
@@ -1613,7 +1675,7 @@ export const CamaraDipu = () => {
           <View style={styles.resultadoEstilo}>
             <MaterialCommunityIcons
               name="chart-donut-variant"
-              size={25}
+              size={responsiveCamaraSize(25)}
               color={COLORS.greenM}
             />
             <Text style={styles.resultado}>
@@ -1650,20 +1712,64 @@ export const CamaraDipu = () => {
         if (!datosListos) {
           return (
             <View style={styles.subtitulo}>
-              <Skeleton width={220} height={24} borderRadius={4} />
+              <Skeleton
+                width={responsiveWidthScale(220)}
+                height={responsiveCamaraSize(24)}
+                borderRadius={responsiveCamaraSize(4)}
+              />
             </View>
           );
         }
 
-        return habilitarTransicion
-          ? `Total camara: ${asistenciaSesionGlobal?.porcentaje}%`
-          : `Total camara: ${asistenciaGlobal}%`;
-        break;
+        if (habilitarTransicion) {
+          return (
+            <Tooltip
+              text={TOOLTIPS.asistencia.especifica}
+              width={responsiveWidthScale(320)}
+            >
+              <Text style={styles.subtitulo}>
+                Total camara: {asistenciaSesionGlobal?.porcentaje}%
+              </Text>
+            </Tooltip>
+          );
+        }
+
+        return (
+          <Tooltip
+            text={TOOLTIPS.asistencia.acumulada}
+            width={responsiveWidthScale(320)}
+          >
+            <Text style={styles.subtitulo}>
+              Total camara: {asistenciaGlobal}%
+            </Text>
+          </Tooltip>
+        );
+
       case 2:
-        return habilitarTransicion
-          ? `Total camara: ${votacionSesionGlobal?.porcentaje}%`
-          : `Total camara: ${participacionHistoricaGlobal}%`;
-        break;
+        if (habilitarTransicion) {
+          return (
+            <Tooltip
+              text={TOOLTIPS.votaciones.especifica}
+              width={responsiveWidthScale(320)}
+            >
+              <Text style={styles.subtitulo}>
+                Total camara: {votacionSesionGlobal?.porcentaje}%
+              </Text>
+            </Tooltip>
+          );
+        }
+
+        return (
+          <Tooltip
+            text={TOOLTIPS.votaciones.acumulada}
+            width={responsiveWidthScale(320)}
+          >
+            <Text style={styles.subtitulo}>
+              Total camara: {participacionHistoricaGlobal}%
+            </Text>
+          </Tooltip>
+        );
+
       case 3:
         if (esProyectoEspecifico) {
           return (
@@ -1698,11 +1804,19 @@ export const CamaraDipu = () => {
           );
         }
 
-        return `Total Cámara: ${mocionesHistoricasGlobal}`;
-        break;
+        return (
+          <Tooltip
+            text={TOOLTIPS.mociones.acumulada}
+            width={responsiveWidthScale(290)}
+          >
+            <Text style={styles.subtitulo}>
+              Total Cámara: {mocionesHistoricasGlobal}
+            </Text>
+          </Tooltip>
+        );
+
       default:
-        return "Total camara: %";
-        break;
+        return <Text style={styles.subtitulo}>Total camara: %</Text>;
     }
   };
 
@@ -1721,15 +1835,14 @@ export const CamaraDipu = () => {
               <TouchableOpacity
                 style={[
                   styles.estadistica2,
+                  styles.botonAsistencia,
                   (botonActivo < 2 || botonActivo === 4) && styles.activeButton,
                 ]}
-                width={responsiveSize(105)}
-                height={responsiveSize(30)}
                 onPress={() => handlePress(1)}
               >
                 <MaterialIcons
                   name="event-available"
-                  size={responsiveIcon(20)}
+                  size={responsiveCamaraText(20, 16)}
                   color={
                     botonActivo < 2 || botonActivo === 4
                       ? COLORS.back
@@ -1755,15 +1868,14 @@ export const CamaraDipu = () => {
               <TouchableOpacity
                 style={[
                   styles.estadistica2,
+                  styles.botonVotaciones,
                   botonActivo === 2 && styles.activeButton,
                 ]}
-                width={responsiveSize(112)}
-                height={responsiveSize(30)}
                 onPress={() => handlePress(2)}
               >
                 <MsIcon
                   icon={msPersonRaisedHand}
-                  size={responsiveIcon(20)}
+                  size={responsiveCamaraText(20, 16)}
                   color={botonActivo === 2 ? COLORS.back : COLORS.greyM}
                 />
                 <Text
@@ -1781,15 +1893,14 @@ export const CamaraDipu = () => {
               <TouchableOpacity
                 style={[
                   styles.estadistica2,
+                  styles.botonProyectos,
                   botonActivo === 3 && styles.activeButton,
                 ]}
-                width={responsiveSize(104)}
-                height={responsiveSize(30)}
                 onPress={() => handlePress(3)}
               >
                 <MsIcon
                   icon={msCloudUpload}
-                  size={responsiveIcon(20)}
+                  size={responsiveCamaraText(20, 16)}
                   color={botonActivo === 3 ? COLORS.back : COLORS.greyM}
                 />
                 <Text
@@ -1819,7 +1930,7 @@ export const CamaraDipu = () => {
               {getTextoInfoEstadistica()}
             </Text>
 
-            <Text style={styles.subtitulo}>{getSubtituloEstadistica()}</Text>
+            {getSubtituloEstadistica()}
 
             {!esProyectoEspecifico && (
               <Text style={styles.textInfo}>
@@ -1834,14 +1945,15 @@ export const CamaraDipu = () => {
             )}
           </View>
           {idVotacionActual && (
-            <View flexDirection={"row"}>
+            <View style={styles.reaccionesContainer}>
               <TouchableOpacity
                 style={styles.reaccionDislike}
+                hitSlop={8}
                 onPress={() => setReaccionLey(idVotacionActual, "dislike")}
               >
                 <FontAwesome
                   name="thumbs-down"
-                  size={responsiveIcon(25)}
+                  size={responsiveCamaraSize(25)}
                   color={
                     reaccionActual === "dislike" ? COLORS.greenM : COLORS.grey
                   }
@@ -1851,11 +1963,12 @@ export const CamaraDipu = () => {
 
               <TouchableOpacity
                 style={styles.reaccionLike}
+                hitSlop={8}
                 onPress={() => setReaccionLey(idVotacionActual, "like")}
               >
                 <FontAwesome
                   name="thumbs-up"
-                  size={responsiveIcon(25)}
+                  size={responsiveCamaraSize(25)}
                   color={
                     reaccionActual === "like" ? COLORS.greenM : COLORS.grey
                   }
@@ -1863,9 +1976,30 @@ export const CamaraDipu = () => {
               </TouchableOpacity>
             </View>
           )}
-          <View style={styles.camara}>
-            {pelotas}
-            {infoPartidos}
+          <View
+            style={[
+              styles.camaraViewport,
+              {
+                width: anchoHemiciclo,
+                height: altoHemiciclo,
+                top: HEMICICLO_BASE_TOP * escalaHemiciclo,
+                marginLeft: -(anchoHemiciclo / 2),
+              },
+            ]}
+          >
+            <View
+              style={[
+                styles.camaraCanvas,
+                {
+                  left: -compensacionEscala,
+                  top: -compensacionEscala,
+                  transform: [{ scale: escalaHemiciclo }],
+                },
+              ]}
+            >
+              {pelotas}
+              {infoPartidos}
+            </View>
           </View>
 
           {esProyectoEspecifico && (
@@ -1878,87 +2012,99 @@ export const CamaraDipu = () => {
           )}
 
           <Modal visible={modalVisible} transparent animationType="slide">
-            <View style={styles.overlay}>
-              <Pressable
-                style={StyleSheet.absoluteFill}
-                onPress={() => setModalVisible(false)}
-              />
+            <TooltipProvider>
+              <View style={styles.overlay}>
+                <Pressable
+                  style={StyleSheet.absoluteFill}
+                  onPress={() => setModalVisible(false)}
+                />
 
-              <View style={styles.modalContainer}>
-                <View style={styles.tituloContainer}>
-                  <View style={styles.tituloContainerText}>
-                    <MsIcon
-                      icon={infoModal.icon}
-                      size={18}
-                      color={COLORS.back}
-                    />
-                    <Text style={styles.tituloText}>{infoModal.tipo}</Text>
+                <View style={styles.modalContainer}>
+                  <View style={styles.tituloContainer}>
+                    <View style={styles.tituloContainerText}>
+                      <MsIcon
+                        icon={infoModal.icon}
+                        size={responsiveCamaraSize(18)}
+                        color={COLORS.back}
+                      />
+                      <Text style={styles.tituloText}>{infoModal.tipo}</Text>
+                    </View>
+                    <Text style={styles.subTituloText}>{infoModal.tiempo}</Text>
                   </View>
-                  <Text style={styles.subTituloText}>{infoModal.tiempo}</Text>
-                </View>
-                <View style={styles.conteiner2}>
-                  <TouchableOpacity
-                    style={styles.botonPartido}
-                    onPress={() =>
-                      handlePressNavigate(
-                        //infoModal.partido,
-                        //console.log('partido', infoModal.partido),
-                        infoModal.partidoId,
-                      )
-                    }
-                  >
-                    <View
-                      style={{
-                        width: 55,
-                        height: 55,
-                        backgroundColor: COLORS.back,
-                        borderRadius: 100,
-                        borderColor,
-                        borderWidth: 3,
-                        justifyContent: "center",
-                        alignItems: "center",
-                      }}
+                  <View style={styles.conteiner2}>
+                    <TouchableOpacity
+                      style={styles.botonPartido}
+                      onPress={() =>
+                        handlePressNavigate(
+                          //infoModal.partido,
+                          //console.log('partido', infoModal.partido),
+                          infoModal.partidoId,
+                        )
+                      }
                     >
-                      <Text style={styles.infopartido}>
-                        {infoModal.partido}
-                      </Text>
-                      <Text style={styles.infoPorcentaje}>
-                        {infoModal.value}
-                        {infoModal.suffix}
-                      </Text>
-                    </View>
-                    <View>
-                      <Text style={styles.textBoton}>
-                        Estadísticas del Partido
-                      </Text>
-                    </View>
-                    <Ionicons
-                      name="chevron-forward-circle"
-                      size={20}
-                      color={COLORS.greenM}
-                    />
-                  </TouchableOpacity>
-                  {loading ? (
-                    <FlatList
-                      style={{ marginTop: 5 }}
-                      data={[1, 2, 3]}
-                      renderItem={skeletonCard}
-                      numColumns={1}
-                      keyExtractor={(item) => item.toString()}
-                    />
-                  ) : (
-                    <FlatList
-                      data={legisladores.diputados}
-                      renderItem={renderGridItem}
-                      numColumns={1}
-                      scrollEnabled={true}
-                      style={{ flexGrow: 0, marginTop: 5, marginVertical: 15 }}
-                      keyboardShouldPersistTaps="handled"
-                    />
-                  )}
+                      <View
+                        style={[
+                          styles.conteinerPartido,
+                          {
+                            borderColor,
+                          },
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.infopartido,
+                            {
+                              fontSize:
+                                (infoModal.partido?.length ?? 0) >= 7
+                                  ? 10.2
+                                  : 12,
+                            },
+                          ]}
+                        >
+                          {infoModal.partido}
+                        </Text>
+                        <Text style={styles.infoPorcentaje}>
+                          {infoModal.value}
+                          {infoModal.suffix}
+                        </Text>
+                      </View>
+                      <View>
+                        <Text style={styles.textBoton}>
+                          Estadísticas del Partido
+                        </Text>
+                      </View>
+                      <Ionicons
+                        name="chevron-forward-circle"
+                        size={responsiveCamaraSize(20)}
+                        color={COLORS.greenM}
+                      />
+                    </TouchableOpacity>
+                    {loading ? (
+                      <FlatList
+                        style={{ marginTop: responsiveCamaraSize(5) }}
+                        data={[1, 2, 3]}
+                        renderItem={skeletonCard}
+                        numColumns={1}
+                        keyExtractor={(item) => item.toString()}
+                      />
+                    ) : (
+                      <FlatList
+                        data={legisladores.diputados}
+                        renderItem={renderGridItem}
+                        numColumns={1}
+                        scrollEnabled={true}
+                        style={{
+                          flexGrow: 0,
+                          marginTop: responsiveCamaraSize(5),
+                          marginVertical: responsiveCamaraSize(15),
+                        }}
+                        keyboardShouldPersistTaps="handled"
+                      />
+                    )}
+                  </View>
                 </View>
               </View>
-            </View>
+            </TooltipProvider>
           </Modal>
 
           <Modal
@@ -1981,7 +2127,7 @@ export const CamaraDipu = () => {
                   <View style={styles.calendarHeaderIcon}>
                     <MaterialIcons
                       name="calendar-month"
-                      size={27}
+                      size={responsiveCamaraSize(27)}
                       color={COLORS.greenM}
                     />
                   </View>
@@ -1999,8 +2145,13 @@ export const CamaraDipu = () => {
                   <TouchableOpacity
                     style={styles.calendarCloseButton}
                     onPress={cerrarCalendario}
+                    hitSlop={8}
                   >
-                    <Ionicons name="close" size={24} color={COLORS.greenM} />
+                    <Ionicons
+                      name="close"
+                      size={responsiveCamaraSize(24)}
+                      color={COLORS.greenM}
+                    />
                   </TouchableOpacity>
                 </View>
 
@@ -2062,13 +2213,13 @@ export const CamaraDipu = () => {
 
                           textSectionTitleColor: COLORS.greyM,
 
-                          textDayFontFamily: "NotoSansMyanmar_400Regular",
-                          textMonthFontFamily: "NotoSansMyanmar_700Bold",
-                          textDayHeaderFontFamily: "NotoSansMyanmar_700Bold",
+                          textDayFontFamily: FONTS.regular,
+                          textMonthFontFamily: FONTS.bold,
+                          textDayHeaderFontFamily: FONTS.bold,
 
-                          textDayFontSize: 14,
-                          textMonthFontSize: 17,
-                          textDayHeaderFontSize: 12,
+                          textDayFontSize: responsiveCamaraText(14),
+                          textMonthFontSize: responsiveCamaraText(17),
+                          textDayHeaderFontSize: responsiveCamaraText(12),
                         }}
                       />
 
@@ -2118,7 +2269,7 @@ export const CamaraDipu = () => {
                         <View style={styles.sesionesHeaderIcon}>
                           <MaterialIcons
                             name="format-list-bulleted"
-                            size={21}
+                            size={responsiveCamaraSize(21)}
                             color={COLORS.greenM}
                           />
                         </View>
@@ -2155,7 +2306,7 @@ export const CamaraDipu = () => {
                                   ? "event-note"
                                   : "event-available"
                               }
-                              size={22}
+                              size={responsiveCamaraSize(22)}
                               color={COLORS.greenM}
                             />
                           </View>
@@ -2170,7 +2321,7 @@ export const CamaraDipu = () => {
 
                           <Ionicons
                             name="chevron-forward"
-                            size={21}
+                            size={responsiveCamaraSize(21)}
                             color={COLORS.greenM}
                           />
                         </Pressable>
@@ -2196,7 +2347,7 @@ export const CamaraDipu = () => {
               >
                 <Ionicons
                   name="play-forward"
-                  size={80}
+                  size={responsiveCamaraSize(80)}
                   color={COLORS.verdeclaro}
                 />
               </Animated.View>
@@ -2236,7 +2387,7 @@ export const CamaraDipu = () => {
                 >
                   <Ionicons
                     name="play-skip-back-circle-outline"
-                    size={responsiveIcon(28)}
+                    size={responsiveCamaraSize(28)}
                     color={COLORS.back}
                   />
                 </TouchableOpacity>
@@ -2248,7 +2399,7 @@ export const CamaraDipu = () => {
                     name={
                       pausado ? "play-circle-outline" : "pause-circle-outline"
                     }
-                    size={responsiveIcon(35)}
+                    size={responsiveCamaraSize(35)}
                     color={COLORS.back}
                   />
                 </TouchableOpacity>
@@ -2258,7 +2409,7 @@ export const CamaraDipu = () => {
                 >
                   <Ionicons
                     name="play-skip-forward-circle-outline"
-                    size={responsiveIcon(28)}
+                    size={responsiveCamaraSize(28)}
                     color={COLORS.back}
                   />
                 </TouchableOpacity>
@@ -2270,7 +2421,7 @@ export const CamaraDipu = () => {
               >
                 <MsIcon
                   icon={msCalendarMonth}
-                  size={responsiveIcon(20)}
+                  size={responsiveCamaraText(20, 16)}
                   color={COLORS.back}
                 />
                 <Text style={[styles.textCalendar, hoyActivo]}>
@@ -2301,23 +2452,33 @@ const styles = StyleSheet.create({
     width: "75%",
     maxHeight: "90%",
     backgroundColor: COLORS.back,
-    borderRadius: 10,
+    borderRadius: responsiveCamaraSize(10),
+    overflow: "hidden",
   },
   iconoAnimacionActiva: {
     position: "absolute",
-    right: -104,
-    bottom: -20,
+    right: -responsiveCamaraSize(104),
+    bottom: -responsiveCamaraSize(20),
     zIndex: 1,
     elevation: 1,
   },
+  reaccionesContainer: {
+    width: "100%",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: responsiveWidthScale(22),
+    zIndex: 2,
+  },
+
   reaccionDislike: {
-    top: "1%",
-    left: "-40%",
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   reaccionLike: {
-    top: "1%",
-    right: "-40%",
+    alignItems: "center",
+    justifyContent: "center",
   },
   pelota: {
     width: 20,
@@ -2327,35 +2488,39 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  camara: {
-    width: "80%",
-    height: "80%",
+  camaraViewport: {
     position: "absolute",
-    marginTop: "38%",
+    left: "50%",
+    overflow: "visible",
+  },
+
+  camaraCanvas: {
+    position: "absolute",
+    width: 500,
+    height: 500,
+    overflow: "visible",
   },
   leyesEstilo: {
     width: "98%",
   },
   leyesEstiloSoloMateria: {
-    minHeight: responsiveVerticalSize(96),
+    minHeight: responsiveHeightScale(96),
   },
   infoBloque: {
     width: "100%",
     alignItems: "center",
   },
-
   infoBloqueCentrado: {
     minHeight: responsiveVerticalSize(115),
     justifyContent: "center",
   },
-
   infoBloqueProyecto: {
-    minHeight: 115,
+    minHeight: responsiveHeightScale(115),
     justifyContent: "flex-start",
   },
   botonCalendar: {
     position: "absolute",
-    bottom: 10,
+    bottom: responsiveHeightScale(10),
     alignSelf: "center",
     zIndex: 2,
   },
@@ -2376,68 +2541,68 @@ const styles = StyleSheet.create({
   containerCalendar: {
     flexDirection: "row",
     backgroundColor: COLORS.greenM,
-    height: responsiveSize(38),
-    paddingHorizontal: responsiveSpacing(14),
+    height: responsiveCamaraSize(38),
+    paddingHorizontal: responsiveCamaraSize(14),
     justifyContent: "center",
     alignItems: "center",
-    borderRadius: responsiveSize(8),
+    borderRadius: responsiveCamaraSize(8),
     elevation: 3,
     shadowColor: COLORS.black,
     shadowOpacity: 0.18,
   },
   calendarModal: {
     width: "100%",
-    maxWidth: 390,
+    maxWidth: responsiveWidthScale(390),
     maxHeight: "92%",
     backgroundColor: COLORS.back,
-    borderRadius: 24,
-    paddingTop: 8,
-    paddingHorizontal: 14,
-    paddingBottom: 14,
+    borderRadius: responsiveCamaraSize(24),
+    paddingTop: responsiveCamaraSize(8),
+    paddingHorizontal: responsiveWidthScale(14),
+    paddingBottom: responsiveCamaraSize(14),
 
     elevation: 12,
     shadowColor: COLORS.black,
     shadowOffset: {
       width: 0,
-      height: 6,
+      height: responsiveCamaraSize(6),
     },
     shadowOpacity: 0.2,
-    shadowRadius: 14,
+    shadowRadius: responsiveCamaraSize(14),
   },
   calendarHeader: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 4,
-    marginBottom: 16,
+    paddingHorizontal: responsiveWidthScale(4),
+    marginBottom: responsiveCamaraSize(16),
   },
   calendarHeaderIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: responsiveCamaraSize(48),
+    height: responsiveCamaraSize(48),
+    borderRadius: responsiveCamaraSize(24),
     backgroundColor: COLORS.verdeclaro,
     justifyContent: "center",
     alignItems: "center",
   },
   calendarHeaderText: {
     flex: 1,
-    marginLeft: 12,
+    marginLeft: responsiveWidthScale(12),
   },
   calendarTitle: {
-    fontSize: 18,
-    fontFamily: "NotoSansMyanmar_700Bold",
+    fontSize: responsiveCamaraText(18),
+    fontFamily: FONTS.bold,
     color: COLORS.greenM,
-    lineHeight: 24,
+    lineHeight: responsiveCamaraLineHeight(24),
   },
   calendarSubtitle: {
-    fontSize: 13,
-    fontFamily: "NotoSansMyanmar_400Regular",
+    fontSize: responsiveCamaraText(13),
+    fontFamily: FONTS.regular,
     color: COLORS.greyM,
-    lineHeight: 18,
+    lineHeight: responsiveCamaraLineHeight(18),
   },
   calendarCloseButton: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: responsiveCamaraSize(38),
+    height: responsiveCamaraSize(38),
+    borderRadius: responsiveCamaraSize(19),
     backgroundColor: COLORS.verdeclaro,
     justifyContent: "center",
     alignItems: "center",
@@ -2445,18 +2610,18 @@ const styles = StyleSheet.create({
   calendarCard: {
     borderWidth: 1,
     borderColor: "#E6EAE7",
-    borderRadius: 20,
+    borderRadius: responsiveCamaraSize(20),
     backgroundColor: COLORS.back,
     overflow: "hidden",
   },
   calendarLoading: {
-    minHeight: 330,
+    minHeight: responsiveCamaraSize(330),
     justifyContent: "center",
     alignItems: "center",
   },
   calendarDay: {
-    width: 31,
-    height: 31,
+    width: Math.max(28, responsiveCamaraSize(31)),
+    height: Math.max(28, responsiveCamaraSize(31)),
     borderRadius: 16,
     justifyContent: "center",
     alignItems: "center",
@@ -2470,9 +2635,9 @@ const styles = StyleSheet.create({
   },
 
   calendarDayText: {
-    fontSize: 14,
+    fontSize: responsiveCamaraText(14),
     color: COLORS.black,
-    fontFamily: "NotoSansMyanmar_400Regular",
+    fontFamily: FONTS.regular,
   },
 
   calendarDayTextDisabled: {
@@ -2481,34 +2646,34 @@ const styles = StyleSheet.create({
 
   calendarDayTextMarked: {
     color: COLORS.back,
-    fontFamily: "NotoSansMyanmar_700Bold",
+    fontFamily: FONTS.bold,
   },
 
   calendarDayTextDouble: {
     color: COLORS.greenM,
-    fontFamily: "NotoSansMyanmar_700Bold",
+    fontFamily: FONTS.bold,
   },
   calendarLegend: {
     flexDirection: "row",
     justifyContent: "space-around",
     alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 13,
+    paddingHorizontal: responsiveWidthScale(12),
+    paddingVertical: responsiveCamaraSize(13),
     borderTopWidth: 1,
     borderTopColor: "#ECEFEC",
   },
   calendarLegendItem: {
+    flexShrink: 1,
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
   },
-
   calendarLegendDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    marginRight: 6,
+    width: responsiveCamaraSize(10),
+    height: responsiveCamaraSize(10),
+    borderRadius: responsiveCamaraSize(5),
+    marginRight: responsiveWidthScale(6),
   },
-
   calendarLegendDotOne: {
     backgroundColor: COLORS.greenM,
   },
@@ -2522,71 +2687,65 @@ const styles = StyleSheet.create({
   calendarLegendDotDisabled: {
     backgroundColor: COLORS.grey,
   },
-
   calendarLegendText: {
-    fontSize: 11,
-    fontFamily: "NotoSansMyanmar_400Regular",
+    flexShrink: 1,
+    fontSize: responsiveCamaraText(11),
+    fontFamily: FONTS.regular,
     color: COLORS.greyM,
   },
-
   sesionesContainer: {
-    paddingHorizontal: 12,
-    paddingTop: 14,
-    paddingBottom: 4,
+    paddingHorizontal: responsiveWidthScale(12),
+    paddingTop: responsiveCamaraSize(14),
+    paddingBottom: responsiveCamaraSize(4),
     borderTopWidth: 1,
     borderTopColor: "#ECEFEC",
   },
-
   sesionesHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 12,
+    marginBottom: responsiveCamaraSize(12),
   },
-
   sesionesHeaderIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: responsiveCamaraSize(38),
+    height: responsiveCamaraSize(38),
+    borderRadius: responsiveCamaraSize(19),
     backgroundColor: COLORS.verdeclaro,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 10,
+    marginRight: responsiveWidthScale(10),
   },
-
   sesionesTitulo: {
-    fontSize: 15,
-    fontFamily: "NotoSansMyanmar_700Bold",
+    fontSize: responsiveCamaraText(15),
+    fontFamily: FONTS.bold,
     color: COLORS.greenM,
-    lineHeight: 20,
+    lineHeight: responsiveCamaraLineHeight(20),
   },
-
   sesionesCantidad: {
-    fontSize: 12,
-    fontFamily: "NotoSansMyanmar_400Regular",
+    fontSize: responsiveCamaraText(12),
+    fontFamily: FONTS.regular,
     color: COLORS.greyM,
-    lineHeight: 17,
+    lineHeight: responsiveCamaraLineHeight(17),
   },
-
   sesionCard: {
-    minHeight: 68,
+    minHeight: responsiveCamaraSize(68),
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: COLORS.back,
     borderWidth: 1,
     borderColor: "#E7EBE8",
-    borderRadius: 14,
-    marginBottom: 10,
-    paddingRight: 14,
+    borderRadius: responsiveCamaraSize(14),
+    marginBottom: responsiveCamaraSize(10),
+    paddingRight: responsiveWidthScale(14),
     overflow: "hidden",
 
     elevation: 2,
     shadowColor: COLORS.black,
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: responsiveCamaraSize(2),
     },
     shadowOpacity: 0.08,
-    shadowRadius: 5,
+    shadowRadius: responsiveCamaraSize(5),
   },
 
   sesionCardPressed: {
@@ -2595,91 +2754,86 @@ const styles = StyleSheet.create({
   },
 
   sesionCardAccent: {
-    width: 5,
+    width: responsiveWidthScale(5),
     alignSelf: "stretch",
     backgroundColor: COLORS.greenM,
   },
-
   sesionCardIcon: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    width: responsiveCamaraSize(42),
+    height: responsiveCamaraSize(42),
+    borderRadius: responsiveCamaraSize(21),
     backgroundColor: COLORS.verdeclaro,
     justifyContent: "center",
     alignItems: "center",
-    marginHorizontal: 12,
+    marginHorizontal: responsiveWidthScale(12),
   },
-
   sesionCardContent: {
     flex: 1,
   },
-
   sesionNumero: {
-    fontSize: 15,
-    fontFamily: "NotoSansMyanmar_700Bold",
+    fontSize: responsiveCamaraText(15),
+    fontFamily: FONTS.bold,
     color: COLORS.black,
-    lineHeight: 20,
+    lineHeight: responsiveCamaraLineHeight(20),
   },
-
   sesionTipo: {
-    fontSize: 13,
-    fontFamily: "NotoSansMyanmar_600SemiBold",
+    fontSize: responsiveCamaraText(13),
+    fontFamily: FONTS.medium,
     color: COLORS.greenM,
-    lineHeight: 18,
+    lineHeight: responsiveCamaraLineHeight(18),
   },
   modalBackground: {
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.48)",
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 18,
+    paddingHorizontal: responsiveWidthScale(18),
   },
   containerPlay: {
     flexDirection: "row",
-    borderRadius: responsiveSize(20),
-    width: responsiveSize(140),
-    height: responsiveSize(40),
+    borderRadius: responsiveCamaraSize(20),
+    width: responsiveCamaraSize(140),
+    height: responsiveCamaraSize(40),
     elevation: 3,
     shadowColor: COLORS.black,
-    paddingHorizontal: 5,
+    paddingHorizontal: responsiveCamaraSize(5),
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: COLORS.greenM,
     overflow: "hidden",
     zIndex: 2,
-    elevation: 2,
   },
   playShimmer: {
-    width: 100,
-    height: 100,
+    width: responsiveCamaraSize(100),
+    height: responsiveCamaraSize(100),
   },
   informacion: {
+    width: "100%",
     flexDirection: "row",
     justifyContent: "center",
-    paddingTop: 12,
+    paddingTop: responsiveHeightScale(12),
+    paddingHorizontal: responsiveWidthScale(12),
   },
   botonPlay: {
     backgroundColor: COLORS.greenM,
-    marginHorizontal: 4,
+    marginHorizontal: responsiveCamaraSize(4),
   },
+
   textHoy: {
-    fontSize: responsiveFont(14.7),
-    fontFamily: "NotoSansMyanmar_700Bold",
+    flexShrink: 1,
+    fontSize: responsiveCamaraText(14.7),
+    fontFamily: FONTS.bold,
     color: COLORS.greyM,
     paddingVertical: 0,
-    paddingBottom: 0,
-    paddingTop: 0,
-    marginHorizontal: 8,
-    letterSpacing: 0.25,
+    marginHorizontal: responsiveWidthScale(4),
+    letterSpacing: responsiveWidthScale(0.25),
   },
   textCalendar: {
-    fontSize: responsiveFont(14.5),
-    fontFamily: "NotoSansMyanmar_700Bold",
+    fontSize: responsiveCamaraText(14.5),
+    fontFamily: FONTS.bold,
     color: COLORS.back,
     paddingVertical: 0,
-    paddingBottom: 0,
-    paddingTop: 0,
-    marginLeft: 10,
+    marginLeft: responsiveWidthScale(10),
   },
   activeButton: {
     backgroundColor: COLORS.greenM,
@@ -2688,6 +2842,7 @@ const styles = StyleSheet.create({
     color: COLORS.back,
   },
   estadistica: {
+    width: "100%",
     flexDirection: "row",
     alignItems: "center",
   },
@@ -2695,33 +2850,42 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 3,
+    borderRadius: responsiveWidthScale(3),
     elevation: 3,
     shadowColor: COLORS.black,
     backgroundColor: COLORS.back,
-    paddingHorizontal: responsiveSpacing(10),
-    height: responsiveSize(36),
+    paddingHorizontal: responsiveWidthScale(6),
+    height: responsiveHeightScale(36),
+  },
+  botonAsistencia: {
+    flex: 105,
+  },
+  botonVotaciones: {
+    flex: 112,
+  },
+  botonProyectos: {
+    flex: 104,
   },
   subtitulo: {
-    fontFamily: "NotoSansMyanmar_700Bold",
-    fontSize: responsiveFont(14.5),
+    fontFamily: FONTS.bold,
+    fontSize: responsiveCamaraText(14.5),
     color: COLORS.black,
     textAlign: "center",
-    lineHeight: 20,
+    lineHeight: responsiveCamaraLineHeight(20),
   },
   materia: {
-    fontFamily: "NotoSansMyanmar_700Bold",
-    fontSize: responsiveFontCamara(13.5, 12),
+    fontFamily: FONTS.bold,
+    fontSize: responsiveProyectoText(13.5),
     color: COLORS.black,
     textAlign: "center",
-    lineHeight: responsiveFontCamara(15, 13),
+    lineHeight: responsiveCamaraLineHeight(15),
   },
   articulo: {
-    fontFamily: "NotoSansMyanmar_400Regular",
-    paddingTop: 3,
-    fontSize: responsiveFontCamara(13, 12),
+    fontFamily: FONTS.regular,
+    paddingTop: responsiveHeightScale(3),
+    fontSize: responsiveProyectoText(13),
     color: COLORS.black,
-    lineHeight: responsiveFontCamara(15, 13),
+    lineHeight: responsiveCamaraLineHeight(15),
     textAlign: "center",
   },
   resultadoEstilo: {
@@ -2731,31 +2895,31 @@ const styles = StyleSheet.create({
   },
   sesionProyecto: {
     position: "absolute",
-    bottom: responsiveVerticalSize(56),
+    bottom: responsiveHeightScale(56),
     alignSelf: "center",
     justifyContent: "center",
     alignItems: "center",
     zIndex: 2,
   },
   resultado: {
-    fontFamily: "NotoSansMyanmar_700Bold",
-    fontSize: responsiveFont(15),
+    fontFamily: FONTS.bold,
+    fontSize: responsiveCamaraText(15),
     color: COLORS.greenM,
-    paddingHorizontal: 3,
+    paddingHorizontal: responsiveWidthScale(3),
     textTransform: "uppercase",
-    letterSpacing: 0.25,
+    letterSpacing: responsiveWidthScale(0.25),
   },
   sesionFecha: {
-    fontFamily: "NotoSansMyanmar_700Bold",
-    fontSize: responsiveFont(15),
+    fontFamily: FONTS.bold,
+    fontSize: responsiveCamaraText(15),
     color: COLORS.greenM,
-    letterSpacing: 0.25,
+    letterSpacing: responsiveWidthScale(0.25),
   },
   infoEstadistica: {
-    fontFamily: "NotoSansMyanmar_700Bold",
-    fontSize: responsiveFont(15),
+    fontFamily: FONTS.bold,
+    fontSize: responsiveCamaraText(15),
     color: COLORS.greenM,
-    marginTop: "2%",
+    marginTop: responsiveHeightScale(8),
   },
   textInfo: {
     width: "90%",
@@ -2764,96 +2928,98 @@ const styles = StyleSheet.create({
   },
   textLey: {
     fontFamily: "Sedan_400Regular",
-    fontSize: 16,
+    fontSize: responsiveCamaraText(16),
     color: COLORS.greenM,
   },
   textDescripcion: {
-    fontFamily: "NotoSansMyanmar_400Regular",
-    fontSize: 12,
+    fontFamily: FONTS.regular,
+    fontSize: responsiveCamaraText(12),
     color: COLORS.black,
     textAlign: "justify",
-    marginHorizontal: "2%",
-    lineHeight: 18,
+    marginHorizontal: responsiveWidthScale(8),
+    lineHeight: responsiveCamaraLineHeight(18),
   },
   tituloContainer: {
-    height: 65,
+    minHeight: responsiveCamaraSize(65),
     width: "100%",
     backgroundColor: COLORS.greenM,
     justifyContent: "center",
     alignItems: "center",
-    borderTopEndRadius: 10,
-    borderTopLeftRadius: 10,
-    paddingTop: 4,
+    borderTopRightRadius: responsiveCamaraSize(10),
+    borderTopLeftRadius: responsiveCamaraSize(10),
+    paddingTop: responsiveCamaraSize(4),
+    paddingHorizontal: responsiveWidthScale(8),
   },
   tituloContainerText: {
     flexDirection: "row",
-    alignItems: "flex-start",
+    alignItems: "center",
+    justifyContent: "center",
   },
   tituloText: {
-    fontFamily: "NotoSansMyanmar_700Bold",
-    fontSize: 16,
+    fontFamily: FONTS.bold,
+    fontSize: responsiveCamaraText(16),
     color: COLORS.back,
-    lineHeight: 22,
-    alignSelf: "center",
-    letterSpacing: 0.4,
-    marginLeft: 6,
-    width: 100,
+    lineHeight: responsiveCamaraLineHeight(22),
+    letterSpacing: responsiveWidthScale(0.4),
+    marginLeft: responsiveWidthScale(6),
   },
   subTituloText: {
-    fontFamily: "NotoSansMyanmar_400Regular",
-    fontSize: 14,
+    fontFamily: FONTS.regular,
+    fontSize: responsiveCamaraText(14),
     color: COLORS.back,
-    lineHeight: 24,
-    alignSelf: "center",
-    letterSpacing: 0.3,
+    lineHeight: responsiveCamaraLineHeight(24),
+    textAlign: "center",
+    letterSpacing: responsiveWidthScale(0.3),
   },
   conteiner2: {
-    paddingTop: 20,
+    paddingTop: responsiveCamaraSize(20),
     flexShrink: 1,
     alignItems: "center",
   },
   botonPartido: {
-    width: 285,
-    height: 72,
+    width: responsiveCamaraSize(285),
+    height: responsiveCamaraSize(72),
     backgroundColor: COLORS.verdeclaro,
-    borderRadius: 30,
+    borderRadius: responsiveCamaraSize(30),
     alignItems: "center",
     justifyContent: "space-between",
     flexDirection: "row",
-    padding: 10,
+    padding: responsiveCamaraSize(10),
   },
   conteinerPartido: {
-    width: 55,
-    height: 55,
-    backgroundColor: "rgba(255, 255, 255, 0.80)",
-    borderRadius: 100,
-    borderWidth: 3,
+    width: responsiveCamaraSize(55),
+    height: responsiveCamaraSize(55),
+    backgroundColor: COLORS.back,
+    borderRadius: responsiveCamaraSize(100),
+    borderWidth: responsiveCamaraSize(3),
     justifyContent: "center",
     alignItems: "center",
   },
   textBoton: {
-    fontFamily: "NotoSansMyanmar_700Bold",
-    fontSize: 15,
+    flexShrink: 1,
+    fontFamily: FONTS.bold,
+    fontSize: responsiveCamaraText(15),
     color: COLORS.greenM,
+    textAlign: "center",
   },
   infopartido: {
-    fontFamily: "NotoSansMyanmar_700Bold",
-    fontSize: 10,
+    fontFamily: FONTS.bold,
+    fontSize: responsiveCamaraText(10, 9),
     color: COLORS.greenM,
-    top: 9,
-    lineHeight: 15,
+    top: responsiveCamaraSize(4),
+    lineHeight: responsiveCamaraLineHeight(15),
   },
   infoPorcentaje: {
-    fontFamily: "NotoSansMyanmar_700Bold",
+    fontFamily: FONTS.bold,
     color: COLORS.greenM,
-    fontSize: 15,
+    fontSize: responsiveCamaraText(15),
   },
   conteinerRepresentantes: {
     margin: 10,
   },
   resumenIA: {
-    fontFamily: "NotoSansMyanmar_700Bold",
-    fontSize: responsiveFont(11.5),
+    fontFamily: FONTS.bold,
+    fontSize: responsiveProyectoText(11.5),
     color: COLORS.greyM,
   },
 });

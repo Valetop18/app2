@@ -18,12 +18,10 @@ import { msCancel } from "@material-symbols-react-native/outlined-400";
 import { MsIcon } from "material-symbols-react-native";
 import MaterialIcons from "@react-native-vector-icons/material-icons";
 import {
-  responsiveVerticalSize,
-  responsiveSpacing,
-  responsiveFont,
-  responsiveIcon,
-  responsiveSize,
+  responsiveWidthScale,
+  responsiveHeightScale,
 } from "../utils/responsive";
+import { FONTS } from "../constants/fonts";
 
 export const TopicosInteres = () => {
   const { user } = useAuth();
@@ -90,11 +88,15 @@ export const TopicosInteres = () => {
     <View
       style={{
         alignSelf: "center",
-        paddingVertical: 8,
-        paddingHorizontal: 8,
+        paddingVertical: responsiveHeightScale(8),
+        paddingHorizontal: responsiveWidthScale(8),
       }}
     >
-      <Skeleton width={112} height={35} borderRadius={5} />
+      <Skeleton
+        width={responsiveWidthScale(112)}
+        height={responsiveHeightScale(35)}
+        borderRadius={responsiveWidthScale(5)}
+      />
     </View>
   );
 
@@ -116,17 +118,25 @@ export const TopicosInteres = () => {
             activeOpacity={1}
             onPress={() => {}}
           >
-            <View style={{ alignSelf: "flex-end" }}>
-              <TouchableOpacity onPress={() => setModalVisible(false)}>
-                <MaterialIcons
-                  name="cancel"
-                  size={responsiveIcon(20)}
-                  color={COLORS.back}
-                />
-              </TouchableOpacity>
-            </View>
-            <View style={{ alignItems: "center", justifyContent: "center" }}>
-              <MsIcon icon={msCancel} size={36} color={COLORS.back} />
+            <TouchableOpacity
+              style={styles.modalCerrar}
+              onPress={() => setModalVisible(false)}
+              hitSlop={8}
+            >
+              <MaterialIcons
+                name="cancel"
+                size={responsiveWidthScale(20)}
+                color={COLORS.back}
+              />
+            </TouchableOpacity>
+
+            <View style={styles.modalContenido}>
+              <MsIcon
+                icon={msCancel}
+                size={responsiveWidthScale(36)}
+                color={COLORS.back}
+              />
+
               <Text style={styles.textModal}>
                 Debes seleccionar al menos un tema
               </Text>
@@ -151,6 +161,8 @@ export const TopicosInteres = () => {
             renderItem={skeletonCard}
             contentContainerStyle={styles.flatlistContent}
             keyExtractor={(item) => item.toString()}
+            scrollEnabled={false}
+            showsVerticalScrollIndicator={false}
           />
         ) : (
           <FlatList
@@ -161,6 +173,8 @@ export const TopicosInteres = () => {
             columnWrapperStyle={styles.columnWrapper}
             renderItem={renderGridItem}
             keyExtractor={(item) => item.id}
+            scrollEnabled={false}
+            showsVerticalScrollIndicator={false}
           />
         )}
       </View>
@@ -172,7 +186,7 @@ export const TopicosInteres = () => {
           <Text style={styles.textContinuar}>{textContinuar}</Text>
           <Ionicons
             name="chevron-forward-circle"
-            size={responsiveIcon(28)}
+            size={responsiveWidthScale(28)}
             color={COLORS.back}
           />
         </TouchableOpacity>
@@ -186,55 +200,59 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.greenM,
     flex: 1,
   },
+
   containerTitulo: {
-    marginTop: responsiveVerticalSize(55),
-    paddingVertical: responsiveVerticalSize(20),
-    paddingHorizontal: responsiveSpacing(30),
+    marginTop: responsiveHeightScale(60),
+    paddingVertical: responsiveHeightScale(20),
+    paddingHorizontal: responsiveWidthScale(30),
   },
-  textModal: {
-    fontFamily: "NotoSansMyanmar_700Bold",
-    color: COLORS.back,
-    fontSize: 15,
-    marginTop: '2%'
-  },
-  titulo: {
-    fontFamily: "NotoSansMyanmar_600SemiBold",
-    fontSize: responsiveFont(20),
-    letterSpacing: 1,
-    color: COLORS.back,
-  },
+
   subTitulo: {
-    fontFamily: "NotoSansMyanmar_600SemiBold",
-    fontSize: responsiveFont(14),
+    fontFamily: FONTS.medium,
+    fontSize: Math.max(11, responsiveWidthScale(15)),
     color: COLORS.grey,
   },
+
+  titulo: {
+    fontFamily: FONTS.medium,
+    fontSize: Math.max(11, responsiveWidthScale(20)),
+    letterSpacing: responsiveWidthScale(1),
+    color: COLORS.back,
+  },
+
   containerFlatlist: {
     flexShrink: 1,
     alignItems: "center",
-    paddingVertical: responsiveVerticalSize(10),
-    paddingHorizontal: responsiveSpacing(5),
+    paddingVertical: responsiveHeightScale(10),
+    paddingHorizontal: responsiveWidthScale(5),
     justifyContent: "flex-start",
   },
+
   flatlist: {
     width: "100%",
   },
+
+  flatlistContent: {
+    paddingBottom: responsiveHeightScale(8),
+  },
+
   topicoContainer: {
     alignSelf: "center",
     justifyContent: "center",
   },
+
   columnWrapper: {
     justifyContent: "center",
     alignItems: "center",
-    gap: responsiveSpacing(3),
+    gap: responsiveWidthScale(3),
   },
+
   containerFinal: {
     justifyContent: "flex-end",
-    paddingTop: responsiveVerticalSize(18),
-    paddingBottom: responsiveVerticalSize(48),
+    paddingTop: responsiveHeightScale(18),
+    paddingBottom: responsiveHeightScale(48),
   },
-  flatlistContent: {
-    paddingBottom: responsiveVerticalSize(8),
-  },
+
   containerContinuar: {
     width: "77%",
     alignSelf: "center",
@@ -242,29 +260,53 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
     alignItems: "center",
   },
+
   textContinuar: {
     flex: 1,
-    fontFamily: "NotoSansMyanmar_700Bold",
-    fontSize: responsiveFont(16),
+    fontFamily: FONTS.bold,
+    fontSize: Math.max(11, responsiveWidthScale(18)),
     color: COLORS.back,
-    letterSpacing: 0.5,
+    letterSpacing: responsiveWidthScale(0.5),
     textAlign: "right",
-    marginRight: responsiveSpacing(6),
+    marginRight: responsiveWidthScale(6),
+    marginTop: responsiveHeightScale(-4),
   },
+
   modalOverlay: {
     flex: 1,
     justifyContent: "flex-end",
     backgroundColor: "rgba(0,0,0,0.35)",
   },
+
   modalContainer: {
-    minHeight: responsiveVerticalSize(145),
+    height: responsiveHeightScale(145),
     width: "100%",
     backgroundColor: COLORS.greenM,
     justifyContent: "center",
     alignItems: "center",
-    borderTopRightRadius: responsiveSize(5),
-    borderTopLeftRadius: responsiveSize(5),
-    paddingHorizontal: responsiveSpacing(25),
-    paddingBottom: responsiveVerticalSize(12),
+    borderTopRightRadius: responsiveWidthScale(5),
+    borderTopLeftRadius: responsiveWidthScale(5),
+    paddingHorizontal: responsiveWidthScale(25),
+    paddingBottom: responsiveHeightScale(12),
+  },
+
+  modalCerrar: {
+    position: "absolute",
+    top: responsiveHeightScale(12),
+    right: responsiveWidthScale(25),
+    zIndex: 2,
+  },
+
+  modalContenido: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  textModal: {
+    fontFamily: FONTS.bold,
+    color: COLORS.back,
+    fontSize: Math.max(11, responsiveWidthScale(15)),
+    marginTop: responsiveHeightScale(8),
+    textAlign: "center",
   },
 });

@@ -4,12 +4,10 @@ import { Picker } from "@react-native-picker/picker";
 import { Ionicons } from "@react-native-vector-icons/ionicons";
 import { COLORS } from "../constants/colors";
 import {
-  responsiveVerticalSize,
-  responsiveSize,
-  responsiveSpacing,
-  responsiveFont,
-  responsiveIcon,
+  responsiveWidthScale,
+  responsiveHeightScale,
 } from "../utils/responsive";
+import { FONTS } from "../constants/fonts";
 
 export const MESES = [
   { label: "Enero", value: 1 },
@@ -76,7 +74,7 @@ const MonthYearPickerModal = ({ visible, month, year, onAccept, onClose }) => {
             >
               <Ionicons
                 name="close-circle"
-                size={responsiveIcon(22)}
+                size={responsiveWidthScale(22)}
                 color={COLORS.grey}
               />
             </TouchableOpacity>
@@ -136,69 +134,71 @@ const MonthYearPickerModal = ({ visible, month, year, onAccept, onClose }) => {
 export default MonthYearPickerModal;
 
 const styles = StyleSheet.create({
-  container: {
-    backgroundColor: COLORS.back,
-    borderRadius: responsiveSize(18),
-    paddingHorizontal: responsiveSpacing(20),
-    paddingTop: responsiveVerticalSize(18),
-    paddingBottom: responsiveVerticalSize(22),
-  },
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.45)",
     justifyContent: "center",
-    paddingHorizontal: responsiveSpacing(24),
+    paddingHorizontal: responsiveWidthScale(24),
   },
+
+  container: {
+    backgroundColor: COLORS.back,
+    borderRadius: responsiveWidthScale(18),
+    paddingHorizontal: responsiveWidthScale(20),
+    paddingTop: responsiveHeightScale(18),
+    paddingBottom: responsiveHeightScale(22),
+  },
+
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: responsiveVerticalSize(18),
+    marginBottom: responsiveHeightScale(18),
   },
 
   title: {
     color: COLORS.greenM,
-    fontSize: responsiveFont(18),
-    fontFamily: "NotoSansMyanmar_700Bold",
+    fontSize: Math.max(11, responsiveWidthScale(18)),
+    fontFamily: FONTS.bold,
   },
 
   label: {
     color: COLORS.greenM,
-    fontSize: responsiveFont(14),
-    fontFamily: "NotoSansMyanmar_600SemiBold",
-    marginBottom: responsiveVerticalSize(5),
+    fontSize: Math.max(11, responsiveWidthScale(14)),
+    fontFamily: FONTS.medium,
+    marginBottom: responsiveHeightScale(5),
   },
 
   pickerContainer: {
     width: "100%",
-    height: responsiveVerticalSize(48),
+    height: responsiveHeightScale(48),
     backgroundColor: COLORS.verdeclaro,
-    borderRadius: responsiveSize(10),
+    borderRadius: responsiveWidthScale(10),
     justifyContent: "center",
     overflow: "hidden",
-    marginBottom: responsiveVerticalSize(16),
+    marginBottom: responsiveHeightScale(16),
   },
 
   picker: {
     width: "100%",
-    height: responsiveVerticalSize(52),
+    height: responsiveHeightScale(52),
     color: COLORS.black,
   },
 
   acceptButton: {
     width: "100%",
-    height: responsiveVerticalSize(44),
+    height: responsiveHeightScale(44),
     backgroundColor: COLORS.greenM,
-    borderRadius: responsiveSize(12),
+    borderRadius: responsiveWidthScale(12),
     justifyContent: "center",
     alignItems: "center",
-    marginTop: responsiveVerticalSize(4),
+    marginTop: responsiveHeightScale(4),
   },
 
   acceptButtonText: {
     color: COLORS.back,
-    fontSize: responsiveFont(15),
-    fontFamily: "NotoSansMyanmar_700Bold",
-    letterSpacing: 1,
+    fontSize: Math.max(11, responsiveWidthScale(15)),
+    fontFamily: FONTS.bold,
+    letterSpacing: responsiveWidthScale(1),
   },
 });

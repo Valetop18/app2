@@ -11,6 +11,8 @@ import {
 } from "@material-symbols-react-native/outlined-400";
 import Ionicons from "@react-native-vector-icons/ionicons";
 import { useReacciones } from "../context/ReaccionesContext";
+import { FONTS } from "../constants/fonts";
+import { responsiveWidthScale } from "../utils/responsive";
 
 const coloresPorPartido = {
   DES: COLORS.DES,
@@ -42,6 +44,7 @@ const GridRepresentPartido = ({ item }) => {
   const onSelected = () => {
     navigation.navigate("Descripcion", {
       idDiputado: item.id,
+      diputadoInicial: item,
       from: "EstadisticaPartido",
     });
   };
@@ -53,7 +56,6 @@ const GridRepresentPartido = ({ item }) => {
         activeOpacity={0.85}
         style={styles.container}
       >
-        {/* Fotografía y partido */}
         <View style={styles.containImage}>
           <Image
             style={[
@@ -66,10 +68,7 @@ const GridRepresentPartido = ({ item }) => {
           />
           <Text style={styles.partido}>{item.partido}</Text>
         </View>
-
-        {/* Información del diputado */}
         <View style={styles.infoEscrita}>
-          {/* Nombre y representación distrital */}
           <View style={styles.headerCard}>
             <Text style={styles.name} numberOfLines={1}>
               {item.nombre}
@@ -78,7 +77,7 @@ const GridRepresentPartido = ({ item }) => {
             <View style={styles.dataUsage}>
               <MaterialIcons
                 name="data-usage"
-                size={39}
+                size={responsiveWidthScale(39)}
                 color={COLORS.verdeclaro}
                 style={styles.dataUsageIcon}
               />
@@ -97,7 +96,7 @@ const GridRepresentPartido = ({ item }) => {
                 <View style={styles.iconContainer}>
                   <MaterialIcons
                     name="event-available"
-                    size={20}
+                    size={responsiveWidthScale(20)}
                     color={COLORS.greenM}
                   />
                 </View>
@@ -115,7 +114,7 @@ const GridRepresentPartido = ({ item }) => {
                 <View style={styles.iconContainer}>
                   <MsIcon
                     icon={msPersonRaisedHand}
-                    size={20}
+                    size={responsiveWidthScale(20)}
                     color={COLORS.greenM}
                   />
                 </View>
@@ -136,7 +135,7 @@ const GridRepresentPartido = ({ item }) => {
                 <View style={styles.iconContainer}>
                   <FontAwesome
                     name="handshake-o"
-                    size={19}
+                    size={responsiveWidthScale(19)}
                     color={COLORS.greenM}
                   />
                 </View>
@@ -155,7 +154,7 @@ const GridRepresentPartido = ({ item }) => {
                 <View style={styles.iconContainer}>
                   <MsIcon
                     icon={msCloudUpload}
-                    size={20}
+                    size={responsiveWidthScale(20)}
                     color={COLORS.greenM}
                   />
                 </View>
@@ -181,11 +180,11 @@ const GridRepresentPartido = ({ item }) => {
                     ? "heart-circle"
                     : "heart-circle-outline"
                 }
-                size={26}
+                size={responsiveWidthScale(26)}
                 color={
                   reaccionesRepresentante[item.id] === "like"
                     ? COLORS.greenM
-                    : COLORS.gray
+                    : COLORS.greyM
                 }
               />
             </View>
@@ -204,53 +203,56 @@ const styles = StyleSheet.create({
 
   container: {
     width: "96%",
-    minHeight: 125,
+    minHeight: responsiveWidthScale(125),
     marginVertical: "1.2%",
-    paddingVertical: 3,
-    paddingHorizontal: 5,
+    paddingVertical: responsiveWidthScale(3),
+    paddingHorizontal: responsiveWidthScale(5),
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: COLORS.back,
-    borderRadius: 12,
+    borderRadius: responsiveWidthScale(12),
 
     elevation: 3,
     shadowColor: COLORS.black,
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: responsiveWidthScale(2),
     },
     shadowOpacity: 0.12,
-    shadowRadius: 4,
+    shadowRadius: responsiveWidthScale(4),
   },
 
   containImage: {
-    width: 82,
+    width: responsiveWidthScale(82),
     alignItems: "center",
     justifyContent: "center",
     alignSelf: "stretch",
   },
+
   partido: {
-    marginTop: 8,
-    fontFamily: "NotoSansMyanmar_700Bold",
-    fontSize: 14,
-    lineHeight: 18,
+    marginTop: responsiveWidthScale(8),
+    fontFamily: FONTS.bold,
+    fontSize: Math.max(11, responsiveWidthScale(14)),
+    lineHeight: responsiveWidthScale(18),
     color: COLORS.black,
     textAlign: "center",
   },
+
   foto: {
-    width: 72,
-    height: 72,
-    borderRadius: 50,
-    borderWidth: 3,
+    width: responsiveWidthScale(72),
+    height: responsiveWidthScale(72),
+    borderRadius: responsiveWidthScale(50),
+    borderWidth: responsiveWidthScale(3),
   },
+
   infoEscrita: {
     flex: 1,
-    marginLeft: 4,
-    marginTop: -2,
+    marginLeft: responsiveWidthScale(4),
+    marginTop: responsiveWidthScale(-4),
   },
 
   headerCard: {
-    minHeight: 34,
+    minHeight: responsiveWidthScale(34),
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -258,21 +260,21 @@ const styles = StyleSheet.create({
 
   name: {
     flex: 1,
-    marginLeft: 5,
-    fontFamily: "NotoSansMyanmar_700Bold",
-    fontSize: 18,
-    lineHeight: 22,
+    marginLeft: responsiveWidthScale(5),
+    fontFamily: FONTS.bold,
+    fontSize: Math.max(11, responsiveWidthScale(18)),
+    lineHeight: responsiveWidthScale(22),
     color: COLORS.black,
-    marginTop: 10,
+    marginTop: responsiveWidthScale(4),
   },
 
   dataUsage: {
-    width: 38,
-    height: 38,
+    width: responsiveWidthScale(38),
+    height: responsiveWidthScale(38),
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 5,
-    marginRight: 10,
+    marginTop: responsiveWidthScale(5),
+    marginRight: responsiveWidthScale(10),
   },
 
   dataUsageIcon: {
@@ -280,16 +282,17 @@ const styles = StyleSheet.create({
   },
 
   data2: {
-    fontFamily: "NotoSansMyanmar_700Bold",
-    fontSize: 12,
+    fontFamily: FONTS.bold,
+    fontSize: Math.max(11, responsiveWidthScale(12)),
     color: COLORS.greenM,
+    top: responsiveWidthScale(-1.5)
   },
 
   containerInfo: {
     width: "100%",
     flexDirection: "row",
-    marginTop: 1,
-    paddingRight: 56,
+    marginTop: responsiveWidthScale(1),
+    paddingRight: responsiveWidthScale(56),
     position: "relative",
   },
 
@@ -300,58 +303,60 @@ const styles = StyleSheet.create({
   columnaInfoDerecha: {
     width: "54%",
   },
+
   filaEstadistica: {
-    minHeight: 39,
+    minHeight: responsiveWidthScale(39),
     flexDirection: "row",
     alignItems: "center",
-    marginVertical: 1,
+    marginVertical: responsiveWidthScale(1),
   },
 
   iconContainer: {
-    width: 27,
+    width: responsiveWidthScale(27),
     alignItems: "center",
     justifyContent: "center",
   },
 
   textoEstadistica: {
     flex: 1,
-    marginLeft: 3,
+    marginLeft: responsiveWidthScale(3),
     justifyContent: "center",
   },
 
   valorEstadistica: {
-    fontFamily: "NotoSansMyanmar_700Bold",
-    fontSize: 13.5,
-    lineHeight: 16,
+    fontFamily: FONTS.bold,
+    fontSize: Math.max(11, responsiveWidthScale(13.5)),
+    lineHeight: responsiveWidthScale(16),
     color: COLORS.black,
   },
 
   nombreEstadistica: {
-    fontFamily: "NotoSansMyanmar_400Regular",
-    fontSize: 12.5,
-    lineHeight: 15,
+    fontFamily: FONTS.regular,
+    fontSize: Math.max(11, responsiveWidthScale(12.5)),
+    lineHeight: responsiveWidthScale(15),
     color: COLORS.black,
   },
+
   likesContainer: {
     position: "absolute",
-    right: 5,
+    right: responsiveWidthScale(5),
     top: 0,
     bottom: 0,
-    width: 56,
+    width: responsiveWidthScale(56),
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "flex-end",
   },
 
   likesText: {
-    minWidth: 20,
-    marginRight: 2,
-    fontFamily: "NotoSansMyanmar_700Bold",
-    fontSize: 12.5,
-    lineHeight: 16,
+    minWidth: responsiveWidthScale(20),
+    marginRight: responsiveWidthScale(2),
+    fontFamily: FONTS.bold,
+    fontSize: Math.max(11, responsiveWidthScale(12.5)),
+    lineHeight: responsiveWidthScale(16),
     color: COLORS.black,
     textAlign: "right",
-    paddingTop: 2,
+    paddingTop: responsiveWidthScale(2),
   },
 });
 

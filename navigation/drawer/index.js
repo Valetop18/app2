@@ -31,6 +31,7 @@ import { useNavigationState } from "@react-navigation/native";
 import Buscador from "../../components/Buscador";
 import { useAuth } from "../../context/AuthContext";
 import { useNavigation } from "@react-navigation/native";
+import { FONTS } from "../../constants/fonts";
 
 const BottomsTabs = createBottomTabNavigator();
 const Drawer = createDrawerNavigator();
@@ -65,7 +66,7 @@ function CustomDrawerContent(props) {
         label="Cambio de distrito"
         onPress={cambioDistrito}
         labelStyle={{
-          fontFamily: "NotoSansMyanmar_700Bold",
+          fontFamily: FONTS.bold,
           fontSize: 14,
           margin: 0,
         }}
@@ -83,7 +84,7 @@ function CustomDrawerContent(props) {
         label="Cerrar Sesión"
         onPress={submit}
         labelStyle={{
-          fontFamily: "NotoSansMyanmar_700Bold",
+          fontFamily: FONTS.bold,
           fontSize: 14,
           margin: 0,
         }}
@@ -124,7 +125,7 @@ const MyDrawer = () => {
       screenOptions={({ navigation }) => ({
         headerTintColor: COLORS.greenM,
         headerTitleStyle: {
-          fontFamily: "NotoSansMyanmar_700Bold",
+          fontFamily: FONTS.bold,
           fontSize: 25,
           letterSpacing: 2,
         },
@@ -159,7 +160,7 @@ const MyDrawer = () => {
           height: 48,
         },
         drawerLabelStyle: {
-          fontFamily: "NotoSansMyanmar_700Bold",
+          fontFamily: FONTS.bold,
           fontSize: 14,
           margin: 0,
         },
@@ -224,7 +225,7 @@ const MyDrawer = () => {
               tabBarStyle: styles.tabBar,
               tabBarLabelStyle: {
                 fontSize: 12.5,
-                fontFamily: "NotoSansMyanmar_400Regular",
+                fontFamily: FONTS.regular,
                 color: COLORS.black,
                 marginTop: -3,
               },
@@ -328,13 +329,13 @@ const styles = StyleSheet.create({
   },
   item: {},
   label: {
-    fontFamily: "NotoSansMyanmar_400Regular",
+    fontFamily: FONTS.regular,
     color: COLORS.black,
     fontSize: 12,
   },
   icon: {},
   header: {
-    fontFamily: "NotoSansMyanmar_700Bold",
+    fontFamily: FONTS.bold,
     fontSize: 26,
     letterSpacing: 2,
     color: COLORS.greenM,

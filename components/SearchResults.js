@@ -19,15 +19,11 @@ import {
 import { MsIcon } from "material-symbols-react-native";
 import { FontAwesome } from "@expo/vector-icons";
 import { useReacciones } from "../context/ReaccionesContext";
-import {
-  responsiveSize,
-  responsiveFont,
-  responsiveIcon,
-  responsiveSpacing,
-} from "../utils/responsive";
+import { responsiveWidthScale } from "../utils/responsive";
 import { useAuth } from "../context/AuthContext";
 import TooltipVotaciones from "./TooltipVotaciones";
 import Tooltip from "./tooltip";
+import { FONTS } from "../constants/fonts";
 
 export const SearchResults = ({ data = [], onSelect, representante }) => {
   const { reaccionesLey, setReaccionLey } = useReacciones();
@@ -90,27 +86,56 @@ export const SearchResults = ({ data = [], onSelect, representante }) => {
   };
 
   const IconoPorVoto = ({ voto }) => {
-    if (!voto)
-      return <Ionicons name="remove-circle" size={18} color={COLORS.greyM} />;
+    if (!voto) {
+      return (
+        <Ionicons
+          name="remove-circle"
+          size={responsiveWidthScale(18)}
+          color={COLORS.greyM}
+        />
+      );
+    }
 
     const v = voto.toLowerCase();
 
     if (v.includes("favor")) {
       return (
-        <MaterialIcons name="check-circle" size={18} color={COLORS.greenM} />
+        <MaterialIcons
+          name="check-circle"
+          size={responsiveWidthScale(18)}
+          color={COLORS.greenM}
+        />
       );
     }
 
     if (v.includes("contra")) {
-      return <MaterialIcons name="cancel" size={18} color={COLORS.FA} />;
+      return (
+        <MaterialIcons
+          name="cancel"
+          size={responsiveWidthScale(18)}
+          color={COLORS.FA}
+        />
+      );
     }
 
     if (v.includes("pareo")) {
-      return <MsIcon icon={msJoinRight} size={19} color={COLORS.PDG} />;
+      return (
+        <MsIcon
+          icon={msJoinRight}
+          size={responsiveWidthScale(19)}
+          color={COLORS.PDG}
+        />
+      );
     }
 
     if (v.includes("absten")) {
-      return <MsIcon icon={msFlaky} size={18} color={COLORS.UDI} />;
+      return (
+        <MsIcon
+          icon={msFlaky}
+          size={responsiveWidthScale(18)}
+          color={COLORS.UDI}
+        />
+      );
     }
 
     return null;
@@ -125,9 +150,9 @@ export const SearchResults = ({ data = [], onSelect, representante }) => {
       return (
         <MaterialIcons
           name="check-circle"
-          size={responsiveIcon(18)}
+          size={responsiveWidthScale(18)}
           color={COLORS.greenM}
-          marginRight={responsiveSpacing(18)}
+          marginRight={responsiveWidthScale(18)}
         />
       );
     }
@@ -136,9 +161,9 @@ export const SearchResults = ({ data = [], onSelect, representante }) => {
       return (
         <MaterialIcons
           name="cancel"
-          size={responsiveIcon(18)}
+          size={responsiveWidthScale(18)}
           color={COLORS.FA}
-          marginRight={responsiveSpacing(18)}
+          marginRight={responsiveWidthScale(18)}
         />
       );
     }
@@ -181,7 +206,7 @@ export const SearchResults = ({ data = [], onSelect, representante }) => {
 
                         <FontAwesome
                           name="thumbs-up"
-                          size={responsiveIcon(18)}
+                          size={responsiveWidthScale(18)}
                           color={
                             reaccion === "like" ? COLORS.greenM : COLORS.grey
                           }
@@ -196,7 +221,7 @@ export const SearchResults = ({ data = [], onSelect, representante }) => {
                       >
                         <FontAwesome
                           name="thumbs-down"
-                          size={responsiveIcon(18)}
+                          size={responsiveWidthScale(18)}
                           color={
                             reaccion === "dislike" ? COLORS.greenM : COLORS.grey
                           }
@@ -220,11 +245,14 @@ export const SearchResults = ({ data = [], onSelect, representante }) => {
                     onPress={() => onSelect(item)}
                   >
                     {representante && (
-                      <Tooltip width={140} text={<TooltipVotaciones />}>
+                      <Tooltip
+                        width={responsiveWidthScale(140)}
+                        text={<TooltipVotaciones />}
+                      >
                         <View style={styles.flexHorizontal}>
                           <MsIcon
                             icon={msPersonRaisedHand}
-                            size={responsiveIcon(18)}
+                            size={responsiveWidthScale(18)}
                             color={COLORS.black}
                           />
 
@@ -235,7 +263,7 @@ export const SearchResults = ({ data = [], onSelect, representante }) => {
 
                     <MaterialCommunityIcons
                       name="chart-donut-variant"
-                      size={responsiveIcon(22)}
+                      size={responsiveWidthScale(22)}
                       color={COLORS.black}
                     />
                     <IconoPorResultado resultado={item?.resultado} />
@@ -274,123 +302,138 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.back,
     width: "96%",
-    marginTop: "01%",
+    marginTop: "1%",
     marginVertical: "0.5%",
     marginHorizontal: "2%",
     elevation: 3,
     shadowColor: COLORS.black,
-    borderRadius: 10,
+    borderRadius: responsiveWidthScale(10),
   },
+
   containerNombre: {
     flexDirection: "row",
-    marginTop: 10,
+    marginTop: responsiveWidthScale(10),
     justifyContent: "space-between",
     width: "100%",
   },
+
   votacion: {
-    fontFamily: "NotoSansMyanmar_400Regular",
-    fontSize: responsiveFont(12),
+    fontFamily: FONTS.regular,
+    fontSize: Math.max(11, responsiveWidthScale(12)),
     color: COLORS.black,
     marginHorizontal: "1%",
   },
 
   nombre: {
-    fontFamily: "NotoSansMyanmar_700Bold",
-    fontSize: responsiveFont(14.5),
+    fontFamily: FONTS.bold,
+    fontSize: Math.max(11, responsiveWidthScale(14.5)),
     color: COLORS.greenM,
-    marginLeft: 10,
-    marginHorizontal: 6,
+    marginLeft: responsiveWidthScale(10),
+    marginHorizontal: responsiveWidthScale(6),
     paddingVertical: 0,
     paddingBottom: 0,
     paddingTop: 0,
   },
+
   datausage: {
     alignItems: "center",
-    width: responsiveSize(34),
-    height: responsiveSize(34),
+    width: responsiveWidthScale(34),
+    height: responsiveWidthScale(34),
     justifyContent: "center",
     marginTop: "-2%",
   },
+
   data2: {
-    fontSize: responsiveFont(10),
-    fontFamily: "NotoSansMyanmar_700Bold",
+    fontSize: Math.max(11, responsiveWidthScale(10)),
+    fontFamily: FONTS.bold,
     color: COLORS.greenM,
   },
+
   estadistica: {
     flexDirection: "row",
     alignItems: "center",
     marginRight: "-2%",
   },
+
   estadistica2: {
     flexDirection: "row",
     alignItems: "flex-start",
     justifyContent: "space-between",
-    marginRight: 6,
-    width: 38,
+    marginRight: responsiveWidthScale(6),
+    width: responsiveWidthScale(38),
   },
+
   flexHorizontal: {
     flexDirection: "row",
-    marginRight: 16,
+    marginRight: responsiveWidthScale(16),
   },
+
   descripcion: {
-    fontFamily: "NotoSansMyanmar_400Regular",
-    fontSize: responsiveFont(14),
+    fontFamily: FONTS.regular,
+    fontSize: Math.max(11, responsiveWidthScale(14)),
     color: COLORS.black,
     textAlign: "justify",
     marginHorizontal: "2%",
-    lineHeight: responsiveSize(18),
-    marginVertical: 4,
-    marginTop: 7,
+    lineHeight: responsiveWidthScale(18),
+    marginVertical: responsiveWidthScale(4),
+    marginTop: responsiveWidthScale(7),
     width: "95%",
     alignSelf: "center",
   },
+
   resumenIA: {
-    fontFamily: "NotoSansMyanmar_700Bold",
-    fontSize: responsiveFont(11.5),
+    fontFamily: FONTS.bold,
+    fontSize: Math.max(11, responsiveWidthScale(11.5)),
     color: COLORS.greyM,
   },
+
   articulo: {
-    fontFamily: "NotoSansMyanmar_400Regular",
-    fontSize: responsiveFont(13),
+    fontFamily: FONTS.regular,
+    fontSize: Math.max(11, responsiveWidthScale(13)),
     color: COLORS.black,
     textAlign: "justify",
     marginHorizontal: "2%",
-    lineHeight: responsiveSize(18),
-    marginVertical: 5,
+    lineHeight: responsiveWidthScale(18),
+    marginVertical: responsiveWidthScale(5),
     width: "95%",
     alignSelf: "center",
   },
+
   reaccionesResumen: {
     flexDirection: "row",
     alignItems: "center",
-    gap: responsiveSpacing(7),
-    marginLeft: responsiveSpacing(1),
-    paddingHorizontal: responsiveSpacing(6),
-    paddingVertical: responsiveSpacing(3),
-    borderRadius: responsiveSize(14),
+    gap: responsiveWidthScale(7),
+    marginLeft: responsiveWidthScale(1),
+    paddingHorizontal: responsiveWidthScale(6),
+    paddingVertical: responsiveWidthScale(3),
+    borderRadius: responsiveWidthScale(14),
     backgroundColor: "#F6F8F6",
   },
+
   reaccionGrupo: {
     flexDirection: "row",
     alignItems: "center",
-    gap: responsiveSpacing(4),
+    gap: responsiveWidthScale(4),
   },
+
   reaccionCantidad: {
-    minWidth: responsiveSize(15),
+    minWidth: responsiveWidthScale(15),
     textAlign: "center",
-    fontSize: responsiveFont(11),
-    lineHeight: responsiveSize(15),
-    fontFamily: "NotoSansMyanmar_700Bold",
+    fontSize: Math.max(11, responsiveWidthScale(11)),
+    lineHeight: responsiveWidthScale(15),
+    fontFamily: FONTS.bold,
     color: COLORS.greyM,
   },
+
   reaccionBoton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: responsiveSpacing(3),
-    paddingVertical: responsiveSpacing(2),
-    borderRadius: responsiveSize(10),
+    paddingHorizontal: responsiveWidthScale(3),
+    paddingVertical: responsiveWidthScale(2),
+    borderRadius: responsiveWidthScale(10),
   },
+
   reaccionCantidadActiva: {
     color: COLORS.greenM,
   },

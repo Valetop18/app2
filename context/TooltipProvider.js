@@ -144,7 +144,7 @@ const styles = StyleSheet.create({
 
   tooltip: {
     position: "absolute",
-    backgroundColor: COLORS.verdeclaro,
+    backgroundColor: COLORS.greenM,
     borderRadius: 8,
     paddingHorizontal: 10,
     paddingVertical: 8,
@@ -153,7 +153,7 @@ const styles = StyleSheet.create({
   },
 
   text: {
-    color: COLORS.greenM,
+    color: COLORS.back,
     fontSize: 13,
     textAlign: "left",
   },
@@ -164,6 +164,6 @@ const styles = StyleSheet.create({
     left: "10%",
     width: 12,
     height: 12,
-    backgroundColor: COLORS.verdeclaro,
+    backgroundColor: COLORS.greenM,
   },
 });

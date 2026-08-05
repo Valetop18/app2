@@ -6,44 +6,29 @@ import store from "./store";
 import { Provider } from "react-redux";
 import { Sedan_400Regular } from "@expo-google-fonts/sedan";
 import {
-  NotoSansMyanmar_100Thin,
-  NotoSansMyanmar_200ExtraLight,
-  NotoSansMyanmar_300Light,
-  NotoSansMyanmar_400Regular,
-  NotoSansMyanmar_500Medium,
-  NotoSansMyanmar_600SemiBold,
-  NotoSansMyanmar_700Bold,
-  NotoSansMyanmar_800ExtraBold,
-  NotoSansMyanmar_900Black,
-} from "@expo-google-fonts/noto-sans-myanmar";
+  Manrope_500Medium,
+  Manrope_700Bold,
+  Manrope_800ExtraBold,
+} from "@expo-google-fonts/manrope";
 import { BuscadorProvider } from "./context/BuscadorContext";
 import { AuthProvider } from "./context/AuthContext";
 import { TooltipProvider } from "./context/TooltipProvider";
 import { ReaccionesProvider } from "./context/ReaccionesContext";
 import { DataProvider } from "./context/DataContext";
+import { Text, TextInput } from "react-native";
+
+Text.defaultProps = Text.defaultProps || {};
+Text.defaultProps.maxFontSizeMultiplier = 1.05;
+
+TextInput.defaultProps = TextInput.defaultProps || {};
+TextInput.defaultProps.maxFontSizeMultiplier = 1.05;
 
 export default function App() {
-  //const [loaded] = useFonts({
-  //OverBold: require('./assets/fonts/Overpass-Bold.ttf'),
-  ////OverLight: require('./assets/fonts/Overpass-Light.ttf'),
-  //OverMedium: require('./assets/fonts/Overpass-Medium.ttf'),
-  //OverRegular: require('./assets/fonts/Overpass-Regular.ttf'),
-  //OverSemiBoldItalic: require('./assets/fonts/Overpass-SemiBoldItalic.ttf'),
-  //})
-
-  //if(!loaded) return <AppLoading />
-
   let [fontsLoaded] = useFonts({
     Sedan_400Regular,
-    NotoSansMyanmar_100Thin,
-    NotoSansMyanmar_200ExtraLight,
-    NotoSansMyanmar_300Light,
-    NotoSansMyanmar_400Regular,
-    NotoSansMyanmar_500Medium,
-    NotoSansMyanmar_600SemiBold,
-    NotoSansMyanmar_700Bold,
-    NotoSansMyanmar_800ExtraBold,
-    NotoSansMyanmar_900Black,
+    Manrope_500Medium,
+    Manrope_700Bold,
+    Manrope_800ExtraBold,
   });
 
   if (!fontsLoaded) {

@@ -7,6 +7,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { CamaraDipu } from "../screens/Camaras";
 import { CamaraSena } from "../screens/Senado";
 import { EstadisticaPartido } from "../screens/EstadisticaPartido";
+import { FONTS } from "../constants/fonts";
 
 const Stack = createMaterialTopTabNavigator();
 const StackNative = createNativeStackNavigator();
@@ -19,7 +20,7 @@ const NaveCamaras = () => {
         headerShown: false,
         tabBarLabelStyle: {
           fontSize: 16.5,
-          fontFamily: "NotoSansMyanmar_700Bold",
+          fontFamily: FONTS.bold,
         },
         tabBarInactiveTintColor: COLORS.greyM,
         tabBarActiveTintColor: COLORS.back,

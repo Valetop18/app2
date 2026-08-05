@@ -31,11 +31,10 @@ import { useAuth } from "../context/AuthContext";
 import { legisladoresRepository } from "../infrastructure/legisladoresRepository";
 import { Skeleton } from "../components/Skeleton";
 import Ionicons from "@react-native-vector-icons/ionicons";
-import {
-  responsiveFont,
-  responsiveSize,
-  responsiveIcon,
-} from "../utils/responsive";
+import { responsiveWidthScale } from "../utils/responsive";
+import Tooltip from "../components/tooltip";
+import { TOOLTIPS } from "../components/tooltip";
+import { FONTS } from "../constants/fonts";
 
 const coloresPorPartido = {
   DES: COLORS.DES,
@@ -61,9 +60,7 @@ const coloresPorPartido = {
 
 const SEMANAS_VISIBLES_GRAFICO = 8;
 
-const ESPACIO_EJES_GRAFICO = 120;
-
-const anchoGrafico = Dimensions.get("window").width - ESPACIO_EJES_GRAFICO;
+const anchoGrafico = responsiveWidthScale(312);
 
 const MODAL_HEIGHT = Dimensions.get("window").height * 0.9;
 
@@ -438,13 +435,13 @@ export const EstadisticaPartido = ({ route }) => {
     },
   );
 
-  const anchoGraficoPequeno = 175;
+  const anchoGraficoPequeno = responsiveWidthScale(173);
 
   const spacingGraficoPequeno =
     dataRepresentacionGraficoPequeno.length > 1
-      ? (anchoGraficoPequeno - 24) /
+      ? (anchoGraficoPequeno - responsiveWidthScale(24)) /
         (dataRepresentacionGraficoPequeno.length - 1)
-      : 40;
+      : responsiveWidthScale(40);
 
   const mocionesNoAprobadas = Math.max(
     mocionesAprobadas.totalMociones - mocionesAprobadas.aprobadas,
@@ -500,8 +497,9 @@ export const EstadisticaPartido = ({ route }) => {
 
   const spacingGrafico =
     dataRepresentacion.length > 1
-      ? (anchoGrafico - 36) / (dataRepresentacion.length - 1)
-      : 50;
+      ? (anchoGrafico - responsiveWidthScale(36)) /
+        (dataRepresentacion.length - 1)
+      : responsiveWidthScale(50);
 
   return (
     <KeyboardAvoidingView
@@ -513,46 +511,85 @@ export const EstadisticaPartido = ({ route }) => {
         <View
           style={{
             alignSelf: "flex-start",
-            paddingVertical: 18,
-            paddingHorizontal: 10,
+            paddingVertical: responsiveWidthScale(18),
+            paddingHorizontal: responsiveWidthScale(10),
           }}
         >
           <View
             style={{
-              paddingLeft: 40,
+              paddingLeft: responsiveWidthScale(40),
             }}
           >
-            <Skeleton width={250} height={25} borderRadius={4} />
+            <Skeleton
+              width={responsiveWidthScale(250)}
+              height={responsiveWidthScale(25)}
+              borderRadius={responsiveWidthScale(4)}
+            />
           </View>
+
           <View
             style={{
-              marginHorizontal: 15,
+              marginHorizontal: responsiveWidthScale(15),
               flexDirection: "row",
-              paddingTop: 15,
+              paddingTop: responsiveWidthScale(15),
             }}
           >
-            <Skeleton width={100} height={100} borderRadius={100} />
-            <View style={{ marginHorizontal: 15, marginTop: 12 }}>
-              <Skeleton width={120} height={80} borderRadius={4} />
+            <Skeleton
+              width={responsiveWidthScale(100)}
+              height={responsiveWidthScale(100)}
+              borderRadius={responsiveWidthScale(100)}
+            />
+
+            <View
+              style={{
+                marginHorizontal: responsiveWidthScale(15),
+                marginTop: responsiveWidthScale(12),
+              }}
+            >
+              <Skeleton
+                width={responsiveWidthScale(120)}
+                height={responsiveWidthScale(80)}
+                borderRadius={responsiveWidthScale(4)}
+              />
             </View>
           </View>
-          <View style={{ marginHorizontal: 15, marginTop: 12 }}>
-            <Skeleton width={360} height={50} borderRadius={4} />
-          </View>
+
           <View
             style={{
-              paddingLeft: 30,
-              paddingVertical: 20,
+              marginHorizontal: responsiveWidthScale(15),
+              marginTop: responsiveWidthScale(12),
             }}
           >
-            <Skeleton width={220} height={20} borderRadius={4} />
+            <Skeleton
+              width={responsiveWidthScale(360)}
+              height={responsiveWidthScale(50)}
+              borderRadius={responsiveWidthScale(4)}
+            />
           </View>
+
           <View
             style={{
-              paddingLeft: 15,
+              paddingLeft: responsiveWidthScale(30),
+              paddingVertical: responsiveWidthScale(20),
             }}
           >
-            <Skeleton width={360} height={170} borderRadius={4} />
+            <Skeleton
+              width={responsiveWidthScale(220)}
+              height={responsiveWidthScale(20)}
+              borderRadius={responsiveWidthScale(4)}
+            />
+          </View>
+
+          <View
+            style={{
+              paddingLeft: responsiveWidthScale(15),
+            }}
+          >
+            <Skeleton
+              width={responsiveWidthScale(360)}
+              height={responsiveWidthScale(170)}
+              borderRadius={responsiveWidthScale(4)}
+            />
           </View>
         </View>
       ) : (
@@ -573,69 +610,72 @@ export const EstadisticaPartido = ({ route }) => {
                 <Image
                   style={{
                     borderColor,
-                    width: responsiveSize(100),
-                    height: responsiveSize(100),
-                    borderRadius: responsiveSize(100),
-                    borderWidth: responsiveSize(4),
+                    width: responsiveWidthScale(100),
+                    height: responsiveWidthScale(100),
+                    borderRadius: responsiveWidthScale(100),
+                    borderWidth: responsiveWidthScale(4),
                   }}
                   source={{ uri: partido.foto }}
                 />
                 <Text style={styles.partido}>{partido.sigla}</Text>
               </View>
               <View style={styles.estadistica}>
-                <View style={styles.estadisticaFila}>
-                  <MaterialIcons
-                    name="event-available"
-                    size={responsiveIcon(20)}
-                    color={COLORS.black}
-                  />
+                <Tooltip text={TOOLTIPS.asistencia.partido}>
+                  <View style={styles.estadisticaFila}>
+                    <MaterialIcons
+                      name="event-available"
+                      size={responsiveWidthScale(20)}
+                      color={COLORS.black}
+                    />
+                    <Text style={styles.informacion}>
+                      {estadisticasGenerales.asistencia}% Asistencia
+                    </Text>
+                  </View>
+                </Tooltip>
+                <Tooltip text={TOOLTIPS.votaciones.partido}>
+                  <View style={styles.estadisticaFila}>
+                    <MsIcon
+                      icon={msPersonRaisedHand}
+                      size={responsiveWidthScale(20)}
+                      color={COLORS.black}
+                    />
+                    <Text style={styles.informacion}>
+                      {estadisticasGenerales.participacionVotaciones}%
+                      Votaciones
+                    </Text>
+                  </View>
+                </Tooltip>
+                <Tooltip text={TOOLTIPS.mociones.partido}>
+                  <View style={styles.estadisticaFila}>
+                    <MaterialIcons
+                      name="addchart"
+                      size={responsiveWidthScale(20)}
+                      color={COLORS.black}
+                    />
+                    <Text style={styles.informacion}>
+                      {estadisticasGenerales.mocionesPresentadas} Mociones
+                    </Text>
+                  </View>
+                </Tooltip>
+                <Tooltip text={TOOLTIPS.oficiosPartido}>
+                  <View style={styles.estadisticaFila}>
+                    <MaterialIcons
+                      name="assignment-late"
+                      size={responsiveWidthScale(20)}
+                      color={COLORS.black}
+                    />
 
-                  <Text style={styles.informacion}>
-                    {estadisticasGenerales.asistencia}% Asistencia
-                  </Text>
-                </View>
-
-                <View style={styles.estadisticaFila}>
-                  <MsIcon
-                    icon={msPersonRaisedHand}
-                    size={responsiveIcon(20)}
-                    color={COLORS.black}
-                  />
-
-                  <Text style={styles.informacion}>
-                    {estadisticasGenerales.participacionVotaciones}% Votaciones
-                  </Text>
-                </View>
-
-                <View style={styles.estadisticaFila}>
-                  <MaterialIcons
-                    name="addchart"
-                    size={responsiveIcon(20)}
-                    color={COLORS.black}
-                  />
-
-                  <Text style={styles.informacion}>
-                    {estadisticasGenerales.mocionesPresentadas} Mociones
-                  </Text>
-                </View>
-
-                <View style={styles.estadisticaFila}>
-                  <MaterialIcons
-                    name="assignment-late"
-                    size={responsiveIcon(20)}
-                    color={COLORS.black}
-                  />
-
-                  <Text style={styles.informacion}>
-                    {estadisticasGenerales.oficiosPresentados} Oficios
-                  </Text>
-                </View>
+                    <Text style={styles.informacion}>
+                      {estadisticasGenerales.oficiosPresentados} Oficios
+                    </Text>
+                  </View>
+                </Tooltip>
               </View>
               <View>
                 <View style={styles.favorite}>
                   <Ionicons
                     name="heart-circle-outline"
-                    size={36}
+                    size={responsiveWidthScale(36)}
                     color={isSaved ? COLORS.greenM : COLORS.greyM}
                     position="absolute"
                   />
@@ -657,7 +697,7 @@ export const EstadisticaPartido = ({ route }) => {
               >
                 <View
                   style={{
-                    width: 90,
+                    width: responsiveWidthScale(90),
                     marginVertical: "5%",
                     alignSelf: "center",
                   }}
@@ -670,19 +710,19 @@ export const EstadisticaPartido = ({ route }) => {
                 <View style={{ marginVertical: "1%" }}>
                   <PieChart
                     strokeColor={COLORS.back}
-                    strokeWidth={1}
+                    strokeWidth={responsiveWidthScale(1)}
                     donut
                     data={dataMociones}
                     showValuesAsLabels={false}
-                    innerRadius={18}
-                    radius={45}
-                    textSize={18}
+                    innerRadius={responsiveWidthScale(18)}
+                    radius={responsiveWidthScale(45)}
+                    textSize={responsiveWidthScale(18)}
                     centerLabelComponent={() => (
                       <Text
                         style={{
                           color: COLORS.greenM,
-                          fontSize: 14,
-                          fontFamily: "NotoSansMyanmar_700Bold",
+                          fontSize: Math.max(11, responsiveWidthScale(14)),
+                          fontFamily: FONTS.bold,
                         }}
                       >
                         {mocionesAprobadas.fraccion}
@@ -693,7 +733,11 @@ export const EstadisticaPartido = ({ route }) => {
               </TouchableOpacity>
 
               <View marginLeft={"-5%"}>
-                <Text style={styles.label} marginVertical={5} marginBottom={10}>
+                <Text
+                  style={styles.label}
+                  marginVertical={responsiveWidthScale(5)}
+                  marginBottom={responsiveWidthScale(10)}
+                >
                   Evolución de la opinión pública.
                 </Text>
 
@@ -703,12 +747,11 @@ export const EstadisticaPartido = ({ route }) => {
                 >
                   <LineChart
                     areaChart
-                    height={53}
+                    height={responsiveWidthScale(53)}
                     width={anchoGraficoPequeno}
-                    // Eje izquierdo: representación promedio del partido
                     data={dataRepresentacionGraficoPequeno}
                     color={COLORS.verdeclaro}
-                    thickness={2}
+                    thickness={responsiveWidthScale(2)}
                     hideDataPoints
                     curved
                     startFillColor={COLORS.verdeclaro}
@@ -719,15 +762,15 @@ export const EstadisticaPartido = ({ route }) => {
                     noOfSections={2}
                     yAxisColor={COLORS.grey}
                     yAxisThickness={0}
-                    yAxisLabelWidth={15}
+                    yAxisLabelWidth={responsiveWidthScale(15)}
                     formatYLabel={(value) => `${Math.round(Number(value))}`}
                     yAxisTextStyle={{
                       color: COLORS.greyM,
-                      fontFamily: "NotoSansMyanmar_600SemiBold",
-                      fontSize: 7.5,
-                      width: 15,
+                      fontFamily: FONTS.medium,
+                      fontSize: responsiveWidthScale(7.5),
+                      width: responsiveWidthScale(15),
                       textAlign: "right",
-                      marginRight: -4,
+                      marginRight: responsiveWidthScale(-4),
                     }}
                     yAxisLabelContainerStyle={{
                       paddingLeft: 0,
@@ -735,14 +778,12 @@ export const EstadisticaPartido = ({ route }) => {
                       marginLeft: 0,
                       marginRight: 0,
                     }}
-                    // Eje derecho: likes del partido
                     secondaryData={dataLikes}
                     secondaryLineConfig={{
                       color: COLORS.greenM,
-                      thickness: 2,
+                      thickness: responsiveWidthScale(2),
                       curved: true,
                       hideDataPoints: true,
-
                       startFillColor: COLORS.greenM,
                       startOpacity: 0.45,
                       endFillColor: COLORS.back,
@@ -753,16 +794,16 @@ export const EstadisticaPartido = ({ route }) => {
                       noOfSections: 2,
                       yAxisColor: COLORS.grey,
                       yAxisThickness: 0,
-                      yAxisLabelWidth: 15,
+                      yAxisLabelWidth: responsiveWidthScale(15),
 
                       formatYLabel: (value) => `${Math.round(Number(value))}`,
 
                       yAxisTextStyle: {
                         color: COLORS.greyM,
-                        fontFamily: "NotoSansMyanmar_600SemiBold",
-                        fontSize: 7.5,
+                        fontFamily: FONTS.medium,
+                        fontSize: responsiveWidthScale(7.5),
                         textAlign: "left",
-                        marginLeft: -4,
+                        marginLeft: responsiveWidthScale(-4),
                       },
 
                       yAxisLabelContainerStyle: {
@@ -772,19 +813,18 @@ export const EstadisticaPartido = ({ route }) => {
                         marginRight: 0,
                       },
                     }}
-                    // Sin líneas interiores
                     hideRules
-                    xAxisThickness={1}
+                    xAxisThickness={responsiveWidthScale(1)}
                     xAxisColor={COLORS.grey}
                     xAxisLabelTextStyle={{
                       color: COLORS.greyM,
-                      fontFamily: "NotoSansMyanmar_600SemiBold",
-                      fontSize: 7,
+                      fontFamily: FONTS.medium,
+                      fontSize: responsiveWidthScale(7),
                       textAlign: "center",
-                      marginTop: 2,
+                      marginTop: responsiveWidthScale(2),
                     }}
-                    initialSpacing={8}
-                    endSpacing={8}
+                    initialSpacing={responsiveWidthScale(8)}
+                    endSpacing={responsiveWidthScale(8)}
                     spacing={spacingGraficoPequeno}
                     disableScroll
                     isAnimated
@@ -795,85 +835,78 @@ export const EstadisticaPartido = ({ route }) => {
             </View>
             <View style={styles.container6}>
               <View style={styles.columnaEstadistica}>
-                <View style={styles.container5}>
-                  <View style={styles.datausage}>
-                    <MaterialIcons
-                      name="data-usage"
-                      size={46}
-                      color={COLORS.verdeclaro}
-                      position="absolute"
-                    />
+                <Tooltip text={TOOLTIPS.representaciondistrital.partido}>
+                  <View style={styles.container5}>
+                    <View style={styles.datausage}>
+                      <MaterialIcons
+                        name="data-usage"
+                        size={responsiveWidthScale(46)}
+                        color={COLORS.verdeclaro}
+                        position="absolute"
+                      />
 
-                    <Text style={styles.data2}>{representacionPromedio}%</Text>
-                  </View>
+                      <Text style={styles.data2}>
+                        {representacionPromedio}%
+                      </Text>
+                    </View>
 
-                  <View
-                    style={{
-                      flex: 1,
-                      marginLeft: 6,
-                      justifyContent: "center",
-                    }}
-                  >
-                    <Text style={styles.label2}>Representación promedio</Text>
+                    <View style={styles.textoEstadistica}>
+                      <Text style={styles.label2}>Representación promedio</Text>
+                    </View>
                   </View>
-                </View>
-                <View style={styles.container5}>
-                  <View style={styles.circulo}>
-                    <Text style={styles.data2}>
-                      {cohesionPartido.cohesion}%
-                    </Text>
+                </Tooltip>
+                <Tooltip
+                  text={TOOLTIPS.cohesionPartido}
+                  width={responsiveWidthScale(340)}
+                >
+                  <View style={styles.container5}>
+                    <View style={styles.circulo}>
+                      <Text style={styles.data2}>
+                        {cohesionPartido.cohesion}%
+                      </Text>
+                    </View>
+                    <View style={styles.textoEstadistica}>
+                      <Text style={styles.label2}>Índice de cohesión</Text>
+                    </View>
                   </View>
-
-                  <View
-                    style={{
-                      flex: 1,
-                      marginLeft: 6,
-                      justifyContent: "center",
-                    }}
-                  >
-                    <Text style={styles.label2}>Índice de cohesión</Text>
-                  </View>
-                </View>
+                </Tooltip>
               </View>
               <View style={styles.columnaEstadistica}>
-                <View style={styles.container5}>
-                  <View style={styles.circulo}>
-                    <Text style={styles.data2}>
-                      {compatibilidadPartido.compatibilidad}%
-                    </Text>
+                <Tooltip
+                  text={TOOLTIPS.CompatibilidadPartidoUsuario}
+                  width={responsiveWidthScale(340)}
+                >
+                  <View style={styles.container5}>
+                    <View style={styles.circulo}>
+                      <Text style={styles.data2}>
+                        {compatibilidadPartido.compatibilidad}%
+                      </Text>
+                    </View>
+                    <View style={styles.textoEstadistica}>
+                      <Text style={styles.label2}>
+                        Compatibilidad con el partido
+                      </Text>
+                    </View>
                   </View>
+                </Tooltip>
+                <Tooltip
+                  text={TOOLTIPS.rankingPartidos}
+                  width={responsiveWidthScale(340)}
+                >
+                  <View style={styles.container5}>
+                    <View style={styles.circulo}>
+                      <Text style={styles.data2}>
+                        {partido.rankingEstadistico
+                          ? `${partido.rankingEstadistico}`
+                          : "-"}
+                      </Text>
+                    </View>
 
-                  <View
-                    style={{
-                      flex: 1,
-                      marginLeft: 6,
-                      justifyContent: "center",
-                    }}
-                  >
-                    <Text style={styles.label2}>
-                      Compatibilidad con el partido
-                    </Text>
+                    <View style={styles.textoEstadistica}>
+                      <Text style={styles.label2}>Ranking nacional</Text>
+                    </View>
                   </View>
-                </View>
-                <View style={styles.container5}>
-                  <View style={styles.circulo}>
-                    <Text style={styles.data2}>
-                      {partido.rankingEstadistico
-                        ? `${partido.rankingEstadistico}`
-                        : "-"}
-                    </Text>
-                  </View>
-
-                  <View
-                    style={{
-                      flex: 1,
-                      marginLeft: 6,
-                      justifyContent: "center",
-                    }}
-                  >
-                    <Text style={styles.label2}>Ranking nacional</Text>
-                  </View>
-                </View>
+                </Tooltip>
               </View>
             </View>
           </View>
@@ -965,189 +998,192 @@ export const EstadisticaPartido = ({ route }) => {
           </Modal>
 
           <Modal
-                  visible={modalEvolucionVisible}
-                  transparent
-                  animationType="fade"
-                  onRequestClose={() => setModalEvolucionVisible(false)}
-                >
-                  <View style={styles.overlay}>
-                    <Pressable
-                      style={StyleSheet.absoluteFill}
-                      onPress={() => setModalEvolucionVisible(false)}
+            visible={modalEvolucionVisible}
+            transparent
+            animationType="fade"
+            onRequestClose={() => setModalEvolucionVisible(false)}
+          >
+            <View style={styles.overlay}>
+              <Pressable
+                style={StyleSheet.absoluteFill}
+                onPress={() => setModalEvolucionVisible(false)}
+              />
+
+              <View style={styles.modalEvolucionContainer}>
+                <View style={styles.modalEvolucionHeader}>
+                  <View style={styles.modalEvolucionIcon}>
+                    <MaterialIcons
+                      name="show-chart"
+                      size={responsiveWidthScale(24)}
+                      color={COLORS.greenM}
                     />
-          
-                    <View style={styles.modalEvolucionContainer}>
-                      <View style={styles.modalEvolucionHeader}>
-                        <View style={styles.modalEvolucionIcon}>
-                          <MaterialIcons
-                            name="show-chart"
-                            size={24}
-                            color={COLORS.greenM}
-                          />
-                        </View>
-          
-                        <View style={styles.modalEvolucionTitulos}>
-                          <Text style={styles.modalEvolucionTitulo}>
-                            Evolución de la opinión pública
-                          </Text>
-          
-                          <Text style={styles.modalEvolucionSubtitulo}>
-                            Historial semanal del partido
-                          </Text>
-                        </View>
-          
-                        <TouchableOpacity
-                          style={styles.modalEvolucionCerrar}
-                          onPress={() => setModalEvolucionVisible(false)}
-                          hitSlop={10}
-                        >
-                          <Ionicons name="close" size={18} color={COLORS.greenM} />
-                        </TouchableOpacity>
-                      </View>
-          
-                      <View style={styles.modalEvolucionLeyenda}>
-                        <View style={styles.leyendaItem}>
-                          <View
-                            style={[
-                              styles.leyendaLinea,
-                              { backgroundColor: COLORS.verdeclaro },
-                            ]}
-                          />
-          
-                          <View style={styles.leyendaTextos}>
-                            <Text style={styles.leyendaTitulo}>
-                              Representación promedio
-                            </Text>
-          
-                            <Text style={styles.leyendaDescripcion}>
-                              Promedio de coincidencia con las preferencias de los usuarios.
-                            </Text>
-                          </View>
-                        </View>
-          
-                        <View style={styles.leyendaItem}>
-                          <View
-                            style={[
-                              styles.leyendaLinea,
-                              { backgroundColor: COLORS.greenM },
-                            ]}
-                          />
-          
-                          <View style={styles.leyendaTextos}>
-                            <Text style={styles.leyendaTitulo}>
-                              Likes al partido
-                            </Text>
-          
-                            <Text style={styles.leyendaDescripcion}>
-                              Cantidad de usuarios que marcaron al partido como favorito.
-                            </Text>
-                          </View>
-                        </View>
-                      </View>
-          
-                      <View style={styles.modalGraficoContainer}>
-                        <ScrollView
-                          horizontal
-                          showsHorizontalScrollIndicator={false}
-                          contentContainerStyle={styles.modalGraficoScroll}
-                        >
-                          <LineChart
-                            areaChart
-                            height={220}
-                            width={anchoGrafico}
-                            // Eje izquierdo: representación distrital
-                            data={dataRepresentacion}
-                            color={COLORS.verdeclaro}
-                            dataPointsColor1={COLORS.verdeclaro}
-                            dataPointsRadius={4}
-                            thickness={3}
-                            startFillColor={COLORS.verdeclaro}
-                            startOpacity={0.55}
-                            endFillColor={COLORS.back}
-                            endOpacity={0.04}
-                            // Eje derecho: likes
-                            secondaryData={dataLikes}
-                            secondaryLineConfig={{
-                              color: COLORS.greenM,
-                              dataPointsColor: COLORS.greenM,
-                              dataPointsRadius: 4,
-                              thickness: 3,
-                              curved: true,
-                              startFillColor: COLORS.greenM,
-                              startOpacity: 0.28,
-                              endFillColor: COLORS.back,
-                              endOpacity: 0.03,
-                            }}
-                            secondaryYAxis={{
-                              maxValue: maxLikesGrafico,
-                              noOfSections: 4,
-                              yAxisColor: COLORS.grey,
-                              yAxisThickness: 0,
-                              formatYLabel: (value) => `${Math.round(Number(value))}`,
-                              yAxisTextStyle: {
-                                ...styles.modalGraficoEjeY,
-                                textAlign: "left",
-                                marginLeft: -4,
-                              },
-                              yAxisLabelWidth: 18,
-                              yAxisLabelContainerStyle: {
-                                paddingRight: 0,
-                                paddingLeft: 0,
-                                marginRight: 0,
-                                marginLeft: 0,
-                              },
-                            }}
-                            maxValue={100}
-                            noOfSections={4}
-                            hideRules={false}
-                            rulesColor="#E8ECE9"
-                            rulesType="dashed"
-                            yAxisColor={COLORS.grey}
-                            yAxisThickness={0}
-                            yAxisTextStyle={{
-                              ...styles.modalGraficoEjeY,
-                              width: 18,
-                              textAlign: "right",
-                              marginRight: -4,
-                            }}
-                            xAxisThickness={1}
-                            xAxisColor={COLORS.grey}
-                            xAxisLabelTextStyle={styles.modalGraficoEjeX}
-                            initialSpacing={12}
-                            spacing={spacingGrafico}
-                            showVerticalLines
-                            verticalLinesColor="#F0F2F0"
-                            disableScroll
-                            isAnimated
-                            curved
-                            animationDuration={700}
-                            yAxisLabelWidth={18}
-                            endSpacing={12}
-                            yAxisLabelContainerStyle={{
-                              paddingRight: 0,
-                              paddingLeft: 0,
-                              marginRight: 0,
-                              marginLeft: 0,
-                            }}
-                            formatYLabel={(value) => `${Math.round(Number(value))}`}
-                          />
-                        </ScrollView>
-                      </View>
-          
-                      <View style={styles.modalEvolucionFooter}>
-                        <Ionicons
-                          name="information-circle-outline"
-                          size={16}
-                          color={COLORS.greyM}
-                        />
-          
-                        <Text style={styles.modalEvolucionNota}>
-                          Los valores corresponden a los snapshots semanales almacenados.
-                        </Text>
-                      </View>
+                  </View>
+
+                  <View style={styles.modalEvolucionTitulos}>
+                    <Text style={styles.modalEvolucionTitulo}>
+                      Evolución de la opinión pública
+                    </Text>
+
+                    <Text style={styles.modalEvolucionSubtitulo}>
+                      Historial semanal del partido
+                    </Text>
+                  </View>
+
+                  <TouchableOpacity
+                    style={styles.modalEvolucionCerrar}
+                    onPress={() => setModalEvolucionVisible(false)}
+                    hitSlop={10}
+                  >
+                    <Ionicons
+                      name="close"
+                      size={responsiveWidthScale(18)}
+                      color={COLORS.greenM}
+                    />
+                  </TouchableOpacity>
+                </View>
+
+                <View style={styles.modalEvolucionLeyenda}>
+                  <View style={styles.leyendaItem}>
+                    <View
+                      style={[
+                        styles.leyendaLinea,
+                        { backgroundColor: COLORS.verdeclaro },
+                      ]}
+                    />
+
+                    <View style={styles.leyendaTextos}>
+                      <Text style={styles.leyendaTitulo}>
+                        Representación promedio
+                      </Text>
+
+                      <Text style={styles.leyendaDescripcion}>
+                        Promedio de coincidencia con las preferencias de los
+                        usuarios.
+                      </Text>
                     </View>
                   </View>
-                </Modal>
+
+                  <View style={styles.leyendaItem}>
+                    <View
+                      style={[
+                        styles.leyendaLinea,
+                        { backgroundColor: COLORS.greenM },
+                      ]}
+                    />
+
+                    <View style={styles.leyendaTextos}>
+                      <Text style={styles.leyendaTitulo}>Likes al partido</Text>
+
+                      <Text style={styles.leyendaDescripcion}>
+                        Cantidad de usuarios que marcaron al partido como
+                        favorito.
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+
+                <View style={styles.modalGraficoContainer}>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.modalGraficoScroll}
+                  >
+                    <LineChart
+                      areaChart
+                      height={responsiveWidthScale(220)}
+                      width={anchoGrafico}
+                      data={dataRepresentacion}
+                      color={COLORS.verdeclaro}
+                      dataPointsColor1={COLORS.verdeclaro}
+                      dataPointsRadius={responsiveWidthScale(4)}
+                      thickness={responsiveWidthScale(3)}
+                      startFillColor={COLORS.verdeclaro}
+                      startOpacity={0.55}
+                      endFillColor={COLORS.back}
+                      endOpacity={0.04}
+                      secondaryData={dataLikes}
+                      secondaryLineConfig={{
+                        color: COLORS.greenM,
+                        dataPointsColor: COLORS.greenM,
+                        dataPointsRadius: responsiveWidthScale(4),
+                        thickness: responsiveWidthScale(3),
+                        curved: true,
+                        startFillColor: COLORS.greenM,
+                        startOpacity: 0.28,
+                        endFillColor: COLORS.back,
+                        endOpacity: 0.03,
+                      }}
+                      secondaryYAxis={{
+                        maxValue: maxLikesGrafico,
+                        noOfSections: 4,
+                        yAxisColor: COLORS.grey,
+                        yAxisThickness: 0,
+                        formatYLabel: (value) => `${Math.round(Number(value))}`,
+                        yAxisTextStyle: {
+                          ...styles.modalGraficoEjeY,
+                          textAlign: "left",
+                          marginLeft: responsiveWidthScale(-4),
+                        },
+                        yAxisLabelWidth: responsiveWidthScale(18),
+                        yAxisLabelContainerStyle: {
+                          paddingRight: 0,
+                          paddingLeft: 0,
+                          marginRight: 0,
+                          marginLeft: 0,
+                        },
+                      }}
+                      maxValue={100}
+                      noOfSections={4}
+                      hideRules={false}
+                      rulesColor="#E8ECE9"
+                      rulesType="dashed"
+                      yAxisColor={COLORS.grey}
+                      yAxisThickness={0}
+                      yAxisTextStyle={{
+                        ...styles.modalGraficoEjeY,
+                        width: responsiveWidthScale(18),
+                        textAlign: "right",
+                        marginRight: responsiveWidthScale(-4),
+                      }}
+                      xAxisThickness={responsiveWidthScale(1)}
+                      xAxisColor={COLORS.grey}
+                      xAxisLabelTextStyle={styles.modalGraficoEjeX}
+                      initialSpacing={responsiveWidthScale(12)}
+                      spacing={spacingGrafico}
+                      showVerticalLines
+                      verticalLinesColor="#F0F2F0"
+                      disableScroll
+                      isAnimated
+                      curved
+                      animationDuration={700}
+                      yAxisLabelWidth={responsiveWidthScale(18)}
+                      endSpacing={responsiveWidthScale(12)}
+                      yAxisLabelContainerStyle={{
+                        paddingRight: 0,
+                        paddingLeft: 0,
+                        marginRight: 0,
+                        marginLeft: 0,
+                      }}
+                      formatYLabel={(value) => `${Math.round(Number(value))}`}
+                    />
+                  </ScrollView>
+                </View>
+
+                <View style={styles.modalEvolucionFooter}>
+                  <Ionicons
+                    name="information-circle-outline"
+                    size={responsiveWidthScale(16)}
+                    color={COLORS.greyM}
+                  />
+
+                  <Text style={styles.modalEvolucionNota}>
+                    Los valores corresponden a los snapshots semanales
+                    almacenados.
+                  </Text>
+                </View>
+              </View>
+            </View>
+          </Modal>
         </ScrollView>
       )}
     </KeyboardAvoidingView>
@@ -1166,7 +1202,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.back,
     elevation: 3,
     shadowColor: COLORS.black,
-    borderRadius: 10,
+    borderRadius: responsiveWidthScale(10),
   },
   container1: {
     marginLeft: "4%",
@@ -1180,12 +1216,12 @@ const styles = StyleSheet.create({
     borderWidth: 3.8,
   },
   title: {
-    fontSize: responsiveFont(20),
-    fontFamily: "NotoSansMyanmar_700Bold",
+    fontSize: Math.max(11, responsiveWidthScale(20)),
+    fontFamily: FONTS.bold,
     color: COLORS.black,
   },
   favorite: {
-    marginTop: responsiveSize(60),
+    marginTop: responsiveWidthScale(60),
     alignItems: "center",
     justifyContent: "center",
     marginRight: "10%",
@@ -1193,22 +1229,22 @@ const styles = StyleSheet.create({
   estadisticaFila: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 1,
+    marginBottom: responsiveWidthScale(5),
   },
   interes: {
-    fontSize: 12,
-    fontFamily: "NotoSansMyanmar_700Bold",
+    fontSize: Math.max(11, responsiveWidthScale(12)),
+    fontFamily: FONTS.bold,
     color: COLORS.back,
     marginTop: "-16%",
   },
   mocionesPartidoTouchable: {
     flexDirection: "row",
     alignItems: "center",
-    marginLeft: '-5%'
+    marginLeft: "-5%",
   },
   title2: {
-    fontSize: 15,
-    fontFamily: "NotoSansMyanmar_700Bold",
+    fontSize: Math.max(11, responsiveWidthScale(15)),
+    fontFamily: FONTS.bold,
     color: COLORS.black,
   },
   container3: {
@@ -1217,74 +1253,68 @@ const styles = StyleSheet.create({
   container4: {
     flexDirection: "row",
     marginHorizontal: "2%",
-    justifyContent: 'space-around',
-    width: '96%'
-  },
-  modalMocionesContainer: {
-    width: "90%",
-    maxHeight: "88%",
-    backgroundColor: COLORS.back,
-    borderRadius: 10,
-    overflow: "hidden",
+    justifyContent: "space-around",
+    width: "96%",
   },
   container5: {
     flexDirection: "row",
     alignItems: "center",
-    marginHorizontal: 4,
-    height: 50,
+    marginHorizontal: responsiveWidthScale(4),
+    height: responsiveWidthScale(50),
   },
   container6: {
     flexDirection: "row",
     marginHorizontal: "2%",
-    marginVertical: 5,
-    marginTop: 6,
+    marginVertical: responsiveWidthScale(5),
+    marginTop: responsiveWidthScale(6),
   },
   label: {
-    fontFamily: "NotoSansMyanmar_400Regular",
-    fontSize: 13,
+    fontFamily: FONTS.regular,
+    fontSize: Math.max(11, responsiveWidthScale(13)),
     textAlign: "center",
-    lineHeight: 16,
+    lineHeight: responsiveWidthScale(16),
   },
   label2: {
-    fontFamily: "NotoSansMyanmar_400Regular",
-    fontSize: 13,
+    fontFamily: FONTS.regular,
+    fontSize: Math.max(11, responsiveWidthScale(13)),
     textAlign: "auto",
-    lineHeight: 16,
+    lineHeight: responsiveWidthScale(16),
   },
   containerInfo: {
     flexDirection: "row",
   },
   estadistica: {
-    marginTop: "1%",
-    marginLeft: "-23%",
+    marginVertical: "3%",
+    marginLeft: "-22%",
   },
   info: {},
   informacion: {
-    fontFamily: "NotoSansMyanmar_400Regular",
-    fontSize: 14,
+    fontFamily: FONTS.regular,
+    fontSize: Math.max(11, responsiveWidthScale(14)),
     color: COLORS.black,
     maxWidth: "98%",
-    marginLeft: "2%",
+    marginLeft: "3%",
   },
   datausage: {
     alignItems: "center",
-    width: responsiveSize(46),
-    height: responsiveSize(46),
+    width: responsiveWidthScale(46),
+    height: responsiveWidthScale(46),
     justifyContent: "center",
   },
   circulo: {
     marginHorizontal: "1%",
     alignItems: "center",
-    width: responsiveSize(40),
-    height: responsiveSize(40),
+    width: responsiveWidthScale(40),
+    height: responsiveWidthScale(40),
     justifyContent: "center",
     backgroundColor: COLORS.verdeclaro,
-    borderRadius: 100,
+    borderRadius: responsiveWidthScale(100),
   },
   data2: {
-    fontSize: 12,
-    fontFamily: "NotoSansMyanmar_700Bold",
+    fontSize: Math.max(11, responsiveWidthScale(12)),
+    fontFamily: FONTS.bold,
     color: COLORS.greenM,
+    top: responsiveWidthScale(-1),
   },
   container2: {
     flexDirection: "row",
@@ -1294,8 +1324,8 @@ const styles = StyleSheet.create({
     width: "95%",
   },
   partido: {
-    fontFamily: "NotoSansMyanmar_700Bold",
-    fontSize: 16,
+    fontFamily: FONTS.bold,
+    fontSize: Math.max(11, responsiveWidthScale(16)),
     color: COLORS.black,
     alignSelf: "center",
     marginTop: "2%",
@@ -1309,10 +1339,10 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0, 0, 0, 0.48)",
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 18,
+    paddingHorizontal: responsiveWidthScale(18),
   },
   loadingMociones: {
-    minHeight: 180,
+    minHeight: responsiveWidthScale(180),
     justifyContent: "center",
     alignItems: "center",
   },
@@ -1320,265 +1350,241 @@ const styles = StyleSheet.create({
     width: "94%",
     maxHeight: "88%",
     backgroundColor: COLORS.back,
-    borderRadius: 10,
+    borderRadius: responsiveWidthScale(10),
     overflow: "hidden",
 
     elevation: 12,
     shadowColor: COLORS.black,
     shadowOffset: {
       width: 0,
-      height: 6,
+      height: responsiveWidthScale(6),
     },
     shadowOpacity: 0.2,
-    shadowRadius: 14,
+    shadowRadius: responsiveWidthScale(14),
   },
   columnaEstadistica: {
     flex: 1,
     justifyContent: "space-between",
   },
+  textoEstadistica: {
+    flex: 1,
+    marginLeft: responsiveWidthScale(6),
+    justifyContent: "center",
+  },
   tituloContainer: {
     backgroundColor: COLORS.greenM,
-    paddingHorizontal: 18,
-    paddingVertical: 14,
+    paddingHorizontal: responsiveWidthScale(18),
+    paddingVertical: responsiveWidthScale(14),
     alignItems: "center",
     justifyContent: "center",
   },
-
   tituloText: {
-    fontSize: 16,
-    lineHeight: 22,
-    fontFamily: "NotoSansMyanmar_700Bold",
+    fontSize: Math.max(11, responsiveWidthScale(16)),
+    lineHeight: responsiveWidthScale(22),
+    fontFamily: FONTS.bold,
     color: COLORS.back,
+    textAlign: "center",
   },
-
   listaMociones: {
-    paddingHorizontal: 14,
-    paddingTop: 14,
-    paddingBottom: 22,
+    paddingHorizontal: responsiveWidthScale(14),
+    paddingTop: responsiveWidthScale(14),
+    paddingBottom: responsiveWidthScale(22),
     backgroundColor: COLORS.back,
   },
-
   mocionCard: {
-    marginBottom: 16,
-    paddingBottom: 14,
-    borderBottomWidth: 1,
+    marginBottom: responsiveWidthScale(16),
+    paddingBottom: responsiveWidthScale(14),
+    borderBottomWidth: responsiveWidthScale(1),
     borderBottomColor: COLORS.verdeclaro,
   },
-
   mocionBoletin: {
-    fontFamily: "NotoSansMyanmar_700Bold",
-    fontSize: 14,
+    fontFamily: FONTS.bold,
+    fontSize: Math.max(11, responsiveWidthScale(14)),
     color: COLORS.greenM,
   },
-
   mocionTitulo: {
-    fontFamily: "NotoSansMyanmar_700Bold",
-    fontSize: 14,
-    lineHeight: 18,
+    fontFamily: FONTS.bold,
+    fontSize: Math.max(11, responsiveWidthScale(14)),
+    lineHeight: responsiveWidthScale(18),
     color: COLORS.black,
-    marginTop: 4,
+    marginTop: responsiveWidthScale(4),
   },
-
   mocionSinVotacion: {
-    fontFamily: "NotoSansMyanmar_400Regular",
-    fontSize: 13,
+    fontFamily: FONTS.regular,
+    fontSize: Math.max(11, responsiveWidthScale(13)),
     color: COLORS.greyM,
-    marginTop: 8,
+    marginTop: responsiveWidthScale(8),
   },
-
   votacionMocion: {
-    marginTop: 10,
-    padding: 10,
-    borderRadius: 8,
+    marginTop: responsiveWidthScale(10),
+    padding: responsiveWidthScale(10),
+    borderRadius: responsiveWidthScale(8),
     backgroundColor: COLORS.verdeclaro,
   },
-
   votacionResultado: {
-    fontFamily: "NotoSansMyanmar_700Bold",
-    fontSize: 13,
+    fontFamily: FONTS.bold,
+    fontSize: Math.max(11, responsiveWidthScale(13)),
     color: COLORS.greenM,
     textTransform: "uppercase",
   },
-
   votacionMateria: {
-    fontFamily: "NotoSansMyanmar_600SemiBold",
-    fontSize: 13,
-    lineHeight: 17,
+    fontFamily: FONTS.medium,
+    fontSize: Math.max(11, responsiveWidthScale(13)),
+    lineHeight: responsiveWidthScale(17),
     color: COLORS.black,
-    marginTop: 4,
+    marginTop: responsiveWidthScale(4),
   },
-
   votacionArticulo: {
-    fontFamily: "NotoSansMyanmar_400Regular",
-    fontSize: 12.5,
-    lineHeight: 17,
+    fontFamily: FONTS.regular,
+    fontSize: Math.max(11, responsiveWidthScale(12.5)),
+    lineHeight: responsiveWidthScale(17),
     color: COLORS.black,
-    marginTop: 4,
+    marginTop: responsiveWidthScale(4),
   },
-
   votacionSesion: {
-    fontFamily: "NotoSansMyanmar_600SemiBold",
-    fontSize: 12,
+    fontFamily: FONTS.medium,
+    fontSize: Math.max(11, responsiveWidthScale(12)),
     color: COLORS.greyM,
-    marginTop: 8,
+    marginTop: responsiveWidthScale(8),
   },
-
   votacionFecha: {
-    fontFamily: "NotoSansMyanmar_400Regular",
-    fontSize: 12,
+    fontFamily: FONTS.regular,
+    fontSize: Math.max(11, responsiveWidthScale(12)),
     color: COLORS.greyM,
   },
   modalEvolucionContainer: {
-  width: "94%",
-  maxHeight: MODAL_HEIGHT,
-  backgroundColor: COLORS.back,
-  borderRadius: 14,
-  overflow: "hidden",
+    width: "94%",
+    maxHeight: MODAL_HEIGHT,
+    backgroundColor: COLORS.back,
+    borderRadius: responsiveWidthScale(14),
+    overflow: "hidden",
 
-  elevation: 12,
-  shadowColor: COLORS.black,
-  shadowOffset: {
-    width: 0,
-    height: 6,
+    elevation: 12,
+    shadowColor: COLORS.black,
+    shadowOffset: {
+      width: 0,
+      height: responsiveWidthScale(6),
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: responsiveWidthScale(14),
   },
-  shadowOpacity: 0.2,
-  shadowRadius: 14,
-},
-
-modalEvolucionHeader: {
-  flexDirection: "row",
-  alignItems: "center",
-  paddingHorizontal: 16,
-  paddingVertical: 14,
-  borderBottomWidth: 1,
-  borderBottomColor: "#E8ECE9",
-},
-
-modalEvolucionIcon: {
-  width: 42,
-  height: 42,
-  borderRadius: 21,
-  backgroundColor: COLORS.verdeclaro,
-  alignItems: "center",
-  justifyContent: "center",
-  marginRight: 12,
-},
-
-modalEvolucionTitulos: {
-  flex: 1,
-  paddingRight: 8,
-},
-
-modalEvolucionTitulo: {
-  fontFamily: "NotoSansMyanmar_700Bold",
-  fontSize: 16,
-  lineHeight: 21,
-  color: COLORS.black,
-},
-
-modalEvolucionSubtitulo: {
-  fontFamily: "NotoSansMyanmar_400Regular",
-  fontSize: 12.5,
-  lineHeight: 17,
-  color: COLORS.greyM,
-  marginTop: 1,
-},
-
-modalEvolucionCerrar: {
-  width: 32,
-  height: 32,
-  borderRadius: 16,
-  backgroundColor: COLORS.verdeclaro,
-  alignItems: "center",
-  justifyContent: "center",
-},
-
-modalEvolucionLeyenda: {
-  paddingHorizontal: 16,
-  paddingTop: 14,
-  paddingBottom: 4,
-},
-
-leyendaItem: {
-  flexDirection: "row",
-  alignItems: "flex-start",
-  marginBottom: 12,
-},
-
-leyendaLinea: {
-  width: 24,
-  height: 4,
-  borderRadius: 4,
-  marginTop: 8,
-  marginRight: 10,
-},
-
-leyendaTextos: {
-  flex: 1,
-},
-
-leyendaTitulo: {
-  fontFamily: "NotoSansMyanmar_700Bold",
-  fontSize: 13,
-  lineHeight: 17,
-  color: COLORS.black,
-},
-
-leyendaDescripcion: {
-  fontFamily: "NotoSansMyanmar_400Regular",
-  fontSize: 11.5,
-  lineHeight: 16,
-  color: COLORS.greyM,
-  marginTop: 1,
-},
-
-modalGraficoContainer: {
-  marginHorizontal: 12,
-  marginTop: 4,
-  paddingTop: 8,
-  paddingBottom: 4,
-  borderRadius: 10,
-  backgroundColor: COLORS.back,
-  overflow: "hidden",
-},
-
-modalGraficoScroll: {
-  paddingHorizontal: 0,
-  paddingBottom: 4,
-},
-
-modalGraficoEjeY: {
-  fontFamily: "NotoSansMyanmar_600SemiBold",
-  fontSize: 9,
-  color: COLORS.greyM,
-},
-
-modalGraficoEjeX: {
-  fontFamily: "NotoSansMyanmar_600SemiBold",
-  fontSize: 9,
-  color: COLORS.greyM,
-  textAlign: "center",
-  marginTop: 4,
-},
-
-modalEvolucionFooter: {
-  flexDirection: "row",
-  alignItems: "center",
-  marginHorizontal: 16,
-  marginTop: 8,
-  marginBottom: 16,
-  paddingHorizontal: 10,
-  paddingVertical: 9,
-  borderRadius: 8,
-  backgroundColor: COLORS.verdeclaro,
-},
-
-modalEvolucionNota: {
-  flex: 1,
-  marginLeft: 6,
-  fontFamily: "NotoSansMyanmar_400Regular",
-  fontSize: 11,
-  lineHeight: 15,
-  color: COLORS.greyM,
-},
+  modalEvolucionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: responsiveWidthScale(16),
+    paddingVertical: responsiveWidthScale(14),
+    borderBottomWidth: responsiveWidthScale(1),
+    borderBottomColor: "#E8ECE9",
+  },
+  modalEvolucionIcon: {
+    width: responsiveWidthScale(42),
+    height: responsiveWidthScale(42),
+    borderRadius: responsiveWidthScale(21),
+    backgroundColor: COLORS.verdeclaro,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: responsiveWidthScale(12),
+  },
+  modalEvolucionTitulos: {
+    flex: 1,
+    paddingRight: responsiveWidthScale(8),
+  },
+  modalEvolucionTitulo: {
+    fontFamily: FONTS.bold,
+    fontSize: Math.max(11, responsiveWidthScale(16)),
+    lineHeight: responsiveWidthScale(21),
+    color: COLORS.black,
+  },
+  modalEvolucionSubtitulo: {
+    fontFamily: FONTS.regular,
+    fontSize: Math.max(11, responsiveWidthScale(12.5)),
+    lineHeight: responsiveWidthScale(17),
+    color: COLORS.greyM,
+    marginTop: responsiveWidthScale(1),
+  },
+  modalEvolucionCerrar: {
+    width: responsiveWidthScale(32),
+    height: responsiveWidthScale(32),
+    borderRadius: responsiveWidthScale(16),
+    backgroundColor: COLORS.verdeclaro,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  modalEvolucionLeyenda: {
+    paddingHorizontal: responsiveWidthScale(16),
+    paddingTop: responsiveWidthScale(14),
+    paddingBottom: responsiveWidthScale(4),
+  },
+  leyendaItem: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    marginBottom: responsiveWidthScale(12),
+  },
+  leyendaLinea: {
+    width: responsiveWidthScale(24),
+    height: responsiveWidthScale(4),
+    borderRadius: responsiveWidthScale(4),
+    marginTop: responsiveWidthScale(8),
+    marginRight: responsiveWidthScale(10),
+  },
+  leyendaTextos: {
+    flex: 1,
+  },
+  leyendaTitulo: {
+    fontFamily: FONTS.bold,
+    fontSize: Math.max(11, responsiveWidthScale(13)),
+    lineHeight: responsiveWidthScale(17),
+    color: COLORS.black,
+  },
+  leyendaDescripcion: {
+    fontFamily: FONTS.regular,
+    fontSize: Math.max(11, responsiveWidthScale(11.5)),
+    lineHeight: responsiveWidthScale(16),
+    color: COLORS.greyM,
+    marginTop: responsiveWidthScale(1),
+  },
+  modalGraficoContainer: {
+    marginHorizontal: responsiveWidthScale(12),
+    marginTop: responsiveWidthScale(4),
+    paddingTop: responsiveWidthScale(8),
+    paddingBottom: responsiveWidthScale(4),
+    borderRadius: responsiveWidthScale(10),
+    backgroundColor: COLORS.back,
+    overflow: "hidden",
+  },
+  modalGraficoScroll: {
+    paddingHorizontal: 0,
+    paddingBottom: responsiveWidthScale(4),
+  },
+  modalGraficoEjeY: {
+    fontFamily: FONTS.medium,
+    fontSize: responsiveWidthScale(9),
+    color: COLORS.greyM,
+  },
+  modalGraficoEjeX: {
+    fontFamily: FONTS.medium,
+    fontSize: responsiveWidthScale(9),
+    color: COLORS.greyM,
+    textAlign: "center",
+    marginTop: responsiveWidthScale(4),
+  },
+  modalEvolucionFooter: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginHorizontal: responsiveWidthScale(16),
+    marginTop: responsiveWidthScale(8),
+    marginBottom: responsiveWidthScale(16),
+    paddingHorizontal: responsiveWidthScale(10),
+    paddingVertical: responsiveWidthScale(9),
+    borderRadius: responsiveWidthScale(8),
+    backgroundColor: COLORS.verdeclaro,
+  },
+  modalEvolucionNota: {
+    flex: 1,
+    marginLeft: responsiveWidthScale(6),
+    fontFamily: FONTS.regular,
+    fontSize: Math.max(11, responsiveWidthScale(11)),
+    lineHeight: responsiveWidthScale(15),
+    color: COLORS.greyM,
+  },
 });

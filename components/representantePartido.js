@@ -1,123 +1,159 @@
 import { View, Text, Image, StyleSheet } from "react-native";
 import { COLORS } from "../constants/colors";
 import MaterialIcons from "@react-native-vector-icons/material-icons";
+import Tooltip from "./tooltip";
+import { FONTS } from "../constants/fonts";
+import {
+  responsiveWidthScale,
+  responsiveHeightScale,
+} from "../utils/responsive";
+
+const responsiveRepresentanteSize = (baseValue) => {
+  return Math.min(
+    responsiveWidthScale(baseValue),
+    responsiveHeightScale(baseValue),
+  );
+};
+
+const responsiveRepresentanteText = (baseValue) => {
+  return Math.max(11, responsiveWidthScale(baseValue));
+};
 
 const RepresentantePartido = ({ item }) => {
-
   const TextoDinamico = () => {
-  
-    const o = item.text.toLowerCase();
+    const o = item.text?.toLowerCase();
 
-          if ( !o) {
-              return null
-          }
-  
-          if ( o.includes("licencia") ){
-              return (<Text style={styles.asistencia}>L.Med.</Text>);
-          }
+    if (!o) {
+      return null;
+    }
 
-          if ( o.includes("sin just") ){
-              return (<Text style={styles.asistencia}>Sin Just.</Text>);
-          }
+    let abreviatura = null;
+    let textoTooltip = null;
 
-          if ( o.includes("impedimento") ){
-              return (<Text style={styles.asistencia}>I.Grav.</Text>);
-          }
+    if (o.includes("licencia")) {
+      abreviatura = "L.Med.";
+      textoTooltip = "Licencia médica";
+    } else if (o.includes("sin just")) {
+      abreviatura = "Sin Just.";
+      textoTooltip = "Sin Justificación";
+    } else if (o.includes("impedimento")) {
+      abreviatura = "I.Grav.";
+      textoTooltip = "Impedimento grave";
+    } else if (o.includes("motivos particulares sin goce")) {
+      abreviatura = "Per.S/G";
+      textoTooltip = "Permiso por motivos particulares sin goce de dieta";
+    } else if (o.includes("permiso especial comit")) {
+      abreviatura = "Per.C/P";
+      textoTooltip = "Permiso especial Comités Parlamentarios";
+    } else if (o.includes("salida del pa")) {
+      abreviatura = "Fue.País";
+      textoTooltip = "Salida del país";
+    } else if (o.includes("n oficial con aviso de salida")) {
+      abreviatura = "Mis.Ofi.";
+      textoTooltip = "Misión oficial con aviso de salida del país";
+    } else if (o.includes("n encomendada por la corpo")) {
+      abreviatura = "Gest.Enc.";
+      textoTooltip = "Gestión encomendada por la Corporación";
+    } else if (o.includes("acuerdo de comit")) {
+      abreviatura = "Acu.Com.";
+      textoTooltip = "Acuerdo de Comités Parlamentarios";
+    } else if (o.includes("actividad propia de la labor")) {
+      abreviatura = "Act.Parl.";
+      textoTooltip = "Actividad propia de la labor parlamentaria";
+    } else if (o.includes("actividad oficial con el presidente")) {
+      abreviatura = "Act.Pres.";
+      textoTooltip = "Actividad oficial con el Presidente de la República";
+    } else if (o.includes("permiso parental")) {
+      abreviatura = "P.Par.";
+      textoTooltip = "Permiso parental";
+    }
 
-          if ( o.includes("motivos particulares sin goce") ){
-              return (<Text style={styles.asistencia}>Per.S/G</Text>);
-          }
+    if (!abreviatura) {
+      return null;
+    }
 
-          if ( o.includes("permiso especial comit") ){
-              return (<Text style={styles.asistencia}>Per.C/P</Text>);
-          }
-
-          if ( o.includes("salida del pa") ){
-              return (<Text style={styles.asistencia}>Fue.País</Text>);
-          }
-
-          if ( o.includes("n oficial con aviso de salida") ){
-              return (<Text style={styles.asistencia}>Mis.Ofi.</Text>);
-          }
-
-          if ( o.includes("n encomendada por la corpo") ){
-              return (<Text style={styles.asistencia}>Gest.Enc.</Text>);
-          }
-
-          if ( o.includes("acuerdo de comit") ){
-              return (<Text style={styles.asistencia}>Acu.Com.</Text>);
-          }
-
-          if ( o.includes("actividad propia de la labor") ){
-              return (<Text style={styles.asistencia}>Act.Parl.</Text>);
-          }
-
-          if ( o.includes("actividad oficial con el presidente") ){
-              return (<Text style={styles.asistencia}>Act.Pres.</Text>);
-          }
-
-          if ( o.includes("permiso parental") ){
-              return (<Text style={styles.asistencia}>P.Par.</Text>);
-          }
-  
-  
-          return null;
-      }
+    return (
+      <Tooltip text={textoTooltip} width={responsiveWidthScale(160)}>
+        <Text style={styles.asistencia}>{abreviatura}</Text>
+      </Tooltip>
+    );
+  };
 
   return (
     <View style={styles.container}>
       <View style={styles.containImage}>
-        <Image
-          style={{
-            width: 28,
-            height: 28,
-            borderRadius: 100,
-          }}
-          source={{ uri: item.foto }}
-        />
+        <Image style={styles.foto} source={{ uri: item.foto }} />
       </View>
-      <Text style={styles.nombre}>{item.nombre}</Text>
+      <Text style={styles.nombre} numberOfLines={1}>
+        {item.nombre}
+      </Text>
 
       {item.icon ? (
-        <View flexDirection={"row"} alignItems={'center'}>
-          <MaterialIcons name={item.icon} size={18} color={item.iconColor} />
-          {item.text ? TextoDinamico() : null  }
+        <View style={styles.estado}>
+          <MaterialIcons
+            name={item.icon}
+            size={responsiveRepresentanteSize(18)}
+            color={item.iconColor}
+          />
+
+          {item.text ? TextoDinamico() : null}
         </View>
-      ): (
-        <Text style={styles.asistencia}>{item.value}{item.suffix}</Text>
-      )
-      }
+      ) : (
+        <Text style={styles.asistencia}>
+          {item.value}
+          {item.suffix}
+        </Text>
+      )}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
+    width: "100%",
+    minHeight: 33,
     flexDirection: "row",
-    marginTop: 5,
-    width: '100%',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    marginLeft: 5
+    alignItems: "center",
+    marginTop: responsiveRepresentanteSize(5),
+    paddingHorizontal: responsiveRepresentanteSize(5),
   },
+
   containImage: {
-    marginRight: 10,
     width: 28,
-    alignSelf: 'flex-start'
+    marginRight: responsiveRepresentanteSize(10),
+    alignItems: "center",
+    justifyContent: "center",
   },
+
+  foto: {
+    width: 28,
+    height: 28,
+    borderRadius: 100,
+  },
+
   nombre: {
-    fontFamily: "NotoSansMyanmar_400Regular",
-    fontSize: 14,
+    width: responsiveWidthScale(180),
+    marginRight: responsiveWidthScale(6),
+    fontFamily: FONTS.regular,
+    fontSize: responsiveRepresentanteText(14),
     color: COLORS.black,
-    alignSelf: "center",
-    width: 180,
-
+    textAlignVertical: "center",
+    includeFontPadding: false,
   },
-  asistencia: {
-    fontFamily: "NotoSansMyanmar_400Regular",
-    fontSize: 14,
-    color: COLORS.black,
 
+  estado: {
+    flexShrink: 0,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-end",
+  },
+
+  asistencia: {
+    flexShrink: 0,
+    fontFamily: FONTS.regular,
+    fontSize: responsiveRepresentanteText(14),
+    color: COLORS.black,
+    includeFontPadding: false,
   },
 });
 

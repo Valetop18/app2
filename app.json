@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "app2",
-    "slug": "app2",
+    "name": "nawi",
+    "slug": "nawi",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -13,17 +13,38 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.nawi.app"
     },
     "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
-      },
+      "package": "com.nawi.app",
+      "googleServicesFile": "./google-services.json",
       "edgeToEdgeEnabled": true
     },
-    "web": {
-      "favicon": "./assets/favicon.png"
+    "extra": {
+      "eas": {
+        "projectId": "36d91b4b-e021-4021-a4d2-67380e9c6307"
+      }
+    },
+    "plugins": [
+  [
+    "expo-font",
+    {
+      "fonts": [
+        "node_modules/@expo-google-fonts/sedan/400Regular/Sedan_400Regular.ttf",
+
+        "node_modules/@expo-google-fonts/noto-sans-myanmar/100Thin/NotoSansMyanmar_100Thin.ttf",
+        "node_modules/@expo-google-fonts/noto-sans-myanmar/200ExtraLight/NotoSansMyanmar_200ExtraLight.ttf",
+        "node_modules/@expo-google-fonts/noto-sans-myanmar/300Light/NotoSansMyanmar_300Light.ttf",
+        "node_modules/@expo-google-fonts/noto-sans-myanmar/400Regular/NotoSansMyanmar_400Regular.ttf",
+        "node_modules/@expo-google-fonts/noto-sans-myanmar/500Medium/NotoSansMyanmar_500Medium.ttf",
+        "node_modules/@expo-google-fonts/noto-sans-myanmar/600SemiBold/NotoSansMyanmar_600SemiBold.ttf",
+        "node_modules/@expo-google-fonts/noto-sans-myanmar/700Bold/NotoSansMyanmar_700Bold.ttf",
+        "node_modules/@expo-google-fonts/noto-sans-myanmar/800ExtraBold/NotoSansMyanmar_800ExtraBold.ttf",
+        "node_modules/@expo-google-fonts/noto-sans-myanmar/900Black/NotoSansMyanmar_900Black.ttf"
+      ]
     }
+  ]
+]
   }
 }

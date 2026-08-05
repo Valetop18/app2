@@ -4,8 +4,6 @@ import Ionicons from "@react-native-vector-icons/ionicons";
 import { COLORS } from "../constants/colors";
 import MaterialIcons from "@react-native-vector-icons/material-icons";
 import {
-  msPersonRaisedHand,
-  msJoin,
   msFlaky,
   msJoinRight,
 } from "@material-symbols-react-native/outlined-400";
@@ -68,6 +66,7 @@ export default TooltipVotaciones;
 const styles = StyleSheet.create({
   container: {
     width: "100%",
+    backgroundColor: COLORS.back
   },
 
   row: {
