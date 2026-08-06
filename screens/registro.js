@@ -18,11 +18,6 @@ import { useAuth } from "../context/AuthContext";
 import {
   responsiveWidthScale,
   responsiveHeightScale,
-  responsiveSize,
-  responsiveVerticalSize,
-  responsiveSpacing,
-  responsiveFont,
-  responsiveIcon
 } from "../utils/responsive";
 import { Calendar, LocaleConfig } from "react-native-calendars";
 import MonthYearPickerModal, {
@@ -392,7 +387,7 @@ const Registro = () => {
               >
                 <Ionicons
                   name="close-circle"
-                  size={responsiveIcon(22)}
+                  size={responsiveWidthScale(22)}
                   color={COLORS.grey}
                 />
               </TouchableOpacity>
@@ -412,7 +407,7 @@ const Registro = () => {
 
                   <Ionicons
                     name="chevron-down"
-                    size={responsiveIcon(17)}
+                    size={responsiveWidthScale(17)}
                     color={COLORS.greenM}
                   />
                 </TouchableOpacity>
@@ -470,9 +465,9 @@ const Registro = () => {
                 textMonthFontFamily: FONTS.bold,
                 textDayHeaderFontFamily: FONTS.bold,
 
-                textDayFontSize: responsiveFont(14),
-                textMonthFontSize: responsiveFont(17),
-                textDayHeaderFontSize: responsiveFont(12),
+                textDayFontSize: Math.max(11, responsiveWidthScale(14)),
+                textMonthFontSize: Math.max(11, responsiveWidthScale(17)),
+                textDayHeaderFontSize: Math.max(11, responsiveWidthScale(12)),
               }}
             />
           </View>
@@ -828,45 +823,39 @@ const styles = StyleSheet.create({
   },
   calendarContainer: {
     backgroundColor: COLORS.back,
-    borderTopLeftRadius: responsiveSize(16),
-    borderTopRightRadius: responsiveSize(16),
-    paddingTop: responsiveVerticalSize(14),
-    paddingHorizontal: responsiveSpacing(12),
-    paddingBottom: responsiveVerticalSize(22),
+    borderTopLeftRadius: responsiveWidthScale(16),
+    borderTopRightRadius: responsiveWidthScale(16),
+    paddingTop: responsiveHeightScale(14),
+    paddingHorizontal: responsiveWidthScale(12),
+    paddingBottom: responsiveHeightScale(22),
   },
-
   calendarHeader: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: responsiveSpacing(10),
-    marginBottom: responsiveVerticalSize(4),
+    paddingHorizontal: responsiveWidthScale(10),
+    marginBottom: responsiveHeightScale(4),
   },
-
   calendarTitle: {
     color: COLORS.greenM,
-    fontSize: responsiveFont(17),
+    fontSize: Math.max(11, responsiveWidthScale(17)),
     fontFamily: FONTS.bold,
   },
-
   calendarDay: {
-    width: responsiveSize(31),
-    height: responsiveSize(31),
-    borderRadius: responsiveSize(16),
+    width: responsiveWidthScale(31),
+    height: responsiveWidthScale(31),
+    borderRadius: responsiveWidthScale(16),
     justifyContent: "center",
     alignItems: "center",
   },
-
   calendarDaySelected: {
     backgroundColor: COLORS.greenM,
   },
-
   calendarDayText: {
     color: COLORS.black,
-    fontSize: responsiveFont(14),
+    fontSize: Math.max(11, responsiveWidthScale(14)),
     fontFamily: FONTS.regular,
   },
-
   calendarDayTextDisabled: {
     color: COLORS.grey,
   },
@@ -879,13 +868,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: responsiveSpacing(8),
-    paddingVertical: responsiveVerticalSize(4),
+    paddingHorizontal: responsiveWidthScale(8),
+    paddingVertical: responsiveHeightScale(4),
   },
   calendarMonthHeaderText: {
     color: COLORS.greenM,
-    fontSize: responsiveFont(17),
+    fontSize: Math.max(11, responsiveWidthScale(17)),
     fontFamily: FONTS.bold,
-    marginRight: responsiveSpacing(4),
+    marginRight: responsiveWidthScale(4),
   },
 });

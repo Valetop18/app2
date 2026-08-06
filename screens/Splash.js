@@ -1,5 +1,16 @@
 import { View, Text, StyleSheet } from "react-native";
 import { COLORS } from "../constants/colors";
+import {
+  responsiveWidthScale,
+  responsiveHeightScale,
+} from "../utils/responsive";
+
+const responsiveSplashSize = (baseValue) => {
+  return Math.min(
+    responsiveWidthScale(baseValue),
+    responsiveHeightScale(baseValue),
+  );
+};
 
 export const Splash = () => {
   return (
@@ -22,8 +33,8 @@ const styles = StyleSheet.create({
   nombre: {
     color: "white",
     fontFamily: "Sedan_400Regular",
-    fontSize: 120,
-    letterSpacing: 8,
+    fontSize: responsiveSplashSize(120),
+    letterSpacing: responsiveSplashSize(8),
   },
   title: {
     justifyContent: "flex-end",

@@ -36,12 +36,6 @@ import { LinearGradient } from "expo-linear-gradient";
 import { FontAwesome } from "@expo/vector-icons";
 import { useReacciones } from "../context/ReaccionesContext";
 import {
-  responsiveSize,
-  responsiveSpacing,
-  responsiveFont,
-  responsiveIcon,
-  responsiveFontCamara,
-  responsiveHeight,
   responsiveVerticalSize,
   responsiveWidthScale,
   responsiveHeightScale,
@@ -672,17 +666,18 @@ export const CamaraDipu = () => {
     }
 
     if (infoModal.representantesModo === "proyectos-especifica") {
-      const voto = getVotoRepresentante(item);
-      const config = getVotoConfig(voto);
-      //console.log(item);
+  const voto = getVotoRepresentante(item);
+  const config = getVotoConfig(voto);
 
-      return {
-        ...item,
-        icon: config.icon,
-        iconColor: config.iconColor,
-        suffix: null,
-      };
-    }
+  return {
+    ...item,
+    voto,
+    mostrarTooltipVoto: true,
+    icon: config.icon,
+    iconColor: config.iconColor,
+    suffix: null,
+  };
+}
 
     return {
       ...item,

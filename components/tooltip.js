@@ -30,7 +30,8 @@ export const TOOLTIPS = {
     especifica:
       "Cantidad de proyectos de ley presentados por el parlamentario.",
     acumulada: "Cantidad de proyectos de ley presentados por los partidos.",
-    partido: "Cantidad de proyectos de ley presentados por los parlamentarios del partido."
+    partido:
+      "Cantidad de proyectos de ley presentados por los parlamentarios del partido.",
   },
   representaciondistrital: {
     legislador:
@@ -48,14 +49,14 @@ export const TOOLTIPS = {
     "Lugar que ocupa el parlamentario entre todos los representantes según un puntaje estadístico que considera asistencia, participación en votaciones, proyectos aprobados y presentados, oficios enviados y atrasos.",
   cohesionPartido:
     "En cada votación se identifica cuál fue la postura más adoptada por los legisladores del partido y se calcula qué porcentaje la siguió. El resultado corresponde al promedio de todas las votaciones del período.",
-  oficiosPartido: 
+  oficiosPartido:
     "Cantidad de oficios enviados por los parlamentarios del partido para solicitar información o realizar requerimientos.",
-  CompatibilidadPartidoUsuario: 
+  CompatibilidadPartidoUsuario:
     "Compara tus preferencias con la forma en que votó mayoritariamente el partido. Mientras más coincidan, mayor será tu porcentaje de compatibilidad.",
-  rankingPartidos: 
-   "Ubica al partido entre los 18 partidos con representación en la Cámara. La posición se calcula considerando su asistencia, participación en votaciones, cohesión, representación distrital, mociones aprobadas y presentadas, oficios y cantidad de diputados(as).",
-   reaccionFueraDistrito:
-  "Solo puedes dar «Me gusta» en representantes que pertenezcan a tu distrito.",
+  rankingPartidos:
+    "Ubica al partido entre los 18 partidos con representación en la Cámara. La posición se calcula considerando su asistencia, participación en votaciones, cohesión, representación distrital, mociones aprobadas y presentadas, oficios y cantidad de diputados(as).",
+  reaccionFueraDistrito:
+    "Solo puedes dar «Me gusta» en representantes que pertenezcan a tu distrito.",
 };
 
 const Tooltip = ({
@@ -65,6 +66,8 @@ const Tooltip = ({
   disabled = false,
   tooltipStyle,
   textStyle,
+  arrowStyle,
+  hitSlop,
 }) => {
   const id = useRef(Symbol()).current;
   const containerRef = useRef(null);
@@ -109,6 +112,7 @@ const Tooltip = ({
               arrowOffsetX,
               tooltipStyle,
               textStyle,
+              arrowStyle,
             });
           },
         );
@@ -122,7 +126,9 @@ const Tooltip = ({
 
   return (
     <View ref={containerRef} collapsable={false} style={styles.container}>
-      <Pressable onPress={handlePress}>{children}</Pressable>
+      <Pressable onPress={handlePress} hitSlop={hitSlop}>
+        {children}
+      </Pressable>
     </View>
   );
 };
@@ -131,7 +137,8 @@ export default Tooltip;
 
 const styles = StyleSheet.create({
   container: {
-  position: "relative",
-  overflow: "visible",
-},
+    position: "relative",
+    justifyContent: "center",
+    overflow: "visible",
+  },
 });

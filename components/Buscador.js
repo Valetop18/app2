@@ -1,52 +1,86 @@
-import React, {useContext} from 'react'
-import { View, Text, TextInput, StyleSheet, KeyboardAvoidingView } from 'react-native'
-import { BuscadorContext } from '../context/BuscadorContext'
-import Ionicons from '@react-native-vector-icons/ionicons'
-import { COLORS } from '../constants/colors'
-import { FONTS } from '../constants/fonts'
+import React, { useContext } from "react";
+import { View, TextInput, StyleSheet } from "react-native";
+import { BuscadorContext } from "../context/BuscadorContext";
+import Ionicons from "@react-native-vector-icons/ionicons";
+import { COLORS } from "../constants/colors";
+import { FONTS } from "../constants/fonts";
+import {
+  responsiveWidthScale,
+  responsiveHeightScale,
+} from "../utils/responsive";
 
-const Buscador = ({value, onChange}) => {
+const responsiveBuscadorSize = (baseValue) => {
+  return Math.min(
+    responsiveWidthScale(baseValue),
+    responsiveHeightScale(baseValue),
+  );
+};
 
-    const {search, setSearch} = useContext(BuscadorContext);
+const responsiveBuscadorText = (baseValue) => {
+  return Math.max(11, responsiveBuscadorSize(baseValue));
+};
 
-    return (
-    <View style={styles.container}>
-        <Ionicons name="search-circle" size={23} color={COLORS.greenM} marginHorizontal={4} marginLeft={10}/>
-        <TextInput
-            value={search}
-            onChangeText={setSearch}
-            placeholder='Ingresa una ley o tema de interés.'
-            style={styles.input}
-            cursorColor={COLORS.black}
-        ></TextInput>
+const Buscador = ({ header = false }) => {
+  const { search, setSearch } = useContext(BuscadorContext);
+
+  return (
+    <View
+      style={[
+        styles.container,
+        header ? styles.containerHeader : styles.containerNormal,
+      ]}
+    >
+      <Ionicons
+        name="search-circle"
+        size={responsiveBuscadorSize(23)}
+        color={COLORS.greenM}
+        style={{
+          marginLeft: responsiveWidthScale(10),
+          marginRight: responsiveWidthScale(4),
+        }}
+      />
+
+      <TextInput
+        value={search}
+        onChangeText={setSearch}
+        placeholder="Ingresa una ley o tema de interés."
+        style={styles.input}
+        cursorColor={COLORS.black}
+      />
     </View>
-    )
-}
+  );
+};
 
 const styles = StyleSheet.create({
-    container: {
-        flexDirection: 'row',
-        backgroundColor: COLORS.back,
-        marginVertical: "0.5%",
-        elevation: 3,
-        alignItems: 'center',
-        shadowColor: COLORS.black,
-        borderRadius: 5,
-        height: 38,
-    },
-    input: {
-        fontFamily: FONTS.regular,
-        fontSize: 13,
-        color: COLORS.black,
-        height: 32,
-        alignSelf: 'center', 
-        paddingTop: 5,
-        height: '100%',
-        paddingVertical: 0,
-        paddingBottom: 0,
-        paddingTop: 0,
-        width: '80%'
-    }
-})
+  container: {
+    height: responsiveHeightScale(38),
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: COLORS.back,
+    marginVertical: "0.5%",
+    elevation: 3,
+    shadowColor: COLORS.black,
+    borderRadius: responsiveWidthScale(5),
+  },
 
-export default Buscador
+  containerHeader: {
+    width: responsiveWidthScale(330),
+    maxWidth: "100%",
+  },
+
+  containerNormal: {
+    width: "100%",
+  },
+
+  input: {
+    flex: 1,
+    height: "100%",
+    fontFamily: FONTS.regular,
+    fontSize: responsiveBuscadorText(13),
+    color: COLORS.black,
+    paddingVertical: 0,
+    paddingHorizontal: 0,
+  },
+});
+
+export default Buscador;

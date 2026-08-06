@@ -7,6 +7,7 @@ import {
   responsiveWidthScale,
   responsiveHeightScale,
 } from "../utils/responsive";
+import TooltipVotaciones from "./TooltipVotaciones";
 
 const responsiveRepresentanteSize = (baseValue) => {
   return Math.min(
@@ -79,6 +80,10 @@ const RepresentantePartido = ({ item }) => {
     );
   };
 
+  const esVotoAFavor = item.voto
+  ?.toLowerCase()
+  .includes("favor");
+
   return (
     <View style={styles.container}>
       <View style={styles.containImage}>
@@ -89,16 +94,42 @@ const RepresentantePartido = ({ item }) => {
       </Text>
 
       {item.icon ? (
-        <View style={styles.estado}>
-          <MaterialIcons
-            name={item.icon}
-            size={responsiveRepresentanteSize(18)}
-            color={item.iconColor}
-          />
+  <View style={styles.estado}>
+    {item.mostrarTooltipVoto ? (
+      <Tooltip
+        width={responsiveWidthScale(115)}
+        hitSlop={responsiveWidthScale(6)}
+        text={
+          <TooltipVotaciones voto={item.voto} />
+        }
+        tooltipStyle={
+          esVotoAFavor
+            ? { backgroundColor: COLORS.back }
+            : undefined
+        }
+        arrowStyle={
+          esVotoAFavor
+            ? { backgroundColor: COLORS.back }
+            : undefined
+        }
+      >
+        <MaterialIcons
+          name={item.icon}
+          size={responsiveRepresentanteSize(18)}
+          color={item.iconColor}
+        />
+      </Tooltip>
+    ) : (
+      <MaterialIcons
+        name={item.icon}
+        size={responsiveRepresentanteSize(18)}
+        color={item.iconColor}
+      />
+    )}
 
-          {item.text ? TextoDinamico() : null}
-        </View>
-      ) : (
+    {item.text ? TextoDinamico() : null}
+  </View>
+) : (
         <Text style={styles.asistencia}>
           {item.value}
           {item.suffix}

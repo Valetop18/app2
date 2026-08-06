@@ -5,12 +5,7 @@ import React, {
   useRef,
   useState,
 } from "react";
-import {
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { COLORS } from "../constants/colors";
 
@@ -45,27 +40,17 @@ export const TooltipProvider = ({ children }) => {
       closeTooltip,
       providerRef,
     }),
-    [activeTooltip]
+    [activeTooltip],
   );
 
   return (
     <TooltipContext.Provider value={value}>
-      <View
-        ref={providerRef}
-        collapsable={false}
-        style={styles.container}
-      >
+      <View ref={providerRef} collapsable={false} style={styles.container}>
         {children}
 
         {activeTooltip && tooltipData && (
-          <View
-            style={styles.tooltipLayer}
-            pointerEvents="box-none"
-          >
-            <Pressable
-              style={styles.closeArea}
-              onPress={closeTooltip}
-            />
+          <View style={styles.tooltipLayer} pointerEvents="box-none">
+            <Pressable style={styles.closeArea} onPress={closeTooltip} />
 
             <View
               pointerEvents="none"
@@ -85,22 +70,17 @@ export const TooltipProvider = ({ children }) => {
                   {
                     transform: [
                       {
-                        translateX:
-                          -6 + tooltipData.arrowOffsetX,
+                        translateX: -6 + tooltipData.arrowOffsetX,
                       },
                       { rotate: "45deg" },
                     ],
                   },
+                  tooltipData.arrowStyle,
                 ]}
               />
 
               {typeof tooltipData.text === "string" ? (
-                <Text
-                  style={[
-                    styles.text,
-                    tooltipData.textStyle,
-                  ]}
-                >
+                <Text style={[styles.text, tooltipData.textStyle]}>
                   {tooltipData.text}
                 </Text>
               ) : (
@@ -118,9 +98,7 @@ export const useTooltip = () => {
   const context = useContext(TooltipContext);
 
   if (!context) {
-    throw new Error(
-      "useTooltip debe utilizarse dentro de TooltipProvider."
-    );
+    throw new Error("useTooltip debe utilizarse dentro de TooltipProvider.");
   }
 
   return context;

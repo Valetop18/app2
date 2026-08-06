@@ -1,62 +1,82 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import Ionicons from "@react-native-vector-icons/ionicons";
-import { COLORS } from "../constants/colors";
 import MaterialIcons from "@react-native-vector-icons/material-icons";
 import {
   msFlaky,
   msJoinRight,
 } from "@material-symbols-react-native/outlined-400";
 import { MsIcon } from "material-symbols-react-native";
+import { COLORS } from "../constants/colors";
+import { responsiveWidthScale } from "../utils/responsive";
 
-const TooltipVotaciones = () => {
+const TooltipVotaciones = ({ voto }) => {
+  const v = voto?.toLowerCase() ?? "";
+
+  let icono;
+  let texto;
+
+  if (v.includes("favor")) {
+    icono = (
+      <MaterialIcons
+        name="check-circle"
+        size={responsiveWidthScale(18)}
+        color={COLORS.greenM}
+      />
+    );
+    texto = "A favor";
+  } else if (v.includes("contra")) {
+    icono = (
+      <MaterialIcons
+        name="cancel"
+        size={responsiveWidthScale(18)}
+        color={COLORS.FA}
+      />
+    );
+    texto = "En contra";
+  } else if (v.includes("absten")) {
+    icono = (
+      <MsIcon
+        icon={msFlaky}
+        size={responsiveWidthScale(18)}
+        color={COLORS.UDI}
+      />
+    );
+    texto = "Abstención";
+  } else if (v.includes("pareo")) {
+    icono = (
+      <MsIcon
+        icon={msJoinRight}
+        size={responsiveWidthScale(19)}
+        color={COLORS.PDG}
+      />
+    );
+    texto = "Pareo";
+  } else {
+    icono = (
+      <Ionicons
+        name="remove-circle"
+        size={responsiveWidthScale(18)}
+        color={COLORS.greyM}
+      />
+    );
+    texto = "No voto";
+  }
+
+  const esFavor = v.includes("favor");
+
   return (
-    <View style={styles.container}>
-      <View style={styles.row}>
-        <MaterialIcons
-          name="check-circle"
-          size={18}
-          color={COLORS.greenM}
-        />
+    <View style={styles.row}>
+      {icono}
 
-        <Text style={styles.text}>A favor</Text>
-      </View>
-
-      <View style={styles.row}>
-        <MaterialIcons
-          name="cancel"
-          size={18}
-          color={COLORS.FA}
-        />
-
-        <Text style={styles.text}>En contra</Text>
-      </View>
-
-      <View style={styles.row}>
-        <MsIcon
-          icon={msFlaky}
-          size={18}
-          color={COLORS.UDI}
-        />
-
-        <Text style={styles.text}>Abstención</Text>
-      </View>
-
-      <View style={styles.row}>
-        <MsIcon
-          icon={msJoinRight}
-          size={19}
-          color={COLORS.PDG}
-        />
-
-        <Text style={styles.text}>Pareo</Text>
-      </View>
-
-      <View style={styles.row}>
-        <Ionicons name="remove-circle" size={18} color={COLORS.greyM} />
-
-        <Text style={styles.text}>No voto</Text>
-      </View>
+      <Text
+        style={[
+          styles.text,
+          esFavor && styles.textFavor,
+        ]}
+      >
+        {texto}
+      </Text>
     </View>
   );
 };
@@ -64,21 +84,18 @@ const TooltipVotaciones = () => {
 export default TooltipVotaciones;
 
 const styles = StyleSheet.create({
-  container: {
-    width: "100%",
-    backgroundColor: COLORS.back
-  },
-
   row: {
     flexDirection: "row",
     alignItems: "center",
-    marginVertical: 2,
   },
 
   text: {
-    color: COLORS.greenM,
+    color: COLORS.back,
     fontSize: 13,
     marginLeft: 6,
-    flex: 1,
+  },
+
+  textFavor: {
+    color: COLORS.greenM,
   },
 });

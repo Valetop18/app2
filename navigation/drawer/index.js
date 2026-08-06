@@ -11,6 +11,10 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import Ionicons from "@react-native-vector-icons/ionicons";
 import { MaterialIcons } from "@react-native-vector-icons/material-icons";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import {
+  responsiveWidthScale,
+  responsiveHeightScale,
+} from "../../utils/responsive";
 
 import { COLORS } from "../../constants/colors";
 import {
@@ -36,6 +40,17 @@ import { FONTS } from "../../constants/fonts";
 const BottomsTabs = createBottomTabNavigator();
 const Drawer = createDrawerNavigator();
 
+const responsiveNavSize = (baseValue) => {
+  return Math.min(
+    responsiveWidthScale(baseValue),
+    responsiveHeightScale(baseValue),
+  );
+};
+
+const responsiveNavText = (baseValue, minValue = 11) => {
+  return Math.max(minValue, responsiveNavSize(baseValue));
+};
+
 function CustomDrawerContent(props) {
   const { logout } = useAuth();
   const navigation = useNavigation();
@@ -55,7 +70,11 @@ function CustomDrawerContent(props) {
   return (
     <DrawerContentScrollView
       {...props}
-      style={{ backgroundColor: COLORS.greenM, marginTop: 0, paddingTop: 70 }}
+      style={{
+        backgroundColor: COLORS.greenM,
+        marginTop: 0,
+        paddingTop: responsiveHeightScale(70),
+      }}
     >
       <DrawerItemList {...props} />
       <DrawerItem
@@ -67,10 +86,15 @@ function CustomDrawerContent(props) {
         onPress={cambioDistrito}
         labelStyle={{
           fontFamily: FONTS.bold,
-          fontSize: 14,
+          fontSize: responsiveNavText(14),
           margin: 0,
         }}
-        style={{ marginLeft: "-6%", borderRadius: 0, width: 500, height: 48 }}
+        style={{
+          marginLeft: "-6%",
+          borderRadius: 0,
+          width: 500,
+          height: responsiveHeightScale(48),
+        }}
         activeBackgroundColor={COLORS.verdeclaro}
         activeTintColor={COLORS.greenM}
         inactiveBackgroundColor={COLORS.greenM}
@@ -85,10 +109,15 @@ function CustomDrawerContent(props) {
         onPress={submit}
         labelStyle={{
           fontFamily: FONTS.bold,
-          fontSize: 14,
+          fontSize: responsiveNavText(14),
           margin: 0,
         }}
-        style={{ marginLeft: "-6%", borderRadius: 0, width: 500, height: 48 }}
+        style={{
+          marginLeft: "-6%",
+          borderRadius: 0,
+          width: 500,
+          height: responsiveHeightScale(48),
+        }}
         activeBackgroundColor={COLORS.verdeclaro}
         activeTintColor={COLORS.greenM}
         inactiveBackgroundColor={COLORS.greenM}
@@ -126,23 +155,28 @@ const MyDrawer = () => {
         headerTintColor: COLORS.greenM,
         headerTitleStyle: {
           fontFamily: FONTS.bold,
-          fontSize: 25,
-          letterSpacing: 2,
+          fontSize: responsiveNavText(25),
+          letterSpacing: responsiveWidthScale(2),
         },
         drawerPosition: "right",
         headerRight: () => (
-          <Pressable onPress={() => navigation.openDrawer()}>
+          <Pressable onPress={() => navigation.openDrawer()} hitSlop={8}>
             <MaterialIcons
               name="workspaces-outline"
-              size={26}
+              size={responsiveNavSize(26)}
               color={COLORS.greenM}
-              style={{ marginRight: 25 }}
+              style={{
+                marginRight: responsiveWidthScale(25),
+              }}
             />
           </Pressable>
         ),
         headerLeftContainerStyle: { width: "5%" },
         headerLeft: false,
-        headerStyle: { backgroundColor: COLORS.back, elevation: 0 },
+        headerStyle: {
+          backgroundColor: COLORS.back,
+          elevation: 0,
+        },
         drawerStyle: {
           backgroundColor: COLORS.greenM,
           width: "50%",
@@ -176,7 +210,7 @@ const MyDrawer = () => {
           },
           headerTitle: () => {
             if (rutaActiva.name.includes("Cámara")) {
-              return <Buscador />;
+              return <Buscador header />;
             }
             if (rutaActiva.name === "EstadisticaPartido") {
               return <Text style={styles.header}>Cámara de diputados</Text>;
@@ -205,7 +239,7 @@ const MyDrawer = () => {
           drawerIcon: ({ focused, size }) => (
             <Ionicons
               name="home-sharp"
-              size={16}
+              size={responsiveNavSize(16)}
               color={focused ? COLORS.greenM : COLORS.back}
               style={styles.icon}
             />
@@ -224,14 +258,14 @@ const MyDrawer = () => {
                 Platform.OS === "android" ? COLORS.greenM : COLORS.grey,
               tabBarStyle: styles.tabBar,
               tabBarLabelStyle: {
-                fontSize: 12.5,
+                fontSize: responsiveNavText(12.5),
                 fontFamily: FONTS.regular,
                 color: COLORS.black,
-                marginTop: -3,
+                marginTop: -responsiveNavSize(3),
               },
               tabBarIconStyle: {
-                width: 36,
-                height: 36,
+                width: responsiveNavSize(36),
+                height: responsiveNavSize(36),
               },
               tabBarHideOnKeyboard: true,
             }}
@@ -246,7 +280,7 @@ const MyDrawer = () => {
                   <View style={styles.item}>
                     <Ionicons
                       name="people-circle"
-                      size={36}
+                      size={responsiveNavSize(36)}
                       color={focused ? COLORS.greenM : COLORS.grey}
                     />
                   </View>
@@ -262,7 +296,7 @@ const MyDrawer = () => {
                   <View style={styles.item}>
                     <Ionicons
                       name="people-circle-outline"
-                      size={36}
+                      size={responsiveNavSize(36)}
                       color={focused ? COLORS.greenM : COLORS.grey}
                     />
                   </View>
@@ -277,7 +311,7 @@ const MyDrawer = () => {
                   <View style={styles.item}>
                     <MaterialCommunityIcons
                       name="chart-donut-variant"
-                      size={36}
+                      size={responsiveNavSize(36)}
                       color={focused ? COLORS.greenM : COLORS.grey}
                     />
                   </View>
@@ -294,7 +328,7 @@ const MyDrawer = () => {
           drawerIcon: ({ focused }) => (
             <MsIcon
               icon={msFavorite}
-              size={16}
+              size={responsiveNavSize(16)}
               color={focused ? COLORS.greenM : COLORS.back}
             />
           ),
@@ -307,7 +341,7 @@ const MyDrawer = () => {
           drawerIcon: ({ focused, size }) => (
             <MaterialIcons
               name="how-to-vote"
-              size={16}
+              size={responsiveNavSize(16)}
               color={focused ? COLORS.greenM : COLORS.back}
             />
           ),
@@ -319,7 +353,7 @@ const MyDrawer = () => {
 
 const styles = StyleSheet.create({
   tabBar: {
-    height: 68,
+    height: responsiveHeightScale(68),
     justifyContent: "center",
     backgroundColor: COLORS.back,
     width: "100%",
@@ -328,17 +362,14 @@ const styles = StyleSheet.create({
     borderTopWidth: 0,
   },
   item: {},
-  label: {
-    fontFamily: FONTS.regular,
-    color: COLORS.black,
-    fontSize: 12,
-  },
+
   icon: {},
   header: {
     fontFamily: FONTS.bold,
-    fontSize: 26,
-    letterSpacing: 2,
+    fontSize: responsiveNavText(26),
+    letterSpacing: responsiveWidthScale(2),
     color: COLORS.greenM,
+    fontWeight: "bold"
   },
   buscador: {},
 });

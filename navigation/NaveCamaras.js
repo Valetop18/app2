@@ -1,16 +1,27 @@
 import React from "react";
-import { Platform } from "react-native";
 import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
 import { COLORS } from "../constants/colors";
-import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import {
+  responsiveWidthScale,
+  responsiveHeightScale,
+} from "../utils/responsive";
 
 import { CamaraDipu } from "../screens/Camaras";
 import { CamaraSena } from "../screens/Senado";
-import { EstadisticaPartido } from "../screens/EstadisticaPartido";
 import { FONTS } from "../constants/fonts";
 
 const Stack = createMaterialTopTabNavigator();
-const StackNative = createNativeStackNavigator();
+
+const responsiveTabSize = (baseValue) => {
+  return Math.min(
+    responsiveWidthScale(baseValue),
+    responsiveHeightScale(baseValue),
+  );
+};
+
+const responsiveTabText = (baseValue) => {
+  return Math.max(11, responsiveTabSize(baseValue));
+};
 
 const NaveCamaras = () => {
   return (
@@ -18,26 +29,33 @@ const NaveCamaras = () => {
       initialRoute="Camaras"
       screenOptions={{
         headerShown: false,
+
         tabBarLabelStyle: {
-          fontSize: 16.5,
+          fontSize: responsiveTabText(16.5),
           fontFamily: FONTS.bold,
         },
+
         tabBarInactiveTintColor: COLORS.greyM,
         tabBarActiveTintColor: COLORS.back,
+
         tabBarIndicatorStyle: {
-          height: 48,
+          height: responsiveHeightScale(48),
           backgroundColor: COLORS.greenM,
         },
+
         tabBarStyle: {
+          height: responsiveHeightScale(48),
           backgroundColor: COLORS.verdeclaro,
           elevation: 0,
         },
+
         tabBarItemStyle: {
-          height: 48,
+          height: responsiveHeightScale(48),
           paddingVertical: 0,
           paddingBottom: 0,
           paddingTop: 0,
         },
+
         tabBarPressColor: COLORS.greenM,
         tabBarPressOpacity: 0.5,
       }}

@@ -8,7 +8,10 @@ import { useCallback } from "react";
 import { useData } from "../context/DataContext";
 import { useFocusEffect } from "@react-navigation/native";
 import { Skeleton } from "../components/Skeleton";
-import { responsiveSize, responsiveSpacing } from "../utils/responsive";
+import {
+  responsiveWidthScale,
+  responsiveHeightScale,
+} from "../utils/responsive";
 
 export const Diputados = ({ navigation }) => {
   const { user } = useAuth();
@@ -69,47 +72,47 @@ export const Diputados = ({ navigation }) => {
   };
 
   const skeletonCard = () => (
+  <View
+    style={{
+      flexDirection: "row",
+      width: "90%",
+      alignSelf: "center",
+      paddingVertical: responsiveHeightScale(18),
+    }}
+  >
+    <Skeleton
+      width={responsiveWidthScale(76)}
+      height={responsiveWidthScale(76)}
+      borderRadius={responsiveWidthScale(100)}
+    />
+
     <View
       style={{
-        flexDirection: "row",
-        width: "90%",
-        alignSelf: "center",
-        paddingVertical: responsiveSpacing(18),
+        marginHorizontal: responsiveWidthScale(15),
+        flex: 1,
       }}
     >
       <Skeleton
-        width={responsiveSize(76)}
-        height={responsiveSize(76)}
-        borderRadius={responsiveSize(100)}
+        width="100%"
+        height={responsiveHeightScale(25)}
+        borderRadius={responsiveWidthScale(4)}
       />
 
       <View
         style={{
-          marginHorizontal: responsiveSpacing(15),
-          flex: 1,
+          marginHorizontal: responsiveWidthScale(5),
+          marginTop: responsiveHeightScale(12),
         }}
       >
         <Skeleton
-          width="100%"
-          height={responsiveSize(25)}
-          borderRadius={responsiveSize(4)}
+          width={responsiveWidthScale(120)}
+          height={responsiveHeightScale(15)}
+          borderRadius={responsiveWidthScale(4)}
         />
-
-        <View
-          style={{
-            marginHorizontal: responsiveSpacing(5),
-            marginTop: responsiveSpacing(12),
-          }}
-        >
-          <Skeleton
-            width={responsiveSize(120)}
-            height={responsiveSize(15)}
-            borderRadius={responsiveSize(4)}
-          />
-        </View>
       </View>
     </View>
-  );
+  </View>
+);
 
   return (
     <>
@@ -142,7 +145,8 @@ const styles = StyleSheet.create({
     height: "100%",
     position: "absolute",
   },
+
   container: {
-    marginTop: 5,
+    marginTop: responsiveHeightScale(5),
   },
 });

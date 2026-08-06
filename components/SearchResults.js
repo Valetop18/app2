@@ -179,7 +179,9 @@ export const SearchResults = ({ data = [], onSelect, representante }) => {
         keyboardShouldPersistTaps="handled"
         renderItem={({ item }) => {
           const reaccion = reaccionesLey[item.id];
-
+          const esVotoAFavor = item?.votoRepresentante
+            ?.toLowerCase()
+            .includes("favor");
           return (
             <View style={styles.container}>
               <View flexDirection={"row"} justifyContent={"space-between"}>
@@ -246,8 +248,21 @@ export const SearchResults = ({ data = [], onSelect, representante }) => {
                   >
                     {representante && (
                       <Tooltip
-                        width={responsiveWidthScale(140)}
-                        text={<TooltipVotaciones />}
+                        width={responsiveWidthScale(115)}
+                        hitSlop={responsiveWidthScale(6)}
+                        text={
+                          <TooltipVotaciones voto={item?.votoRepresentante} />
+                        }
+                        tooltipStyle={
+                          esVotoAFavor
+                            ? { backgroundColor: COLORS.back }
+                            : undefined
+                        }
+                        arrowStyle={
+                          esVotoAFavor
+                            ? { backgroundColor: COLORS.back }
+                            : undefined
+                        }
                       >
                         <View style={styles.flexHorizontal}>
                           <MsIcon
