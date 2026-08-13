@@ -8,6 +8,7 @@ import { useState, useEffect } from "react";
 import { msPersonRaisedHand } from "@material-symbols-react-native/outlined-400";
 import { MsIcon } from "material-symbols-react-native";
 import { responsiveWidthScale } from "../utils/responsive";
+import { useData } from "../context/DataContext";
 
 const coloresPorPartido = {
   DES: COLORS.DES,
@@ -34,6 +35,13 @@ const coloresPorPartido = {
 const GridRepresent = ({ item, reaccion, onSelected, handleLike }) => {
   //const isLiked = item
   const borderColor = coloresPorPartido[item.partido] || "#000";
+
+  const { totalesLikesRepresentantes } = useData();
+
+  const totalLikesVisible =
+    totalesLikesRepresentantes[item.id] ??
+    item.totalLikes ??
+    0;
 
   return (
     <View style={styles.card}>
@@ -68,7 +76,7 @@ const GridRepresent = ({ item, reaccion, onSelected, handleLike }) => {
               {item.nombre}
             </Text>
             <Text style={styles.totLikes}>
-              {item.totalLikes > 0 ? item.totalLikes : ""}
+              {totalLikesVisible > 0 ? totalLikesVisible : ""}
             </Text>
             <TouchableOpacity
               style={styles.icono}
@@ -169,8 +177,18 @@ const styles = StyleSheet.create({
     borderRadius: responsiveWidthScale(10),
     width: "96%",
     backgroundColor: COLORS.back,
+
+    // Android
     elevation: 3,
+
+    // iOS
     shadowColor: COLORS.black,
+    shadowOffset: {
+      width: 0,
+      height: responsiveWidthScale(2),
+    },
+    shadowOpacity: 0.12,
+    shadowRadius: responsiveWidthScale(4),
   },
 
   containImage: {

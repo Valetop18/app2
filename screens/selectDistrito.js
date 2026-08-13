@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, Alert, TouchableOpacity } from "react-native";
-import { Picker } from "@react-native-picker/picker";
+import { View, Text, StyleSheet, Alert, TouchableOpacity} from "react-native";
+import SelectorRegistro from "../components/SelectorRegistro";
 import { REGIONES } from "../data/regiones";
 import { COMUNAS } from "../data/comunas";
 import { COLORS } from "../constants/colors";
@@ -182,42 +182,34 @@ const SelectDistrito = () => {
       <View style={styles.containerSelect}>
         <Text style={styles.label}>Región:</Text>
         <View style={styles.input}>
-          <Picker
-            selectedValue={regionSelect}
-            onValueChange={(itemValue) => setRegionSelect(itemValue)}
-            style={styles.picker}
-          >
-            <Picker.Item
-              label="Selecciona tu región"
-              value={null}
-              color={COLORS.black}
-            />
-            {REGIONES.map((region) => (
-              <Picker.Item
-                key={region.value}
-                label={region.label}
-                value={region.value}
-              />
-            ))}
-          </Picker>
-        </View>
+  <SelectorRegistro
+    value={regionSelect}
+    placeholder="Selecciona tu región"
+    title="Selecciona tu región"
+    options={REGIONES.map((region) => ({
+      label: region.label,
+      value: region.value,
+    }))}
+    onChange={(value) => {
+      setRegionSelect(value);
+      setComunaSelect(undefined);
+      setDistritoSelect(null);
+    }}
+  />
+</View>
         <Text style={[styles.label, styles.comunaLabel]}>Comuna:</Text>
         <View style={styles.input}>
-          <Picker
-            selectedValue={comunaSelect}
-            onValueChange={handlerSelectDistrito}
-            style={styles.picker}
-          >
-            <Picker.Item label="Selecciona tu comuna" value={null} />
-            {COMUNASSELECTED.map((comuna) => (
-              <Picker.Item
-                key={comuna.value}
-                label={comuna.label}
-                value={comuna.value}
-              />
-            ))}
-          </Picker>
-        </View>
+  <SelectorRegistro
+    value={comunaSelect}
+    placeholder="Selecciona tu comuna"
+    title="Selecciona tu comuna"
+    options={COMUNASSELECTED.map((comuna) => ({
+      label: comuna.label,
+      value: comuna.value,
+    }))}
+    onChange={handlerSelectDistrito}
+  />
+</View>
       </View>
       <View style={styles.containerButon}>
         <TouchableOpacity style={styles.buton} onPress={onChangeDistrito}>
@@ -288,22 +280,7 @@ const styles = StyleSheet.create({
     marginTop: responsiveHeightScale(5),
     borderRadius: responsiveWidthScale(10),
     backgroundColor: COLORS.verdeclaro,
-    overflow: "hidden",
     justifyContent: "center",
-  },
-
-  picker: {
-    width: "100%",
-    height: responsiveHeightScale(54),
-    color: COLORS.black,
-    fontFamily: FONTS.regular,
-    fontSize: Math.max(
-      11,
-      Math.min(
-        responsiveWidthScale(16),
-        responsiveHeightScale(16),
-      ),
-    ),
   },
 
   containerButon: {
@@ -356,10 +333,13 @@ const styles = StyleSheet.create({
   },
 
   distrito: {
-    color: COLORS.verdeclaro,
-    fontFamily: FONTS.bold,
-    letterSpacing: responsiveWidthScale(-20),
-    marginTop: responsiveHeightScale(-45),
-  },
+  color: COLORS.verdeclaro,
+  fontFamily: FONTS.bold,
+  letterSpacing: responsiveWidthScale(-20),
+  marginTop: -Math.min(
+    responsiveWidthScale(100),
+    responsiveHeightScale(100),
+  ),
+},
 });
 export default SelectDistrito;

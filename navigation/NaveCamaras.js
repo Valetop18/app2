@@ -1,5 +1,9 @@
 import React from "react";
 import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
+import {
+  Platform,
+  useWindowDimensions,
+} from "react-native";
 import { COLORS } from "../constants/colors";
 import {
   responsiveWidthScale,
@@ -24,6 +28,14 @@ const responsiveTabText = (baseValue) => {
 };
 
 const NaveCamaras = () => {
+  const { width, height } = useWindowDimensions();
+
+  const esTelefonoBajo =
+    Platform.OS === "android" &&
+    width <= 375 &&
+    height <= 680 &&
+    height > width;
+
   return (
     <Stack.Navigator
       initialRoute="Camaras"
@@ -33,6 +45,14 @@ const NaveCamaras = () => {
         tabBarLabelStyle: {
           fontSize: responsiveTabText(16.5),
           fontFamily: FONTS.bold,
+          margin: 0,
+          transform: [
+            {
+              translateY: esTelefonoBajo
+                ? -9
+                : -responsiveTabSize(2),
+            },
+          ],
         },
 
         tabBarInactiveTintColor: COLORS.greyM,
@@ -44,6 +64,7 @@ const NaveCamaras = () => {
         },
 
         tabBarStyle: {
+
           height: responsiveHeightScale(48),
           backgroundColor: COLORS.verdeclaro,
           elevation: 0,

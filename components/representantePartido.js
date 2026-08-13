@@ -1,4 +1,11 @@
-import { View, Text, Image, StyleSheet } from "react-native";
+import {
+  View,
+  Text,
+  Image,
+  StyleSheet,
+  Platform,
+  useWindowDimensions,
+} from "react-native";
 import { COLORS } from "../constants/colors";
 import MaterialIcons from "@react-native-vector-icons/material-icons";
 import Tooltip from "./tooltip";
@@ -21,6 +28,13 @@ const responsiveRepresentanteText = (baseValue) => {
 };
 
 const RepresentantePartido = ({ item }) => {
+  const { width, height } = useWindowDimensions();
+
+  const esTelefonoBajo =
+    Platform.OS === "android" &&
+    width <= 375 &&
+    height <= 680 &&
+    height > width;
   const TextoDinamico = () => {
     const o = item.text?.toLowerCase();
 
@@ -85,7 +99,12 @@ const RepresentantePartido = ({ item }) => {
   .includes("favor");
 
   return (
-    <View style={styles.container}>
+    <View
+  style={[
+    styles.container,
+    esTelefonoBajo && styles.containerTelefonoBajo,
+  ]}
+>
       <View style={styles.containImage}>
         <Image style={styles.foto} source={{ uri: item.foto }} />
       </View>
@@ -157,8 +176,8 @@ const styles = StyleSheet.create({
   },
 
   foto: {
-    width: 28,
-    height: 28,
+    width: responsiveWidthScale(28),
+    height: responsiveWidthScale(28),
     borderRadius: 100,
   },
 
@@ -186,6 +205,10 @@ const styles = StyleSheet.create({
     color: COLORS.black,
     includeFontPadding: false,
   },
+
+  containerTelefonoBajo: {
+  minHeight: responsiveHeightScale(40),
+},
 });
 
 export default RepresentantePartido;

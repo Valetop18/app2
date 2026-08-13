@@ -20,8 +20,16 @@ const responsiveBuscadorText = (baseValue) => {
   return Math.max(11, responsiveBuscadorSize(baseValue));
 };
 
-const Buscador = ({ header = false }) => {
+const Buscador = ({
+  header = false,
+  value,
+  onChangeText,
+  placeholder = "Ingresa una ley o tema de interés.",
+}) => {
   const { search, setSearch } = useContext(BuscadorContext);
+
+  const valorVisible = value !== undefined ? value : search;
+  const cambiarTexto = onChangeText ?? setSearch;
 
   return (
     <View
@@ -41,9 +49,10 @@ const Buscador = ({ header = false }) => {
       />
 
       <TextInput
-        value={search}
-        onChangeText={setSearch}
-        placeholder="Ingresa una ley o tema de interés."
+        value={valorVisible}
+        onChangeText={cambiarTexto}
+        placeholder={placeholder}
+        placeholderTextColor={COLORS.greyM}
         style={styles.input}
         cursorColor={COLORS.black}
       />
@@ -58,14 +67,25 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: COLORS.back,
     marginVertical: "0.5%",
-    elevation: 3,
-    shadowColor: COLORS.black,
     borderRadius: responsiveWidthScale(5),
+
+    // Android
+    elevation: 3,
+
+    // iOS
+    shadowColor: COLORS.black,
+    shadowOffset: {
+      width: 0,
+      height: responsiveWidthScale(2),
+    },
+    shadowOpacity: 0.12,
+    shadowRadius: responsiveWidthScale(4),
   },
 
   containerHeader: {
-    width: responsiveWidthScale(330),
+    width: responsiveWidthScale(320),
     maxWidth: "100%",
+    marginBottom: responsiveHeightScale(13),
   },
 
   containerNormal: {

@@ -13,6 +13,7 @@ import Ionicons from "@react-native-vector-icons/ionicons";
 import { useReacciones } from "../context/ReaccionesContext";
 import { FONTS } from "../constants/fonts";
 import { responsiveWidthScale } from "../utils/responsive";
+import { useData } from "../context/DataContext";
 
 const coloresPorPartido = {
   DES: COLORS.DES,
@@ -48,6 +49,13 @@ const GridRepresentPartido = ({ item }) => {
       from: "EstadisticaPartido",
     });
   };
+
+  const { totalesLikesRepresentantes } = useData();
+
+  const totalLikesVisible =
+    totalesLikesRepresentantes[item.id] ??
+    item.totalLikes ??
+    0;
 
   return (
     <View style={styles.card}>
@@ -171,7 +179,7 @@ const GridRepresentPartido = ({ item }) => {
             </View>
             <View style={styles.likesContainer}>
               <Text style={styles.likesText} numberOfLines={1}>
-                {item.totalLikes ?? 0}
+                {totalLikesVisible}
               </Text>
 
               <Ionicons

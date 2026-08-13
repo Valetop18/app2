@@ -8,6 +8,7 @@ import { RegisterStack } from "./RegisterStack";
 import { AppStack } from "./AppStack";
 import { UbicacionStack } from "./UbicacionStack";
 import { Splash } from "../screens/Splash";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 
 const MainNavigation = () => {
   const { user, tipoAuth, loading } = useAuth();
@@ -41,17 +42,19 @@ const MainNavigation = () => {
         : "sin-ubicacion";
 
   return (
-    <NavigationContainer key={navigationKey}>
-      {!user ? (
-        <AuthStack />
-      ) : tipoAuth === "register" ? (
-        <RegisterStack />
-      ) : tieneUbicacion ? (
-        <UbicacionStack />
-      ) : (
-        <AppStack />
-      )}
-    </NavigationContainer>
+    <SafeAreaProvider>
+      <NavigationContainer key={navigationKey}>
+        {!user ? (
+          <AuthStack />
+        ) : tipoAuth === "register" ? (
+          <RegisterStack />
+        ) : tieneUbicacion ? (
+          <UbicacionStack />
+        ) : (
+          <AppStack />
+        )}
+      </NavigationContainer>
+    </SafeAreaProvider>
   );
 };
 

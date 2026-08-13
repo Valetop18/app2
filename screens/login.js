@@ -29,6 +29,14 @@ import {
 } from "../utils/responsive";
 import { FONTS } from "../constants/fonts";
 
+import { Dimensions, PixelRatio } from "react-native";
+
+const { width, height } = Dimensions.get("window");
+
+console.log("ANCHO LOGICO:", width);
+console.log("ALTO LOGICO:", height);
+console.log("PIXEL RATIO:", PixelRatio.get());
+
 const INITIAL_STATE = {
   user: "",
   pass: "",

@@ -314,16 +314,26 @@ export const SearchResults = ({ data = [], onSelect, representante }) => {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: COLORS.back,
-    width: "96%",
-    marginTop: "1%",
-    marginVertical: "0.5%",
-    marginHorizontal: "2%",
-    elevation: 3,
-    shadowColor: COLORS.black,
-    borderRadius: responsiveWidthScale(10),
+  flex: 1,
+  backgroundColor: COLORS.back,
+  width: "96%",
+  marginTop: "1%",
+  marginVertical: "0.5%",
+  marginHorizontal: "2%",
+  borderRadius: responsiveWidthScale(10),
+
+  // Android
+  elevation: 3,
+
+  // iOS
+  shadowColor: COLORS.black,
+  shadowOffset: {
+    width: 0,
+    height: responsiveWidthScale(2),
   },
+  shadowOpacity: 0.12,
+  shadowRadius: responsiveWidthScale(4),
+},
 
   containerNombre: {
     flexDirection: "row",

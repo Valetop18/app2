@@ -20,6 +20,8 @@ const estadoInicialDiputados = {
 export const DataProvider = ({ children }) => {
   const [cacheDiputados, setCacheDiputados] = useState(estadoInicialDiputados);
   const [cacheDetalleDiputados, setCacheDetalleDiputados] = useState({});
+  const [totalesLikesRepresentantes, setTotalesLikesRepresentantes] =
+    useState({});
   const cargasDetalleDiputadosEnCurso = useRef({});
 
   const [loadingDiputados, setLoadingDiputados] = useState(false);
@@ -171,6 +173,59 @@ export const DataProvider = ({ children }) => {
     [actualizarColeccion],
   );
 
+  const actualizarTotalLikesRepresentante = useCallback(
+    (idRepresentante, nuevoTotal) => {
+      if (!idRepresentante) return;
+
+      const totalNormalizado = Math.max(Number(nuevoTotal) || 0, 0);
+
+      // Total global accesible desde cualquier pantalla.
+      setTotalesLikesRepresentantes((prev) => ({
+        ...prev,
+        [idRepresentante]: totalNormalizado,
+      }));
+
+      // Lista normal de diputados del distrito.
+      setCacheDiputados((prev) => ({
+        ...prev,
+        datos: prev.datos.map((item) =>
+          String(item.id) === String(idRepresentante)
+            ? {
+              ...item,
+              totalLikes: totalNormalizado,
+            }
+            : item,
+        ),
+      }));
+
+      // Detalle almacenado del representante.
+      setCacheDetalleDiputados((prev) => {
+        const detalleActual = prev[idRepresentante];
+
+        if (!detalleActual) {
+          return prev;
+        }
+
+        return {
+          ...prev,
+          [idRepresentante]: {
+            ...detalleActual,
+            datos: {
+              ...detalleActual.datos,
+              diputadoCompleto: detalleActual.datos?.diputadoCompleto
+                ? {
+                  ...detalleActual.datos.diputadoCompleto,
+                  totalLikes: totalNormalizado,
+                }
+                : detalleActual.datos?.diputadoCompleto,
+            },
+          },
+        };
+      });
+    },
+    [],
+  );
+
   const obtenerDiputado = useCallback(
     (id) => {
       return cacheDiputados.datos.find((diputado) => diputado.id === id);
@@ -237,8 +292,8 @@ export const DataProvider = ({ children }) => {
    */
   const limpiarCache = useCallback(() => {
     setCacheDiputados(estadoInicialDiputados);
-
     setCacheDetalleDiputados({});
+    setTotalesLikesRepresentantes({});
 
     cargaDiputadosEnCurso.current = null;
     cargasDetalleDiputadosEnCurso.current = {};
@@ -264,6 +319,9 @@ export const DataProvider = ({ children }) => {
       obtenerDetalleDiputado,
       cargarDetalleDiputado,
 
+      totalesLikesRepresentantes,
+      actualizarTotalLikesRepresentante,
+
       limpiarCache,
     }),
     [
@@ -277,6 +335,8 @@ export const DataProvider = ({ children }) => {
       cacheDetalleDiputados,
       obtenerDetalleDiputado,
       cargarDetalleDiputado,
+      totalesLikesRepresentantes,
+      actualizarTotalLikesRepresentante,
       limpiarCache,
     ],
   );

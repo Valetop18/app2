@@ -28,13 +28,13 @@ import {
 import { MsIcon } from "material-symbols-react-native";
 import { partidosRepository } from "../infrastructure/partidosRepository";
 import { useAuth } from "../context/AuthContext";
-import { legisladoresRepository } from "../infrastructure/legisladoresRepository";
 import { Skeleton } from "../components/Skeleton";
 import Ionicons from "@react-native-vector-icons/ionicons";
 import { responsiveWidthScale } from "../utils/responsive";
 import Tooltip from "../components/tooltip";
 import { TOOLTIPS } from "../components/tooltip";
 import { FONTS } from "../constants/fonts";
+import Buscador from "../components/Buscador";
 
 const coloresPorPartido = {
   DES: COLORS.DES,
@@ -64,6 +64,43 @@ const anchoGrafico = responsiveWidthScale(312);
 
 const MODAL_HEIGHT = Dimensions.get("window").height * 0.9;
 
+const ModalHeader = ({ icon, title, subtitle, onClose }) => {
+  return (
+    <View style={styles.modalHeader}>
+      <View style={styles.modalHeaderIcon}>
+        <MaterialIcons
+          name={icon}
+          size={responsiveWidthScale(24)}
+          color={COLORS.greenM}
+        />
+      </View>
+
+      <View style={styles.modalHeaderTitulos}>
+        <Text style={styles.modalHeaderTitulo} numberOfLines={1}>
+          {title}
+        </Text>
+
+        <Text style={styles.modalHeaderSubtitulo} numberOfLines={1}>
+          {subtitle}
+        </Text>
+      </View>
+
+      <TouchableOpacity
+        style={styles.modalHeaderCerrar}
+        onPress={onClose}
+        hitSlop={10}
+        activeOpacity={0.7}
+      >
+        <Ionicons
+          name="close"
+          size={responsiveWidthScale(18)}
+          color={COLORS.greenM}
+        />
+      </TouchableOpacity>
+    </View>
+  );
+};
+
 export const EstadisticaPartido = ({ route }) => {
   const navigation = useNavigation();
   const { user } = useAuth();
@@ -76,6 +113,7 @@ export const EstadisticaPartido = ({ route }) => {
 
   const [metricasHistoricas, setMetricasHistoricas] = useState([]);
   const [detalleMociones, setDetalleMociones] = useState([]);
+  const [busquedaMociones, setBusquedaMociones] = useState("");
   const [modalMocionesVisible, setModalMocionesVisible] = useState(false);
   const [loadingMociones, setLoadingMociones] = useState(false);
   const [representacionPromedio, setRepresentacionPromedio] = useState(0);
@@ -97,6 +135,14 @@ export const EstadisticaPartido = ({ route }) => {
     coincidencias: 0,
     totalReacciones: 0,
   });
+
+  const normalizarBusqueda = (texto = "") => {
+    return String(texto)
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .trim();
+  };
 
   const normalizarTexto = (texto = "") =>
     texto.trim().replace(/\s+/g, " ").toLowerCase();
@@ -132,6 +178,8 @@ export const EstadisticaPartido = ({ route }) => {
     return `${meses[Number(mes) - 1]} ${anio.slice(-2)}`;
   };
   const cargarDetalleMociones = async () => {
+    setBusquedaMociones("");
+
     try {
       setLoadingMociones(true);
 
@@ -168,13 +216,25 @@ export const EstadisticaPartido = ({ route }) => {
         }, {}),
       );
 
+      const esVotacionAprobada = (votacion) => {
+        const resultado = normalizarTexto(votacion?.resultado || "");
+
+        return resultado.startsWith("aprobad");
+      };
+
       const procesadas = agrupadas.map((mocion) => {
         let materiaAnterior = "";
         let articuloAnterior = "";
 
+        const votacionesOrdenadas = [...mocion.votaciones].sort(
+          (a, b) =>
+            Number(esVotacionAprobada(b)) -
+            Number(esVotacionAprobada(a)),
+        );
+
         return {
           ...mocion,
-          votaciones: mocion.votaciones.map((votacion) => {
+          votaciones: votacionesOrdenadas.map((votacion) => {
             const materiaActual =
               votacion.materiaResumen || votacion.materia || "";
 
@@ -204,7 +264,14 @@ export const EstadisticaPartido = ({ route }) => {
         };
       });
 
-      setDetalleMociones(procesadas);
+      const mocionesOrdenadas = [...procesadas].sort((a, b) => {
+        const aTieneAprobada = a.votaciones.some(esVotacionAprobada);
+        const bTieneAprobada = b.votaciones.some(esVotacionAprobada);
+
+        return Number(bTieneAprobada) - Number(aTieneAprobada);
+      });
+
+      setDetalleMociones(mocionesOrdenadas);
       setModalMocionesVisible(true);
     } catch (error) {
       console.error("Error cargando detalle de mociones:", error);
@@ -374,6 +441,35 @@ export const EstadisticaPartido = ({ route }) => {
 
   const { search, setSearch } = useContext(BuscadorContext);
 
+  const detalleMocionesFiltradas = detalleMociones.filter((mocion) => {
+    const busqueda = normalizarBusqueda(busquedaMociones);
+
+    if (!busqueda) {
+      return true;
+    }
+
+    const contenidoMocion = [
+      mocion.numeroBoletin,
+      mocion.titulo,
+
+      ...(mocion.votaciones ?? []).flatMap((votacion) => [
+        votacion.resultado,
+        votacion.materia,
+        votacion.materiaResumen,
+        votacion.materiaMostrar,
+        votacion.articulo,
+        votacion.articuloResumen,
+        votacion.articuloMostrar,
+        votacion.sesion,
+        votacion.fechaTexto,
+      ]),
+    ]
+      .filter(Boolean)
+      .join(" ");
+
+    return normalizarBusqueda(contenidoMocion).includes(busqueda);
+  });
+
   const dataLikesCompleta = metricasHistoricas.map((item) => ({
     value: Number(item.totalLikes ?? 0),
     label: formatearFechaGrafico(item.fechaSnapshot),
@@ -440,7 +536,7 @@ export const EstadisticaPartido = ({ route }) => {
   const spacingGraficoPequeno =
     dataRepresentacionGraficoPequeno.length > 1
       ? (anchoGraficoPequeno - responsiveWidthScale(24)) /
-        (dataRepresentacionGraficoPequeno.length - 1)
+      (dataRepresentacionGraficoPequeno.length - 1)
       : responsiveWidthScale(40);
 
   const mocionesNoAprobadas = Math.max(
@@ -498,7 +594,7 @@ export const EstadisticaPartido = ({ route }) => {
   const spacingGrafico =
     dataRepresentacion.length > 1
       ? (anchoGrafico - responsiveWidthScale(36)) /
-        (dataRepresentacion.length - 1)
+      (dataRepresentacion.length - 1)
       : responsiveWidthScale(50);
 
   return (
@@ -930,21 +1026,33 @@ export const EstadisticaPartido = ({ route }) => {
               />
 
               <View style={styles.modalMocionesContainer}>
-                <View style={styles.tituloContainer}>
-                  <Text style={styles.tituloText}>
-                    Mociones presentadas por el partido
-                  </Text>
+                <ModalHeader
+                  icon="addchart"
+                  title="Mociones presentadas"
+                  subtitle="Iniciativas ingresadas por el partido"
+                  onClose={() => setModalMocionesVisible(false)}
+                />
+                <View style={styles.buscadorMociones}>
+                  <Buscador
+                    value={busquedaMociones}
+                    onChangeText={setBusquedaMociones}
+                    placeholder="Buscar boletín, proyecto o tema..."
+                  />
                 </View>
-
                 {loadingMociones ? (
                   <View style={styles.loadingMociones}>
                     <ActivityIndicator size="large" color={COLORS.greenM} />
                   </View>
                 ) : (
                   <FlatList
-                    data={detalleMociones}
+                    data={detalleMocionesFiltradas}
                     keyExtractor={(item) => item.numeroBoletin}
                     contentContainerStyle={styles.listaMociones}
+                    ListEmptyComponent={
+                      <Text style={styles.sinResultadosMociones}>
+                        No se encontraron proyectos relacionados.
+                      </Text>
+                    }
                     renderItem={({ item }) => (
                       <View style={styles.mocionCard}>
                         <Text style={styles.mocionBoletin}>
@@ -1200,8 +1308,16 @@ const styles = StyleSheet.create({
     marginHorizontal: "2%",
     width: "96%",
     backgroundColor: COLORS.back,
+
     elevation: 3,
     shadowColor: COLORS.black,
+    shadowOffset: {
+      width: 0,
+      height: responsiveWidthScale(2),
+    },
+    shadowOpacity: 0.12,
+    shadowRadius: responsiveWidthScale(4),
+
     borderRadius: responsiveWidthScale(10),
   },
   container1: {
@@ -1586,5 +1702,72 @@ const styles = StyleSheet.create({
     fontSize: Math.max(11, responsiveWidthScale(11)),
     lineHeight: responsiveWidthScale(15),
     color: COLORS.greyM,
+  },
+  modalHeader: {
+    width: "100%",
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: responsiveWidthScale(18),
+    paddingTop: responsiveWidthScale(18),
+    paddingBottom: responsiveWidthScale(14),
+    backgroundColor: COLORS.back,
+  },
+
+  modalHeaderIcon: {
+    width: responsiveWidthScale(46),
+    height: responsiveWidthScale(46),
+    borderRadius: responsiveWidthScale(23),
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: COLORS.verdeclaro,
+  },
+
+  modalHeaderTitulos: {
+    flex: 1,
+    marginLeft: responsiveWidthScale(12),
+    paddingRight: responsiveWidthScale(18),
+  },
+
+  modalHeaderTitulo: {
+    color: COLORS.greenM,
+    fontSize: Math.max(11, responsiveWidthScale(17)),
+    lineHeight: responsiveWidthScale(23),
+    fontFamily: FONTS.bold,
+  },
+
+  modalHeaderSubtitulo: {
+    color: COLORS.greyM,
+    fontSize: Math.max(11, responsiveWidthScale(12.5)),
+    lineHeight: responsiveWidthScale(18),
+    fontFamily: FONTS.regular,
+  },
+
+  modalHeaderCerrar: {
+    position: "absolute",
+    top: responsiveWidthScale(12),
+    right: responsiveWidthScale(12),
+    width: responsiveWidthScale(18),
+    height: responsiveWidthScale(18),
+    borderRadius: responsiveWidthScale(9),
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: COLORS.verdeclaro,
+    zIndex: 10,
+  },
+  buscadorMociones: {
+    width: "100%",
+    paddingHorizontal: responsiveWidthScale(14),
+    paddingTop: responsiveWidthScale(10),
+    paddingBottom: responsiveWidthScale(4),
+    backgroundColor: COLORS.back,
+  },
+
+  sinResultadosMociones: {
+    paddingVertical: responsiveWidthScale(28),
+    paddingHorizontal: responsiveWidthScale(15),
+    fontFamily: FONTS.regular,
+    fontSize: Math.max(11, responsiveWidthScale(13)),
+    color: COLORS.greyM,
+    textAlign: "center",
   },
 });

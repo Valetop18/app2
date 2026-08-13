@@ -18,8 +18,14 @@ export const Diputados = ({ navigation }) => {
 
   const { reaccionesRepresentante, setReaccionRepresentante } = useReacciones();
 
-  const { diputados, loadingDiputados, cargarDiputados, actualizarDiputado } =
-    useData();
+  const {
+    diputados,
+    loadingDiputados,
+    cargarDiputados,
+    obtenerDiputado,
+    totalesLikesRepresentantes,
+    actualizarTotalLikesRepresentante,
+  } = useData();
 
   const handleSelected = (item) => {
     navigation.navigate("Descripcion", {
@@ -43,16 +49,21 @@ export const Diputados = ({ navigation }) => {
 
       const { anterior, nueva } = resultado;
 
-      actualizarDiputado(id, (dipu) => {
-        let cambio = 0;
+      let cambio = 0;
 
-        if (anterior !== "like" && nueva === "like") cambio = 1;
-        if (anterior === "like" && nueva !== "like") cambio = -1;
+      if (anterior !== "like" && nueva === "like") cambio = 1;
+      if (anterior === "like" && nueva !== "like") cambio = -1;
 
-        return {
-          totalLikes: Math.max((dipu.totalLikes ?? 0) + cambio, 0),
-        };
-      });
+      const diputadoActual = obtenerDiputado(id);
+
+      const totalActual =
+        totalesLikesRepresentantes[id] ??
+        diputadoActual?.totalLikes ??
+        0;
+
+      const nuevoTotal = Math.max(Number(totalActual) + cambio, 0);
+
+      actualizarTotalLikesRepresentante(id, nuevoTotal);
     } catch (error) {
       console.log("Error al reaccionar al diputado:", error);
     }
@@ -72,47 +83,47 @@ export const Diputados = ({ navigation }) => {
   };
 
   const skeletonCard = () => (
-  <View
-    style={{
-      flexDirection: "row",
-      width: "90%",
-      alignSelf: "center",
-      paddingVertical: responsiveHeightScale(18),
-    }}
-  >
-    <Skeleton
-      width={responsiveWidthScale(76)}
-      height={responsiveWidthScale(76)}
-      borderRadius={responsiveWidthScale(100)}
-    />
-
     <View
       style={{
-        marginHorizontal: responsiveWidthScale(15),
-        flex: 1,
+        flexDirection: "row",
+        width: "90%",
+        alignSelf: "center",
+        paddingVertical: responsiveHeightScale(18),
       }}
     >
       <Skeleton
-        width="100%"
-        height={responsiveHeightScale(25)}
-        borderRadius={responsiveWidthScale(4)}
+        width={responsiveWidthScale(76)}
+        height={responsiveWidthScale(76)}
+        borderRadius={responsiveWidthScale(100)}
       />
 
       <View
         style={{
-          marginHorizontal: responsiveWidthScale(5),
-          marginTop: responsiveHeightScale(12),
+          marginHorizontal: responsiveWidthScale(15),
+          flex: 1,
         }}
       >
         <Skeleton
-          width={responsiveWidthScale(120)}
-          height={responsiveHeightScale(15)}
+          width="100%"
+          height={responsiveHeightScale(25)}
           borderRadius={responsiveWidthScale(4)}
         />
+
+        <View
+          style={{
+            marginHorizontal: responsiveWidthScale(5),
+            marginTop: responsiveHeightScale(12),
+          }}
+        >
+          <Skeleton
+            width={responsiveWidthScale(120)}
+            height={responsiveHeightScale(15)}
+            borderRadius={responsiveWidthScale(4)}
+          />
+        </View>
       </View>
     </View>
-  </View>
-);
+  );
 
   return (
     <>

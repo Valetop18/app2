@@ -1,48 +1,54 @@
-import React, { useState } from 'react'
-import { View, TextInput, StyleSheet } from 'react-native'
-import { COLORS } from '../constants/colors';
-import { FONTS } from '../constants/fonts';
+import React from "react";
+import { View, TextInput, StyleSheet } from "react-native";
+import { COLORS } from "../constants/colors";
+import { FONTS } from "../constants/fonts";
 import { responsiveWidthScale } from "../utils/responsive";
 
-const Input = (props) => {
-    const { id, value, setInput } = props;
+const Input = ({
+  id,
+  value,
+  setInput,
+  style,
+  ...textInputProps
+}) => {
+  const onHandleChangeText = (text) => {
+    setInput(text);
+  };
 
-    const onHandleChangeText = (text,id) => {
-        console.log('text changed: ', text);
-        // setInput({
-        //     ...input,
-        //     [id]:text
-        // })
-        setInput(text);
-    }
+  return (
+    <View style={styles.inputContainer}>
+      <TextInput
+        {...textInputProps}
+        value={value}
+        onChangeText={onHandleChangeText}
+        cursorColor={COLORS.black}
+        maxFontSizeMultiplier={1}
+        style={[styles.input, style]}
+      />
+    </View>
+  );
+};
 
-    return (
-        <View style={{ flex: 1, justifyContent: 'center' }}>
-            <TextInput
-                { ...props }
-                style={styles.input}
-                onChangeText={text => onHandleChangeText(text, id)}
-                value={value}
-                cursorColor={COLORS.black}
-            />
-            
-        </View>
-    )
-}
-
-export default Input
+export default Input;
 
 const styles = StyleSheet.create({
+  inputContainer: {
+    flex: 1,
+    width: "100%",
+    height: "100%",
+    justifyContent: "center",
+  },
+
   input: {
     width: "100%",
     height: "100%",
     color: COLORS.black,
     fontFamily: FONTS.medium,
     fontSize: Math.max(11, responsiveWidthScale(16)),
-    marginLeft: "2%",
+
+    paddingHorizontal: responsiveWidthScale(10),
     paddingVertical: 0,
-    paddingBottom: 0,
-    paddingTop: 0,
+
     textAlignVertical: "center",
     includeFontPadding: false,
   },

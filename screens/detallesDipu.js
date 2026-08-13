@@ -68,6 +68,48 @@ const coloresPorPartido = {
 
 const MODAL_HEIGHT = Dimensions.get("window").height * 0.9;
 
+const ModalHeader = ({
+  icon,
+  title,
+  subtitle,
+  onClose,
+}) => {
+  return (
+    <View style={styles.modalHeader}>
+      <View style={styles.modalHeaderIcon}>
+        <MaterialIcons
+          name={icon}
+          size={responsiveWidthScale(24)}
+          color={COLORS.greenM}
+        />
+      </View>
+
+      <View style={styles.modalHeaderTitulos}>
+        <Text style={styles.modalHeaderTitulo}>
+          {title}
+        </Text>
+
+        <Text style={styles.modalHeaderSubtitulo}>
+          {subtitle}
+        </Text>
+      </View>
+
+      <TouchableOpacity
+        style={styles.modalHeaderCerrar}
+        onPress={onClose}
+        hitSlop={10}
+        activeOpacity={0.7}
+      >
+        <Ionicons
+          name="close"
+          size={responsiveWidthScale(18)}
+          color={COLORS.greenM}
+        />
+      </TouchableOpacity>
+    </View>
+  );
+};
+
 export const DescripcionDiputado = ({ route }) => {
   const { user, distrito, puedeInteractuar } = useAuth();
 
@@ -77,6 +119,8 @@ export const DescripcionDiputado = ({ route }) => {
     actualizarDiputado,
     obtenerDetalleDiputado,
     cargarDetalleDiputado,
+    totalesLikesRepresentantes,
+    actualizarTotalLikesRepresentante,
   } = useData();
 
   const idDiputado = route.params?.idDiputado;
@@ -105,6 +149,7 @@ export const DescripcionDiputado = ({ route }) => {
   const [buscandoVotaciones, setBuscandoVotaciones] = useState(false);
   const [adherenciaPartido, setAdherenciaPartido] = useState("");
   const [mocionesAprobadas, setMocionesAprobadas] = useState("0/0");
+  const [busquedaMociones, setBusquedaMociones] = useState("");
 
   const [detalleMociones, setDetalleMociones] = useState([]);
   const [modalMocionesVisible, setModalMocionesVisible] = useState(false);
@@ -124,6 +169,14 @@ export const DescripcionDiputado = ({ route }) => {
     totalReacciones: 0,
     usuariosParticipantes: 0,
   });
+
+  const normalizarBusqueda = (texto = "") => {
+  return String(texto)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+};
 
   useEffect(() => {
     if (!diputadoCache) return;
@@ -230,7 +283,7 @@ export const DescripcionDiputado = ({ route }) => {
   const spacingGraficoPequeno =
     dataRepresentacionGraficoPequeno.length > 1
       ? (anchoGraficoPequeno - responsiveWidthScale(24)) /
-        (dataRepresentacionGraficoPequeno.length - 1)
+      (dataRepresentacionGraficoPequeno.length - 1)
       : responsiveWidthScale(40);
 
   useEffect(() => {
@@ -373,9 +426,11 @@ export const DescripcionDiputado = ({ route }) => {
   };
 
   const cargarDetalleMociones = async () => {
-    if (!idDiputadoCamara) return;
+  if (!idDiputadoCamara) return;
 
-    try {
+  setBusquedaMociones("");
+
+  try {
       setLoadingMociones(true);
 
       const data =
@@ -413,11 +468,23 @@ export const DescripcionDiputado = ({ route }) => {
         }, {}),
       );
 
+      const esVotacionAprobada = (votacion) => {
+        const resultado = normalizarTexto(votacion?.resultado || "");
+
+        return resultado.startsWith("aprobad");
+      };
+
       const mocionesProcesadas = agrupadas.map((mocion) => {
         let materiaAnterior = "";
         let articuloAnterior = "";
 
-        const votaciones = mocion.votaciones.map((votacion) => {
+        const votacionesOrdenadas = [...mocion.votaciones].sort(
+          (a, b) =>
+            Number(esVotacionAprobada(b)) -
+            Number(esVotacionAprobada(a)),
+        );
+
+        const votaciones = votacionesOrdenadas.map((votacion) => {
           const materiaActual =
             votacion.materiaResumen || votacion.materia || "";
 
@@ -450,7 +517,14 @@ export const DescripcionDiputado = ({ route }) => {
         };
       });
 
-      setDetalleMociones(mocionesProcesadas);
+      const mocionesOrdenadas = [...mocionesProcesadas].sort((a, b) => {
+        const aTieneAprobada = a.votaciones.some(esVotacionAprobada);
+        const bTieneAprobada = b.votaciones.some(esVotacionAprobada);
+
+        return Number(bTieneAprobada) - Number(aTieneAprobada);
+      });
+
+      setDetalleMociones(mocionesOrdenadas);
       setModalMocionesVisible(true);
     } catch (error) {
       console.error("Error cargando detalle de mociones:", error);
@@ -458,6 +532,30 @@ export const DescripcionDiputado = ({ route }) => {
       setLoadingMociones(false);
     }
   };
+
+  const detalleMocionesFiltradas = detalleMociones.filter((mocion) => {
+  const busqueda = normalizarBusqueda(busquedaMociones);
+
+  if (!busqueda) return true;
+
+  const contenidoMocion = [
+    mocion.numeroBoletin,
+    mocion.titulo,
+
+    ...mocion.votaciones.flatMap((votacion) => [
+      votacion.materia,
+      votacion.materiaResumen,
+      votacion.materiaMostrar,
+      votacion.articulo,
+      votacion.articuloResumen,
+      votacion.articuloMostrar,
+    ]),
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  return normalizarBusqueda(contenidoMocion).includes(busqueda);
+});
 
   const getUltimasVotaciones = async (idDiputadoCamara) => {
     const votaciones = await votacionesRepository.getUltimasVotaciones(
@@ -563,8 +661,13 @@ export const DescripcionDiputado = ({ route }) => {
   const spacingGrafico =
     dataRepresentacion.length > 1
       ? (anchoGrafico - responsiveWidthScale(36)) /
-        (dataRepresentacion.length - 1)
+      (dataRepresentacion.length - 1)
       : responsiveWidthScale(50);
+
+  const totalLikesVisible =
+    totalesLikesRepresentantes[idDiputado] ??
+    diputado?.totalLikes ??
+    0;
 
   const renderGridItem = (item) => {
     return (
@@ -757,20 +860,28 @@ export const DescripcionDiputado = ({ route }) => {
 
                   const { anterior, nueva } = resultado;
 
-                  actualizarDiputado(idDiputado, (dipu) => {
-                    let cambio = 0;
+                  let cambio = 0;
 
-                    if (anterior !== "like" && nueva === "like") cambio = 1;
-                    if (anterior === "like" && nueva !== "like") cambio = -1;
+                  if (anterior !== "like" && nueva === "like") cambio = 1;
+                  if (anterior === "like" && nueva !== "like") cambio = -1;
 
-                    return {
-                      totalLikes: Math.max((dipu.totalLikes ?? 0) + cambio, 0),
-                    };
-                  });
+                  const totalActual =
+                    totalesLikesRepresentantes[idDiputado] ??
+                    diputado?.totalLikes ??
+                    0;
+
+                  const nuevoTotal = Math.max(Number(totalActual) + cambio, 0);
+
+                  actualizarTotalLikesRepresentante(idDiputado, nuevoTotal);
+
+                  setDiputado((prev) => ({
+                    ...prev,
+                    totalLikes: nuevoTotal,
+                  }));
                 }}
               >
                 <Text style={styles.interes}>
-                  {diputado?.totalLikes > 0 ? diputado.totalLikes : ""}
+                  {totalLikesVisible > 0 ? totalLikesVisible : ""}
                 </Text>
 
                 <Ionicons
@@ -1176,16 +1287,24 @@ export const DescripcionDiputado = ({ route }) => {
         </ScrollView>
       )}
 
-      <Modal visible={modalVisible} transparent animationType="fade">
+      <Modal
+        visible={modalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setModalVisible(false)}
+      >
         <View style={styles.overlay}>
           <Pressable
             style={StyleSheet.absoluteFill}
             onPress={() => setModalVisible(false)}
           />
           <View style={styles.modalContainer}>
-            <View style={styles.tituloContainer}>
-              <Text style={styles.tituloText}>COMPROMISOS*</Text>
-            </View>
+            <ModalHeader
+              icon="fact-check"
+              title="Compromisos*"
+              subtitle="Propuestas y prioridades del representante"
+              onClose={() => setModalVisible(false)}
+            />
             <View style={styles.modalBody}>
               <ScrollView
                 style={styles.modalScroll}
@@ -1219,19 +1338,33 @@ export const DescripcionDiputado = ({ route }) => {
           />
 
           <View style={styles.modalMocionesContainer}>
-            <View style={styles.tituloContainer}>
-              <Text style={styles.tituloText}>Proyectos Presentados</Text>
-            </View>
-
+            <ModalHeader
+              icon="addchart"
+              title="Proyectos presentados"
+              subtitle="Iniciativas ingresadas por el representante"
+              onClose={() => setModalMocionesVisible(false)}
+            />
+<View style={styles.buscadorMociones}>
+  <Buscador
+    value={busquedaMociones}
+    onChangeText={setBusquedaMociones}
+    placeholder="Buscar boletín, proyecto o tema..."
+  />
+</View>
             {loadingMociones ? (
               <View style={styles.loadingMociones}>
                 <ActivityIndicator size="large" color={COLORS.greenM} />
               </View>
             ) : (
               <FlatList
-                data={detalleMociones}
+                data={detalleMocionesFiltradas}
                 keyExtractor={(item) => item.numeroBoletin}
                 contentContainerStyle={styles.listaMociones}
+                ListEmptyComponent={
+  <Text style={styles.sinResultadosMociones}>
+    No se encontraron proyectos relacionados.
+  </Text>
+}
                 renderItem={({ item }) => (
                   <View style={styles.mocionCard}>
                     <Text style={styles.mocionBoletin}>
@@ -1484,9 +1617,19 @@ const styles = StyleSheet.create({
     marginHorizontal: "2%",
     width: "96%",
     backgroundColor: COLORS.back,
-    elevation: 3,
-    shadowColor: COLORS.black,
     borderRadius: 10,
+
+    // Android
+    elevation: 3,
+
+    // iOS
+    shadowColor: COLORS.black,
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
   },
   container1: {
     marginLeft: "8%",
@@ -1701,32 +1844,14 @@ const styles = StyleSheet.create({
     flexGrow: 0,
   },
   modalScrollContent: {
-    paddingVertical: responsiveWidthScale(20),
+    paddingTop: responsiveWidthScale(2),
+    paddingBottom: responsiveWidthScale(20),
   },
   modalFooter: {
     paddingVertical: responsiveWidthScale(10),
     marginHorizontal: "4%",
   },
-  tituloContainer: {
-    height: responsiveWidthScale(60),
-    width: "100%",
-    backgroundColor: COLORS.greenM,
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    borderTopEndRadius: responsiveWidthScale(10),
-    borderTopLeftRadius: responsiveWidthScale(10),
-    paddingTop: responsiveWidthScale(4),
-  },
-  tituloText: {
-    fontFamily: FONTS.bold,
-    fontSize: Math.max(11, responsiveWidthScale(20)),
-    color: COLORS.back,
-    lineHeight: responsiveWidthScale(22),
-    letterSpacing: responsiveWidthScale(2),
-    alignSelf: "center",
-    paddingTop: responsiveWidthScale(2),
-  },
+
   conteiner2: {
     paddingTop: responsiveWidthScale(10),
     flexShrink: 1,
@@ -1972,4 +2097,71 @@ const styles = StyleSheet.create({
     fontSize: Math.max(11, responsiveWidthScale(10.5)),
     fontFamily: FONTS.regular,
   },
+  modalHeader: {
+    width: "100%",
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: responsiveWidthScale(18),
+    paddingTop: responsiveWidthScale(18),
+    paddingBottom: responsiveWidthScale(14),
+    backgroundColor: COLORS.back,
+  },
+
+  modalHeaderIcon: {
+    width: responsiveWidthScale(46),
+    height: responsiveWidthScale(46),
+    borderRadius: responsiveWidthScale(23),
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: COLORS.verdeclaro,
+  },
+
+  modalHeaderTitulos: {
+    flex: 1,
+    marginLeft: responsiveWidthScale(12),
+    paddingRight: responsiveWidthScale(18),
+  },
+
+  modalHeaderTitulo: {
+    color: COLORS.greenM,
+    fontSize: Math.max(11, responsiveWidthScale(17)),
+    lineHeight: responsiveWidthScale(23),
+    fontFamily: FONTS.bold,
+  },
+
+  modalHeaderSubtitulo: {
+    color: COLORS.greyM,
+    fontSize: Math.max(11, responsiveWidthScale(12.5)),
+    lineHeight: responsiveWidthScale(18),
+    fontFamily: FONTS.regular,
+  },
+
+  modalHeaderCerrar: {
+    position: "absolute",
+    top: responsiveWidthScale(12),
+    right: responsiveWidthScale(12),
+    width: responsiveWidthScale(18),
+    height: responsiveWidthScale(18),
+    borderRadius: responsiveWidthScale(9),
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: COLORS.verdeclaro,
+    zIndex: 10,
+  },
+  buscadorMociones: {
+  width: "100%",
+  paddingHorizontal: responsiveWidthScale(14),
+  paddingTop: responsiveWidthScale(10),
+  paddingBottom: responsiveWidthScale(4),
+  backgroundColor: COLORS.back,
+},
+
+sinResultadosMociones: {
+  paddingVertical: responsiveWidthScale(28),
+  paddingHorizontal: responsiveWidthScale(15),
+  fontFamily: FONTS.regular,
+  fontSize: Math.max(11, responsiveWidthScale(13)),
+  color: COLORS.greyM,
+  textAlign: "center",
+},
 });

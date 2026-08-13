@@ -8,6 +8,7 @@ import {
   Pressable,
   ActivityIndicator,
   Animated,
+  Platform,
 } from "react-native";
 import { COLORS } from "../constants/colors";
 import { Desk } from "../components/desk";
@@ -142,7 +143,16 @@ export const CamaraDipu = () => {
   const [proyectoActivo, setProyectoActivo] = useState(0);
 
   const effectiveWidth = Math.min(Math.max(screenWidth, 350), 480);
-  const effectiveHeight = Math.min(Math.max(screenHeight, 720), 1040);
+  const effectiveHeight = Math.min(
+  Math.max(screenHeight, 640),
+  1040,
+);
+
+const esTelefonoBajo =
+  Platform.OS === "android" &&
+  screenWidth <= 375 &&
+  screenHeight <= 680 &&
+  screenHeight > screenWidth;
 
   const escalaHemiciclo = Math.min(effectiveWidth / 432, effectiveHeight / 960);
 
@@ -1554,8 +1564,12 @@ export const CamaraDipu = () => {
   const navigation = useNavigation();
 
   const handlePressNavigate = (partidoId) => {
+  setModalVisible(false);
+
+  setTimeout(() => {
     navigation.navigate("EstadisticaPartido", { partidoId });
-  };
+  }, 100);
+};
 
   const handlePressPause = () => {
     setPausado((prev) => !prev);
@@ -2028,15 +2042,12 @@ export const CamaraDipu = () => {
                   </View>
                   <View style={styles.conteiner2}>
                     <TouchableOpacity
-                      style={styles.botonPartido}
-                      onPress={() =>
-                        handlePressNavigate(
-                          //infoModal.partido,
-                          //console.log('partido', infoModal.partido),
-                          infoModal.partidoId,
-                        )
-                      }
-                    >
+  style={[
+    styles.botonPartido,
+    esTelefonoBajo && styles.botonPartidoTelefonoBajo,
+  ]}
+  onPress={() => handlePressNavigate(infoModal.partidoId)}
+>
                       <View
                         style={[
                           styles.conteinerPartido,
@@ -2050,9 +2061,9 @@ export const CamaraDipu = () => {
                             styles.infopartido,
                             {
                               fontSize:
-                                (infoModal.partido?.length ?? 0) >= 7
-                                  ? 10.2
-                                  : 12,
+  (infoModal.partido?.length ?? 0) >= 7
+    ? responsiveCamaraText(10.2, 8.5)
+    : responsiveCamaraText(12, 8.5),
                             },
                           ]}
                         >
@@ -2524,27 +2535,40 @@ const styles = StyleSheet.create({
     opacity: 0.9,
   },
   containerHoy: {
-    flexDirection: "row",
-    backgroundColor: COLORS.greenM,
-    height: 34,
-    justifyContent: "center",
-    alignItems: "center",
-    borderRadius: 4,
-    elevation: 3,
-    shadowColor: COLORS.black,
+  flexDirection: "row",
+  backgroundColor: COLORS.greenM,
+  height: 34,
+  justifyContent: "center",
+  alignItems: "center",
+  borderRadius: 4,
+
+  elevation: 3,
+  shadowColor: COLORS.black,
+  shadowOffset: {
+    width: 0,
+    height: responsiveCamaraSize(2),
   },
+  shadowOpacity: 0.12,
+  shadowRadius: responsiveCamaraSize(4),
+},
   containerCalendar: {
-    flexDirection: "row",
-    backgroundColor: COLORS.greenM,
-    height: responsiveCamaraSize(38),
-    paddingHorizontal: responsiveCamaraSize(14),
-    justifyContent: "center",
-    alignItems: "center",
-    borderRadius: responsiveCamaraSize(8),
-    elevation: 3,
-    shadowColor: COLORS.black,
-    shadowOpacity: 0.18,
+  flexDirection: "row",
+  backgroundColor: COLORS.greenM,
+  height: responsiveCamaraSize(38),
+  paddingHorizontal: responsiveCamaraSize(14),
+  justifyContent: "center",
+  alignItems: "center",
+  borderRadius: responsiveCamaraSize(8),
+
+  elevation: 3,
+  shadowColor: COLORS.black,
+  shadowOffset: {
+    width: 0,
+    height: responsiveCamaraSize(2),
   },
+  shadowOpacity: 0.18,
+  shadowRadius: responsiveCamaraSize(4),
+},
   calendarModal: {
     width: "100%",
     maxWidth: responsiveWidthScale(390),
@@ -2785,19 +2809,27 @@ const styles = StyleSheet.create({
     paddingHorizontal: responsiveWidthScale(18),
   },
   containerPlay: {
-    flexDirection: "row",
-    borderRadius: responsiveCamaraSize(20),
-    width: responsiveCamaraSize(140),
-    height: responsiveCamaraSize(40),
-    elevation: 3,
-    shadowColor: COLORS.black,
-    paddingHorizontal: responsiveCamaraSize(5),
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: COLORS.greenM,
-    overflow: "hidden",
-    zIndex: 2,
+  flexDirection: "row",
+  borderRadius: responsiveCamaraSize(20),
+  width: responsiveCamaraSize(140),
+  height: responsiveCamaraSize(40),
+
+  elevation: 3,
+  shadowColor: COLORS.black,
+  shadowOffset: {
+    width: 0,
+    height: responsiveCamaraSize(2),
   },
+  shadowOpacity: 0.12,
+  shadowRadius: responsiveCamaraSize(4),
+
+  paddingHorizontal: responsiveCamaraSize(5),
+  justifyContent: "center",
+  alignItems: "center",
+  backgroundColor: COLORS.greenM,
+  overflow: "hidden",
+  zIndex: 2,
+},
   playShimmer: {
     width: responsiveCamaraSize(100),
     height: responsiveCamaraSize(100),
@@ -2842,16 +2874,24 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   estadistica2: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: responsiveWidthScale(3),
-    elevation: 3,
-    shadowColor: COLORS.black,
-    backgroundColor: COLORS.back,
-    paddingHorizontal: responsiveWidthScale(6),
-    height: responsiveHeightScale(36),
+  flexDirection: "row",
+  alignItems: "center",
+  justifyContent: "center",
+  borderRadius: responsiveWidthScale(3),
+
+  elevation: 3,
+  shadowColor: COLORS.black,
+  shadowOffset: {
+    width: 0,
+    height: responsiveCamaraSize(2),
   },
+  shadowOpacity: 0.12,
+  shadowRadius: responsiveCamaraSize(4),
+
+  backgroundColor: COLORS.back,
+  paddingHorizontal: responsiveWidthScale(6),
+  height: responsiveHeightScale(36),
+},
   botonAsistencia: {
     flex: 105,
   },
@@ -2999,16 +3039,16 @@ const styles = StyleSheet.create({
   },
   infopartido: {
     fontFamily: FONTS.bold,
-    fontSize: responsiveCamaraText(10, 9),
     color: COLORS.greenM,
     top: responsiveCamaraSize(4),
     lineHeight: responsiveCamaraLineHeight(15),
   },
   infoPorcentaje: {
-    fontFamily: FONTS.bold,
-    color: COLORS.greenM,
-    fontSize: responsiveCamaraText(15),
-  },
+  fontFamily: FONTS.bold,
+  color: COLORS.greenM,
+  fontSize: responsiveCamaraText(15, 10),
+  lineHeight: responsiveCamaraLineHeight(17),
+},
   conteinerRepresentantes: {
     margin: 10,
   },
@@ -3017,4 +3057,7 @@ const styles = StyleSheet.create({
     fontSize: responsiveProyectoText(11.5),
     color: COLORS.greyM,
   },
+  botonPartidoTelefonoBajo: {
+  width: responsiveCamaraSize(310),
+},
 });

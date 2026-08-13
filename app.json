@@ -27,24 +27,24 @@
       }
     },
     "plugins": [
-  [
-    "expo-font",
-    {
-      "fonts": [
-        "node_modules/@expo-google-fonts/sedan/400Regular/Sedan_400Regular.ttf",
-
-        "node_modules/@expo-google-fonts/noto-sans-myanmar/100Thin/NotoSansMyanmar_100Thin.ttf",
-        "node_modules/@expo-google-fonts/noto-sans-myanmar/200ExtraLight/NotoSansMyanmar_200ExtraLight.ttf",
-        "node_modules/@expo-google-fonts/noto-sans-myanmar/300Light/NotoSansMyanmar_300Light.ttf",
-        "node_modules/@expo-google-fonts/noto-sans-myanmar/400Regular/NotoSansMyanmar_400Regular.ttf",
-        "node_modules/@expo-google-fonts/noto-sans-myanmar/500Medium/NotoSansMyanmar_500Medium.ttf",
-        "node_modules/@expo-google-fonts/noto-sans-myanmar/600SemiBold/NotoSansMyanmar_600SemiBold.ttf",
-        "node_modules/@expo-google-fonts/noto-sans-myanmar/700Bold/NotoSansMyanmar_700Bold.ttf",
-        "node_modules/@expo-google-fonts/noto-sans-myanmar/800ExtraBold/NotoSansMyanmar_800ExtraBold.ttf",
-        "node_modules/@expo-google-fonts/noto-sans-myanmar/900Black/NotoSansMyanmar_900Black.ttf"
-      ]
-    }
-  ]
-]
+      [
+        "expo-font",
+        {
+          "fonts": [
+            "node_modules/@expo-google-fonts/sedan/400Regular/Sedan_400Regular.ttf",
+            "node_modules/@expo-google-fonts/noto-sans-myanmar/100Thin/NotoSansMyanmar_100Thin.ttf",
+            "node_modules/@expo-google-fonts/noto-sans-myanmar/200ExtraLight/NotoSansMyanmar_200ExtraLight.ttf",
+            "node_modules/@expo-google-fonts/noto-sans-myanmar/300Light/NotoSansMyanmar_300Light.ttf",
+            "node_modules/@expo-google-fonts/noto-sans-myanmar/400Regular/NotoSansMyanmar_400Regular.ttf",
+            "node_modules/@expo-google-fonts/noto-sans-myanmar/500Medium/NotoSansMyanmar_500Medium.ttf",
+            "node_modules/@expo-google-fonts/noto-sans-myanmar/600SemiBold/NotoSansMyanmar_600SemiBold.ttf",
+            "node_modules/@expo-google-fonts/noto-sans-myanmar/700Bold/NotoSansMyanmar_700Bold.ttf",
+            "node_modules/@expo-google-fonts/noto-sans-myanmar/800ExtraBold/NotoSansMyanmar_800ExtraBold.ttf",
+            "node_modules/@expo-google-fonts/noto-sans-myanmar/900Black/NotoSansMyanmar_900Black.ttf"
+          ]
+        }
+      ],
+      "expo-fmt-consteval-fix"
+    ]
   }
 }

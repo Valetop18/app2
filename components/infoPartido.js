@@ -102,6 +102,7 @@ const styles = StyleSheet.create({
     color: COLORS.greenM,
     top: 5,
     lineHeight: 15,
+    fontWeight: "bold"
   },
   infoPorcentaje: {
     fontFamily: FONTS.bold,

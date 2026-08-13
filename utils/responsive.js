@@ -15,7 +15,7 @@ const limitedWidth = Math.min(Math.max(width, MIN_WIDTH), MAX_WIDTH);
 
 const widthRatio = limitedWidth / BASE_WIDTH;
 
-const MIN_HEIGHT = 720;
+const MIN_HEIGHT = 640;
 const MAX_HEIGHT = 1040;
 
 const limitedHeight = Math.min(Math.max(height, MIN_HEIGHT), MAX_HEIGHT);
@@ -109,7 +109,7 @@ export const responsiveWidthScale = (
  */
 export const responsiveHeightScale = (
   baseValue,
-  minHeight = 720,
+  minHeight = 640,
   maxHeight = 1040,
 ) => {
   const effectiveHeight = Math.min(

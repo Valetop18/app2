@@ -1,6 +1,13 @@
 import "react-native-gesture-handler";
 import { React } from "react";
-import { StyleSheet, View, Text, Platform, Pressable } from "react-native";
+import {
+  StyleSheet,
+  View,
+  Text,
+  Platform,
+  Pressable,
+  useWindowDimensions,
+} from "react-native";
 import {
   createDrawerNavigator,
   DrawerContentScrollView,
@@ -55,6 +62,14 @@ function CustomDrawerContent(props) {
   const { logout } = useAuth();
   const navigation = useNavigation();
 
+  const { width, height } = useWindowDimensions();
+
+  const esTelefonoBajo =
+    Platform.OS === "android" &&
+    width <= 375 &&
+    height <= 680 &&
+    height > width;
+
   const submit = async () => {
     try {
       await logout();
@@ -80,7 +95,11 @@ function CustomDrawerContent(props) {
       <DrawerItem
         pressOpacity={0.5}
         icon={({ focused, color }) => (
-          <MsIcon icon={msDirectorySync} size={16} color={COLORS.back} />
+          <MsIcon
+            icon={msDirectorySync}
+            size={responsiveNavSize(16)}
+            color={COLORS.back}
+          />
         )}
         label="Cambio de distrito"
         onPress={cambioDistrito}
@@ -90,10 +109,13 @@ function CustomDrawerContent(props) {
           margin: 0,
         }}
         style={{
-          marginLeft: "-6%",
+          marginLeft: esTelefonoBajo ? "-7%" : "-6%",
           borderRadius: 0,
           width: 500,
-          height: responsiveHeightScale(48),
+          ...(esTelefonoBajo && {
+            height: 48,
+            marginVertical: 0,
+          }),
         }}
         activeBackgroundColor={COLORS.verdeclaro}
         activeTintColor={COLORS.greenM}
@@ -103,7 +125,11 @@ function CustomDrawerContent(props) {
       />
       <DrawerItem
         icon={({ focused, color }) => (
-          <MsIcon icon={msLogout} size={16} color={COLORS.back} />
+          <MsIcon
+            icon={msLogout}
+            size={responsiveNavSize(16)}
+            color={COLORS.back}
+          />
         )}
         label="Cerrar Sesión"
         onPress={submit}
@@ -113,10 +139,13 @@ function CustomDrawerContent(props) {
           margin: 0,
         }}
         style={{
-          marginLeft: "-6%",
+          marginLeft: esTelefonoBajo ? "-7%" : "-6%",
           borderRadius: 0,
           width: 500,
-          height: responsiveHeightScale(48),
+          ...(esTelefonoBajo && {
+            height: 48,
+            marginVertical: 0,
+          }),
         }}
         activeBackgroundColor={COLORS.verdeclaro}
         activeTintColor={COLORS.greenM}
@@ -130,6 +159,14 @@ function CustomDrawerContent(props) {
 
 const MyDrawer = () => {
   const { user } = useAuth();
+
+  const { width, height } = useWindowDimensions();
+
+  const esTelefonoBajo =
+    Platform.OS === "android" &&
+    width <= 375 &&
+    height <= 680 &&
+    height > width;
 
   const rutaActiva = useNavigationState((state) => {
     const index = state.index;
@@ -153,6 +190,7 @@ const MyDrawer = () => {
       useLegacyImplementation
       screenOptions={({ navigation }) => ({
         headerTintColor: COLORS.greenM,
+        headerTitleAlign: "left",
         headerTitleStyle: {
           fontFamily: FONTS.bold,
           fontSize: responsiveNavText(25),
@@ -167,6 +205,9 @@ const MyDrawer = () => {
               color={COLORS.greenM}
               style={{
                 marginRight: responsiveWidthScale(25),
+                transform: rutaActiva.name.includes("Cámara")
+                  ? [{ translateY: -responsiveNavSize(4) }]
+                  : [],
               }}
             />
           </Pressable>
@@ -176,11 +217,15 @@ const MyDrawer = () => {
         headerStyle: {
           backgroundColor: COLORS.back,
           elevation: 0,
+          shadowColor: "transparent",
+          ...(esTelefonoBajo && {
+            height: 55,
+          }),
         },
         drawerStyle: {
           backgroundColor: COLORS.greenM,
           width: "50%",
-          height: "100%",
+
           borderRadius: 0,
         },
         drawerActiveBackgroundColor: COLORS.verdeclaro,
@@ -188,14 +233,17 @@ const MyDrawer = () => {
         drawerInactiveBackgroundColor: COLORS.greenM,
         drawerInactiveTintColor: COLORS.back,
         drawerItemStyle: {
-          marginLeft: "-6%",
+          marginLeft: esTelefonoBajo ? "-7%" : "-6%",
           borderRadius: 0,
           width: 500,
-          height: 48,
+          ...(esTelefonoBajo && {
+            height: 48,
+            marginVertical: 0,
+          }),
         },
         drawerLabelStyle: {
           fontFamily: FONTS.bold,
-          fontSize: 14,
+          fontSize: responsiveNavText(14),
           margin: 0,
         },
       })}
@@ -204,10 +252,7 @@ const MyDrawer = () => {
       <Drawer.Screen
         name="Principal"
         options={{
-          headerStyle: {
-            backgroundColor: COLORS.back,
-            elevation: 0,
-          },
+
           headerTitle: () => {
             if (rutaActiva.name.includes("Cámara")) {
               return <Buscador header />;

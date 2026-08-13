@@ -13,7 +13,7 @@ import Input from "../components/input";
 import { COLORS } from "../constants/colors";
 import { Ionicons } from "@react-native-vector-icons/ionicons";
 import { useNavigation } from "@react-navigation/native";
-import { Picker } from "@react-native-picker/picker";
+import SelectorRegistro from "../components/SelectorRegistro";
 import { useAuth } from "../context/AuthContext";
 import {
   responsiveWidthScale,
@@ -360,7 +360,7 @@ const Registro = () => {
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={styles.keyboardContainer}
     >
       <Modal
@@ -471,16 +471,16 @@ const Registro = () => {
               }}
             />
           </View>
-        </View>
+        </View><MonthYearPickerModal
+          visible={selectorMesAnioVisible}
+          month={mesCalendario}
+          year={anioCalendario}
+          onAccept={aceptarMesAnio}
+          onClose={() => setSelectorMesAnioVisible(false)}
+        />
       </Modal>
 
-      <MonthYearPickerModal
-        visible={selectorMesAnioVisible}
-        month={mesCalendario}
-        year={anioCalendario}
-        onAccept={aceptarMesAnio}
-        onClose={() => setSelectorMesAnioVisible(false)}
-      />
+
 
       <ScrollView
         style={styles.scrollView}
@@ -506,8 +506,6 @@ const Registro = () => {
                 value={nombre}
                 keyboardType="default"
                 textAlign="left"
-                paddingHorizontal={12}
-                fontFamily={FONTS.regular}
               />
             </View>
           </CampoRegistro>
@@ -522,7 +520,15 @@ const Registro = () => {
               onPress={() => setCalendarVisible(true)}
               activeOpacity={0.7}
             >
-              <Text style={styles.textoFecha}>{displayDate()}</Text>
+              <View style={styles.textoFechaContainer}>
+                <Text
+                  style={styles.textoFecha}
+                  numberOfLines={1}
+                  maxFontSizeMultiplier={1}
+                >
+                  {displayDate()}
+                </Text>
+              </View>
 
               <Ionicons
                 name="calendar-outline"
@@ -535,36 +541,34 @@ const Registro = () => {
             label="Género:"
             error={errores.genero ? "Selecciona un género" : null}
           >
-            <View style={styles.pickerContainer}>
-              <Picker
-                selectedValue={genero}
-                onValueChange={(itemValue) => setGenero(itemValue)}
-                style={styles.picker}
-                mode="dropdown"
-              >
-                <Picker.Item label="" value="" />
-                <Picker.Item label="Femenino" value="Femenino" />
-                <Picker.Item label="Masculino" value="Masculino" />
-                <Picker.Item label="LGTBIQ+" value="LGTBIQ+" />
-              </Picker>
-            </View>
+            <SelectorRegistro
+              value={genero}
+              placeholder="Selecciona un género"
+              title="Selecciona tu género"
+              options={[
+                { label: "Femenino", value: "Femenino" },
+                { label: "Masculino", value: "Masculino" },
+                { label: "LGTBIQ+", value: "LGTBIQ+" },
+              ]}
+              onChange={setGenero}
+              inputFontFamily={FONTS.bold}
+            />
           </CampoRegistro>
           <CampoRegistro
             label="Nacionalidad:"
             error={errores.pais ? "Introduce una nacionalidad" : null}
           >
-            <View style={styles.pickerContainer}>
-              <Picker
-                selectedValue={pais}
-                onValueChange={(itemValue) => setPais(itemValue)}
-                style={styles.picker}
-                mode="dropdown"
-              >
-                <Picker.Item label="" value="" />
-                <Picker.Item label="Chile" value="Chile" />
-                <Picker.Item label="Extranjero" value="Extranjero" />
-              </Picker>
-            </View>
+            <SelectorRegistro
+              value={pais}
+              placeholder="Selecciona una nacionalidad"
+              title="Selecciona tu nacionalidad"
+              options={[
+                { label: "Chile", value: "Chile" },
+                { label: "Extranjero", value: "Extranjero" },
+              ]}
+              onChange={setPais}
+              inputFontFamily={FONTS.bold}
+            />
           </CampoRegistro>
           <CampoRegistro label="RUT:" error={errores.rut ?? null}>
             <View style={styles.contenidoInput}>
@@ -574,7 +578,6 @@ const Registro = () => {
                 setInput={setRut}
                 value={rut}
                 keyboardType="default"
-                paddingHorizontal={12}
               />
             </View>
           </CampoRegistro>
@@ -589,7 +592,6 @@ const Registro = () => {
                 setInput={setEmail}
                 value={email}
                 keyboardType="email-address"
-                paddingHorizontal={12}
               />
             </View>
           </CampoRegistro>
@@ -609,7 +611,6 @@ const Registro = () => {
                 secureTextEntry
                 setInput={setPass}
                 value={pass}
-                paddingHorizontal={12}
               />
             </View>
           </CampoRegistro>
@@ -625,7 +626,6 @@ const Registro = () => {
                 secureTextEntry
                 setInput={setConfirmPass}
                 value={confirmPass}
-                paddingHorizontal={12}
               />
             </View>
           </CampoRegistro>
@@ -773,23 +773,10 @@ const styles = StyleSheet.create({
   contenidoInput: {
     width: "90%",
   },
-  pickerContainer: {
-    flex: 1,
-    width: "100%",
-    height: "100%",
-    justifyContent: "center",
-    overflow: "hidden",
-  },
   calendarOverlay: {
     flex: 1,
     justifyContent: "flex-end",
     backgroundColor: "rgba(0,0,0,0.35)",
-  },
-  picker: {
-    width: "100%",
-    height: responsiveHeightScale(50),
-    color: COLORS.black,
-    marginTop: responsiveHeightScale(-5),
   },
   botonFecha: {
     width: "100%",
@@ -802,7 +789,9 @@ const styles = StyleSheet.create({
   textoFecha: {
     color: COLORS.black,
     fontSize: Math.max(11, responsiveWidthScale(15)),
-    fontFamily: FONTS.regular,
+    fontFamily: FONTS.bold,
+    includeFontPadding: false,
+    paddingVertical: 0,
   },
   label: {
     color: COLORS.greenM,
@@ -876,5 +865,14 @@ const styles = StyleSheet.create({
     fontSize: Math.max(11, responsiveWidthScale(17)),
     fontFamily: FONTS.bold,
     marginRight: responsiveWidthScale(4),
+  },
+  textoFechaContainer: {
+    flex: 1,
+    height: "100%",
+    justifyContent: "center",
+    marginRight: responsiveWidthScale(8),
+  },
+  inputTextBold: {
+    fontFamily: FONTS.bold,
   },
 });
