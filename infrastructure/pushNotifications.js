@@ -1,5 +1,6 @@
 import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
+import Constants from "expo-constants";
 import { Platform } from "react-native";
 
 const ANDROID_CHANNEL_ID = "updates";
@@ -46,6 +47,11 @@ async function getNotificationPermission(){
 
     const requestedPermission = await Notifications.requestPermissionsAsync();
 
+    return {
+        granted: notificationsAreAllowed(requestedPermission),
+        requestedNow: true,
+        canAskAgain: requestedPermission.canAskAgain
+    };
 
 }
 
@@ -54,11 +60,49 @@ export async function registerCurrentDeviceForPushNotifications(userId){
         throw new Error("PUSH_USER_REQUERIDO")
     }
 
+    console.log(Device.isDevice)
+
     if (!Device.isDevice) {
         return { status: "dispositivo-no-soportado" }
     }
 
     //crear canal
+    console.log('canal android')
+    await ensureAndroidChannel();
+
+    const permission = await getNotificationPermission();
+
+    if(!permission.granted){
+        return {
+            status: "permission-denied",
+            canAskAgain: permission.canAskAgain,
+            requestedNow: permission.requestedNow
+        }
+    }
+
+    const projectId = 
+        Constants.expoConfig?.extra?.eas?.projectId ??
+        Constants.easConfig?.projectId;
+
+    if (!projectId) {
+        throw new Error("PUSH_PROJECT_ID_MISSING")
+    }
+
+    let expoPushToken;
+
+    try {
+        expoPushToken = ( await Notifications.getExpoPushTokenAsync({projectId}) ).data
+    } catch (error) {
+        throw new Error("PUSH_TOKEN_REQUEST_FAILED", { cause: error} );
+    }
+
+    //to-do: guardar en tabla de push tokens supabase
+
+    //to-do: guardar push token en async storage
+
+
+
+
 
 
 

@@ -1,5 +1,5 @@
 import "react-native-gesture-handler";
-import React from "react";
+import React, {useEffect} from "react";
 import { useFonts } from "expo-font";
 import MainNavigation from "./navigation/index";
 import store from "./store";
@@ -16,6 +16,7 @@ import { TooltipProvider } from "./context/TooltipProvider";
 import { ReaccionesProvider } from "./context/ReaccionesContext";
 import { DataProvider } from "./context/DataContext";
 import { Text, TextInput } from "react-native";
+import { registerCurrentDeviceForPushNotifications } from "./infrastructure/pushNotifications";
 
 Text.defaultProps = Text.defaultProps || {};
 Text.defaultProps.maxFontSizeMultiplier = 1.05;
@@ -24,6 +25,16 @@ TextInput.defaultProps = TextInput.defaultProps || {};
 TextInput.defaultProps.maxFontSizeMultiplier = 1.05;
 
 export default function App() {
+  useEffect( () => {
+
+    const iniciarNotificaciones = async () => {
+      console.log('iniciadno notificaciones')
+      await registerCurrentDeviceForPushNotifications('12345');
+      
+    }
+    iniciarNotificaciones();
+  }, [])
+
   let [fontsLoaded] = useFonts({
     Sedan_400Regular,
     Manrope_500Medium,
@@ -34,6 +45,8 @@ export default function App() {
   if (!fontsLoaded) {
     return null;
   }
+
+
 
   return (
     <AuthProvider>
