@@ -1,10 +1,11 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
   KeyboardAvoidingView,
+  Keyboard,
   Platform,
   ScrollView,
   Modal,
@@ -111,6 +112,19 @@ const Registro = () => {
   const [registrando, setRegistrando] = useState(false);
 
   const navigation = useNavigation();
+
+  const [scrollKey, setScrollKey] = useState(0);
+
+useEffect(() => {
+  const keyboardHideListener = Keyboard.addListener(
+    "keyboardDidHide",
+    () => {
+      setScrollKey((currentKey) => currentKey + 1);
+    },
+  );
+
+  return () => keyboardHideListener.remove();
+}, []);
 
   const formatearFechaLocal = (fecha) => {
     const year = fecha.getFullYear();
@@ -360,9 +374,10 @@ const Registro = () => {
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={styles.keyboardContainer}
-    >
+  key={scrollKey}
+  behavior={Platform.OS === "ios" ? "padding" : "height"}
+  style={styles.keyboardContainer}
+>
       <Modal
         visible={calendarVisible}
         transparent
@@ -483,12 +498,12 @@ const Registro = () => {
 
 
       <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.container}
-        keyboardShouldPersistTaps="handled"
-        contentInsetAdjustmentBehavior="never"
-        showsVerticalScrollIndicator={false}
-      >
+  style={styles.scrollView}
+  contentContainerStyle={styles.container}
+  keyboardShouldPersistTaps="handled"
+  contentInsetAdjustmentBehavior="never"
+  showsVerticalScrollIndicator={false}
+>
         <View style={styles.containerTitle}>
           <Text style={styles.title}>Registro</Text>
           <Text style={styles.subtitle}>Crea tu cuenta</Text>
@@ -522,12 +537,15 @@ const Registro = () => {
             >
               <View style={styles.textoFechaContainer}>
                 <Text
-                  style={styles.textoFecha}
-                  numberOfLines={1}
-                  maxFontSizeMultiplier={1}
-                >
-                  {displayDate()}
-                </Text>
+  style={[
+    styles.textoFecha,
+    !date && styles.textoFechaPlaceholder,
+  ]}
+  numberOfLines={1}
+  maxFontSizeMultiplier={1}
+>
+  {displayDate()}
+</Text>
               </View>
 
               <Ionicons
@@ -875,4 +893,7 @@ const styles = StyleSheet.create({
   inputTextBold: {
     fontFamily: FONTS.bold,
   },
+  textoFechaPlaceholder: {
+  color: COLORS.grey,
+},
 });

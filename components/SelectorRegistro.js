@@ -42,16 +42,16 @@ const SelectorRegistro = ({
       >
         <View style={styles.selectorTextContainer}>
           <Text
-  style={[
-    styles.selectorText,
-    { fontFamily: inputFontFamily },
-    !opcionSeleccionada && styles.placeholderText,
-  ]}
-  numberOfLines={1}
-  maxFontSizeMultiplier={1}
->
-  {opcionSeleccionada?.label || placeholder}
-</Text>
+            style={[
+              styles.selectorText,
+              { fontFamily: inputFontFamily },
+              !opcionSeleccionada && styles.placeholderText,
+            ]}
+            numberOfLines={1}
+            maxFontSizeMultiplier={1}
+          >
+            {opcionSeleccionada?.label || placeholder}
+          </Text>
         </View>
 
         <Ionicons
@@ -163,11 +163,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: responsiveWidthScale(12),
   },
   selectorText: {
-  color: COLORS.black,
-  fontSize: Math.max(11, responsiveWidthScale(15)),
-  includeFontPadding: false,
-  paddingVertical: 0,
-},
+    color: COLORS.black,
+    fontSize: Math.max(11, responsiveWidthScale(15)),
+    includeFontPadding: false,
+    paddingVertical: 0,
+  },
   placeholderText: {
     color: COLORS.grey,
   },
