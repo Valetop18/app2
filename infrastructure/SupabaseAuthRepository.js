@@ -62,6 +62,7 @@ export class SupabaseAuthRepository {
       nombre: profileData.nombre,
       distrito: null,
       circunscripcion: null,
+      pais: profileData.pais,
     });
   }
 

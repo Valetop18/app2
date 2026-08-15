@@ -100,6 +100,8 @@ const styles = StyleSheet.create({
     color: COLORS.black,
     paddingVertical: 0,
     paddingHorizontal: 0,
+    includeFontPadding: false,
+    textAlignVertical: "center",
   },
 });
 

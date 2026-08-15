@@ -116,6 +116,10 @@ const Registro = () => {
   const [scrollKey, setScrollKey] = useState(0);
 
 useEffect(() => {
+  if (Platform.OS !== "android") {
+    return;
+  }
+
   const keyboardHideListener = Keyboard.addListener(
     "keyboardDidHide",
     () => {
@@ -374,7 +378,7 @@ useEffect(() => {
 
   return (
     <KeyboardAvoidingView
-  key={scrollKey}
+  key={Platform.OS === "android" ? scrollKey : "registro-ios"}
   behavior={Platform.OS === "ios" ? "padding" : "height"}
   style={styles.keyboardContainer}
 >
