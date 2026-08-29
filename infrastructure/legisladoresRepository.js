@@ -86,6 +86,50 @@ function calcularPorcentajeAsistenciaPartido(diputados, fecha = null) {
   return Math.min(porcentaje, 100);
 }
 
+function calcularPorcentajeAsistenciaPartidoSenadores(
+  senadores,
+  fecha = null,
+) {
+  let total = 0;
+  let presentes = 0;
+
+  senadores.forEach((sena) => {
+    let asistencias = sena.senador_asistencia || [];
+
+    if (fecha) {
+      asistencias = asistencias.filter((a) => a.fecha_date === fecha);
+    }
+
+    total += asistencias.length;
+
+    asistencias.forEach((a) => {
+      const asistencia = a.asistencia?.trim().toLowerCase();
+      const observacion = a.justificacion?.trim().toLowerCase() || "";
+
+      const presente = asistencia === "asiste";
+
+      if (presente) {
+        presentes++;
+      }
+    });
+
+    if (!fecha) {
+      const ausenciasJustificadas =
+        Number(
+          sena?.asistencia_resumen_senadores?.ausencias_justificadas,
+        ) || 0;
+
+      presentes += ausenciasJustificadas;
+    }
+  });
+
+  if (total === 0) return 0;
+
+  const porcentaje = Math.round((presentes / total) * 100);
+
+  return Math.min(porcentaje, 100);
+}
+
 export const legisladoresRepository = {
   async getLegisladorById(id) {
     try {
@@ -161,9 +205,9 @@ export const legisladoresRepository = {
         puntajeEstadistico: data.diputados[0].puntaje_estadistico ?? 0,
         diputado: esDiputado
           ? {
-              id: data.diputados[0].id,
-              distrito: data.diputados[0].distrito,
-            }
+            id: data.diputados[0].id,
+            distrito: data.diputados[0].distrito,
+          }
           : null,
         senador: esSenador
           ? { circunscripcion: data.senadores[0].circunscripcion }
@@ -358,8 +402,8 @@ export const legisladoresRepository = {
 
           const registroSesion = numeroSesionObjetivo
             ? dipu.asistencia.find(
-                (a) => a.numero_sesion === numeroSesionObjetivo,
-              )
+              (a) => a.numero_sesion === numeroSesionObjetivo,
+            )
             : null;
 
           return {
@@ -388,103 +432,338 @@ export const legisladoresRepository = {
     }
   },
 
+  async getSenadorById(id) {
+    try {
+      const { data, error } = await supabase
+        .from("legisladores")
+        .select(
+          `
+          id,
+          nombre,
+          url_img,
+          fecha_nacimiento,
+          profesion,
+          trayectoria,
+          periodo_inicio,
+          periodo_fin,
+          partido_id,
+          estado,
+
+          partidos (
+            id,
+            nombre,
+            sigla
+          ),
+
+          senadores (
+            id,
+            circunscripcion,
+            ranking_estadistico,
+            puntaje_estadistico,
+
+            senador_asistencia (
+              fecha,
+              sesion,
+              tipo,
+              asistencia,
+              justificacion
+            ),
+
+            asistencia_resumen_senadores (
+              ausencias_justificadas
+            ),
+
+            senador_oficios (
+              numero_oficio
+            ),
+
+            senador_mociones (
+              id_mocion
+            ),
+
+            senador_comisiones (
+              cargo,
+              comisiones_senado (
+                id_comision,
+                nombre
+              )
+            ),
+
+            senador_acuerdos (
+              id_acuerdo
+            )
+          )
+        `,
+        )
+        .eq("id", id)
+        .single();
+
+      if (error) throw error;
+
+      const esSenador = data.senadores && data.senadores.length > 0;
+
+      if (!esSenador) {
+        return null;
+      }
+
+      const senador = data.senadores[0];
+
+      return {
+        id: data.id,
+        nombre: data.nombre,
+        profesion: data.profesion,
+        trayectoria: data.trayectoria,
+        periodoInicio: data.periodo_inicio,
+        periodoFin: data.periodo_fin,
+        estado: data.estado,
+        foto: getPublicUrl(data.url_img, BUCKET_LEGISLADORES),
+        edad: calcularEdad(data.fecha_nacimiento),
+        partido: data.partidos ? data.partidos.sigla : "",
+
+        senador: {
+          id: senador.id,
+          circunscripcion: senador.circunscripcion,
+        },
+
+        circunscripcion: senador.circunscripcion,
+        rankingEstadistico: senador.ranking_estadistico ?? null,
+        puntajeEstadistico: senador.puntaje_estadistico ?? 0,
+
+        asistencia: calcularPorcentajeAsistencia(
+          senador.senador_asistencia,
+          senador.asistencia_resumen_senadores?.ausencias_justificadas,
+        ),
+
+        oficios: calcularNumeroOficios(
+          senador.senador_oficios,
+        ),
+
+        mociones: calcularNumeroOficios(
+          senador.senador_mociones,
+        ),
+
+        comisiones: senador.senador_comisiones.map(
+          (senadorComision) => ({
+            id: senadorComision.comisiones_senado.id_comision,
+            nombre: senadorComision.comisiones_senado.nombre,
+            cargo: senadorComision.cargo,
+          }),
+        ),
+
+        acuerdos: calcularNumeroOficios(
+          senador.senador_acuerdos,
+        ),
+      };
+    } catch (error) {
+      console.error("Error al obtener senador: ", error.message);
+      return null;
+    }
+  },
+
   async getSenadoresByCircunscripcion(circunscripcion) {
     try {
       const { data, error } = await supabase
         .from("senadores")
         .select(
           `
-                id,
-                circunscripcion,
-                legisladores (
-                    id,
-                    nombre,
-                    url_img,
-                    fecha_nacimiento,
-                    profesion,
-                    trayectoria,
-                    periodo_inicio,
-                    periodo_fin,
-                    partidos (
-                        id,
-                        nombre,
-                        sigla
-                    )
-                )    
-            `,
+          id,
+          circunscripcion,
+          ranking_estadistico,
+          puntaje_estadistico,
+
+          senador_asistencia (
+            fecha,
+            sesion,
+            tipo,
+            asistencia,
+            justificacion
+          ),
+
+          asistencia_resumen_senadores (
+            ausencias_justificadas
+          ),
+
+          senador_oficios (
+            numero_oficio
+          ),
+
+          senador_mociones (
+            id_mocion
+          ),
+
+          senador_acuerdos (
+  id_acuerdo
+),
+
+          legisladores (
+            id,
+            nombre,
+            url_img,
+            fecha_nacimiento,
+            profesion,
+            trayectoria,
+            periodo_inicio,
+            periodo_fin,
+            partidos (
+              id,
+              nombre,
+              sigla
+            )
+          )
+        `,
         )
         .eq("circunscripcion", circunscripcion);
 
       if (error) throw error;
 
-      return data.map((senador) => {
-        const legislador = senador.legisladores;
-        const partido = legislador?.partidos;
+      const senadoresMapeados = await Promise.all(
+        data.map(async (senador) => {
+          const legislador = senador.legisladores;
+          const partido = legislador?.partidos;
+          const resumenAsistencia = senador.asistencia_resumen_senadores;
 
-        return {
-          id: legislador.id,
-          nombre: legislador.nombre,
-          circunscripcion: senador.circunscripcion,
-          profesion: legislador.profesion,
-          trayectoria: legislador.trayectoria,
-          periodoInicio: legislador.periodo_inicio,
-          periodoFin: legislador.periodo_fin,
-          partido: partido ? partido.sigla : "",
-          foto: getPublicUrl(legislador.url_img, BUCKET_LEGISLADORES),
-          edad: calcularEdad(legislador.fecha_nacimiento),
-        };
-      });
+          const porcentajeVotaciones =
+            await legisladoresRepository.getParticipacionHistoricaSenador(
+              senador.id,
+            );
 
-      return data;
+          const representacionCircunscripcion =
+            await legisladoresRepository.getRepresentacionCircunscripcionSenador(
+              senador.id,
+            );
+
+          const totalLikes =
+            await legisladoresRepository.getTotalLikesRepresentante(
+              legislador.id,
+            );
+
+          return {
+            id: legislador.id,
+            idSenador: senador.id,
+            nombre: legislador.nombre,
+            circunscripcion: senador.circunscripcion,
+            rankingEstadistico: senador.ranking_estadistico ?? null,
+            puntajeEstadistico: senador.puntaje_estadistico ?? 0,
+            profesion: legislador.profesion,
+            trayectoria: legislador.trayectoria,
+            periodoInicio: legislador.periodo_inicio,
+            periodoFin: legislador.periodo_fin,
+            partido: partido ? partido.sigla : "",
+            foto: getPublicUrl(legislador.url_img, BUCKET_LEGISLADORES),
+            edad: calcularEdad(legislador.fecha_nacimiento),
+
+            asistencia: calcularPorcentajeAsistencia(
+              senador.senador_asistencia,
+              resumenAsistencia?.ausencias_justificadas,
+            ),
+
+            votaciones: Math.round(porcentajeVotaciones ?? 0),
+
+            oficios: calcularNumeroOficios(senador.senador_oficios),
+            mociones: calcularNumeroOficios(senador.senador_mociones),
+            acuerdos: calcularNumeroOficios(senador.senador_acuerdos),
+
+            representacionDistrital:
+              representacionCircunscripcion.representacion,
+
+            representacionCoincidencias:
+              representacionCircunscripcion.coincidencias,
+
+            representacionTotalReacciones:
+              representacionCircunscripcion.totalReacciones,
+
+            representacionUsuarios:
+              representacionCircunscripcion.usuariosParticipantes,
+
+            totalLikes,
+          };
+        }),
+      );
+
+      return senadoresMapeados;
     } catch (error) {
       console.error("Error al obtener senadores: ", error.message);
       return [];
     }
   },
 
-  async getSenadoresByPartido(partidoId) {
+  async getSenadoresByPartido(partidoId, numeroSesion = null, modoData) {
     try {
+      const esModoEspefico = modoData === "especifica";
+
+      const numeroSesionObjetivo = esModoEspefico ? numeroSesion : null;
+
       const { data, error } = await supabase
         .from("senadores")
         .select(
           `
-                id,
-                circunscripcion,
-                legisladores!inner (
-                    id,
-                    nombre,
-                    url_img,
-                    periodo_inicio,
-                    periodo_fin,
-                    partido_id,
-                    partidos (
-                        id,
-                        nombre,
-                        sigla
-                    )
-                )    
-            `,
+          id,
+          circunscripcion,
+          senador_asistencia (
+            asistencia,
+            justificacion,
+            fecha,
+            sesion
+          ),
+          asistencia_resumen_senadores (
+            ausencias_justificadas
+          ),
+          legisladores!inner (
+            id,
+            nombre,
+            url_img,
+            periodo_inicio,
+            periodo_fin,
+            partido_id,
+            partidos (
+              id,
+              nombre,
+              sigla
+            )
+          )
+        `,
         )
         .eq("legisladores.partido_id", partidoId);
 
       if (error) throw error;
 
-      return data.map((sena) => {
-        const legislador = sena.legisladores;
-        const partido = legislador?.partidos;
+      return {
+        modoData,
+        senadores: data.map((sena) => {
+          const legislador = sena.legisladores;
+          const partido = legislador?.partidos;
+          const resumenAsistencia = sena.asistencia_resumen_senadores;
 
-        return {
-          id: legislador.id,
-          nombre: legislador.nombre,
-          circunscripcion: sena.circunscripcion,
-          periodoInicio: legislador.periodo_inicio,
-          periodoFin: legislador.periodo_fin,
-          partido: partido ? partido.sigla : "",
-          foto: getPublicUrl(legislador.url_img, BUCKET_LEGISLADORES),
-        };
-      });
+          const registroSesion = numeroSesionObjetivo
+            ? sena.senador_asistencia.find(
+              (a) => a.sesion === numeroSesionObjetivo,
+            )
+            : null;
 
-      return data;
+          return {
+            id: legislador.id,
+            nombre: legislador.nombre,
+            circunscripcion: sena.circunscripcion,
+            periodoInicio: legislador.periodo_inicio,
+            periodoFin: legislador.periodo_fin,
+            partido: partido ? partido.sigla : "",
+            foto: getPublicUrl(legislador.url_img, BUCKET_LEGISLADORES),
+
+            asistencia: calcularPorcentajeAsistencia(
+              sena.senador_asistencia,
+              resumenAsistencia?.ausencias_justificadas,
+            ),
+
+            modoData,
+
+            asistenciaSesion: registroSesion?.asistencia === "Asiste",
+
+            observacion: registroSesion
+              ? registroSesion.justificacion
+              : sena.senador_asistencia[0]?.justificacion,
+          };
+        }),
+      };
     } catch (error) {
       console.error("Error al obtener senadores: ", error.message);
       return [];
@@ -559,6 +838,57 @@ export const legisladoresRepository = {
     }
   },
 
+  async getPorcentajeAsistenciaPartidoSenadores(partidoId) {
+    try {
+      const { data, error } = await supabase
+        .from("senadores")
+        .select(
+          `
+          senador_asistencia (
+            asistencia,
+            justificacion,
+            fecha_date
+          ),
+          asistencia_resumen_senadores (
+            ausencias_justificadas
+          ),
+          legisladores!inner (
+            partido_id
+          )
+        `,
+        )
+        .eq("legisladores.partido_id", partidoId);
+
+      if (error) throw error;
+
+      const hoy = new Date().toISOString().split("T")[0];
+
+      const porcentajeAsistenciaHistorica =
+        calcularPorcentajeAsistenciaPartidoSenadores(data);
+
+      const porcentajeAsistenciaHoy =
+        calcularPorcentajeAsistenciaPartidoSenadores(
+          data,
+          hoy,
+        );
+
+      return {
+        porcentajeAsistenciaHoy,
+        porcentajeAsistenciaHistorica,
+      };
+    } catch (error) {
+      console.error(
+        "Error al obtener asistencia del partido Senado",
+        error,
+      );
+
+      return {
+        porcentajeAsistenciaHoy: 0,
+        porcentajeAsistenciaHistorica: 0,
+      };
+    }
+  },
+
   async getAtrasosDiputado(idDiputado) {
     try {
       const { data, error } = await supabase.rpc(
@@ -601,6 +931,28 @@ export const legisladoresRepository = {
     }
   },
 
+  async getAdherenciaSenadorPartido(idSenador) {
+    try {
+      const { data, error } = await supabase.rpc(
+        "adherencia_senador_partido",
+        {
+          p_id_senador: idSenador,
+        },
+      );
+
+      if (error) throw error;
+
+      return data ?? 0;
+    } catch (error) {
+      console.error(
+        "Error al obtener adherencia senador-partido:",
+        error.message,
+      );
+
+      return 0;
+    }
+  },
+
   async getMocionesAprobadasDiputado(idDiputado) {
     try {
       const { data, error } = await supabase.rpc(
@@ -621,6 +973,38 @@ export const legisladoresRepository = {
       };
     } catch (error) {
       console.error("Error al obtener mociones aprobadas:", error.message);
+      return {
+        aprobadas: 0,
+        total: 0,
+        fraccion: "0/0",
+      };
+    }
+  },
+
+  async getMocionesAprobadasSenador(idSenador) {
+    try {
+      const { data, error } = await supabase.rpc(
+        "mociones_aprobadas_senador",
+        {
+          p_id_senador: idSenador,
+        },
+      );
+
+      if (error) throw error;
+
+      const resultado = data?.[0];
+
+      return {
+        aprobadas: resultado?.aprobadas ?? 0,
+        total: resultado?.total_mociones ?? 0,
+        fraccion: resultado?.fraccion ?? "0/0",
+      };
+    } catch (error) {
+      console.error(
+        "Error al obtener mociones aprobadas del senador:",
+        error.message,
+      );
+
       return {
         aprobadas: 0,
         total: 0,
@@ -661,6 +1045,39 @@ export const legisladoresRepository = {
     }
   },
 
+  async getCompatibilidadUsuarioSenador(userId, idSenador) {
+    try {
+      const { data, error } = await supabase.rpc(
+        "compatibilidad_usuario_senador",
+        {
+          p_user_id: userId,
+          p_id_senador: idSenador,
+        },
+      );
+
+      if (error) throw error;
+
+      const resultado = data?.[0];
+
+      return {
+        compatibilidad: resultado?.compatibilidad ?? 0,
+        coincidencias: resultado?.coincidencias ?? 0,
+        totalReacciones: resultado?.total_reacciones ?? 0,
+      };
+    } catch (error) {
+      console.error(
+        "Error al obtener compatibilidad usuario-senador:",
+        error.message,
+      );
+
+      return {
+        compatibilidad: 0,
+        coincidencias: 0,
+        totalReacciones: 0,
+      };
+    }
+  },
+
   async getRepresentacionDistritalDiputado(idDiputado) {
     try {
       const { data, error } = await supabase.rpc(
@@ -683,6 +1100,40 @@ export const legisladoresRepository = {
     } catch (error) {
       console.error(
         "Error al obtener representación distrital:",
+        error.message,
+      );
+
+      return {
+        representacion: 0,
+        coincidencias: 0,
+        totalReacciones: 0,
+        usuariosParticipantes: 0,
+      };
+    }
+  },
+
+  async getRepresentacionCircunscripcionSenador(idSenador) {
+    try {
+      const { data, error } = await supabase.rpc(
+        "representacion_circunscripcion_senador",
+        {
+          p_id_senador: idSenador,
+        },
+      );
+
+      if (error) throw error;
+
+      const resultado = data?.[0];
+
+      return {
+        representacion: resultado?.representacion ?? 0,
+        coincidencias: resultado?.coincidencias ?? 0,
+        totalReacciones: resultado?.total_reacciones ?? 0,
+        usuariosParticipantes: resultado?.usuarios_participantes ?? 0,
+      };
+    } catch (error) {
+      console.error(
+        "Error al obtener representación circunscripción senador:",
         error.message,
       );
 
@@ -728,6 +1179,27 @@ export const legisladoresRepository = {
     }
   },
 
+  async getDetalleMocionesSenador(idSenador) {
+    try {
+      const { data, error } = await supabase.rpc(
+        "detalle_mociones_senador",
+        {
+          p_id_senador: idSenador,
+        },
+      );
+
+      if (error) throw error;
+
+      return data ?? [];
+    } catch (error) {
+      console.error(
+        "Error al obtener detalle de mociones del senador:",
+        error.message,
+      );
+      return [];
+    }
+  },
+
   async getMetricasHistoricasDiputado(idLegislador) {
     try {
       const { data, error } = await supabase
@@ -756,6 +1228,65 @@ export const legisladoresRepository = {
       );
 
       return [];
+    }
+  },
+
+  async getMetricasHistoricasSenador(idLegislador) {
+    try {
+      const { data, error } = await supabase
+        .from("senador_metricas_historico")
+        .select(
+          `
+        fecha_snapshot,
+        total_likes,
+        representacion_circunscripcion
+      `,
+        )
+        .eq("id_legislador", idLegislador)
+        .order("fecha_snapshot", { ascending: true });
+
+      if (error) throw error;
+
+      return (data ?? []).map((row) => ({
+        fechaSnapshot: row.fecha_snapshot,
+        totalLikes: Number(row.total_likes ?? 0),
+        representacionDistrital: Number(
+          row.representacion_circunscripcion ?? 0,
+        ),
+      }));
+    } catch (error) {
+      console.error(
+        "Error al obtener métricas históricas del senador:",
+        error.message,
+      );
+
+      return [];
+    }
+  },
+
+  async getParticipacionHistoricaSenador(idSenador) {
+    try {
+      const { data, error } = await supabase.rpc(
+        "participacion_historica_senador",
+        {
+          p_senador_id: idSenador,
+        },
+      );
+
+      if (error) throw error;
+
+      console.log("VOTACIONES SENADOR RPC:", {
+        idSenador,
+        data,
+      });
+
+      return data;
+    } catch (error) {
+      console.error(
+        "Error al obtener participacion historica senador",
+        error.message,
+      );
+      return null;
     }
   },
 };

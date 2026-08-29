@@ -1,24 +1,31 @@
 import React from "react";
 import GridRepresent from "../components/gridRepresents";
-import { useSelector } from "react-redux";
 import { FlatList, StyleSheet, View } from "react-native";
 import { COLORS } from "../constants/colors";
 import { useAuth } from "../context/AuthContext";
-import { useState, useEffect, useCallback } from "react";
-import { reaccionesRepository } from "../infrastructure/ReaccionesRepository";
-import { legisladoresRepository } from "../infrastructure/legisladoresRepository";
+import { useReacciones } from "../context/ReaccionesContext";
+import { useCallback } from "react";
+import { useData } from "../context/DataContext";
 import { useFocusEffect } from "@react-navigation/native";
 import { Skeleton } from "../components/Skeleton";
+import {
+  responsiveWidthScale,
+  responsiveHeightScale,
+} from "../utils/responsive";
 
 export const Senadores = ({ navigation }) => {
   const { user } = useAuth();
 
-  console.log("user: ", user);
+  const { reaccionesRepresentante, setReaccionRepresentante } = useReacciones();
 
-  const [senadores, setSenadores] = useState([]);
-
-  const [reacciones, setReacciones] = useState({});
-  const [loading, setLoading] = useState(true);
+  const {
+    senadores,
+    loadingSenadores,
+    cargarSenadores,
+    obtenerSenador,
+    totalesLikesRepresentantes,
+    actualizarTotalLikesRepresentante,
+  } = useData();
 
   const handleSelected = (item) => {
     navigation.navigate("DescripcionSenador", {
@@ -26,79 +33,44 @@ export const Senadores = ({ navigation }) => {
     });
   };
 
-  useEffect(() => {
-    if (user?.circunscripcion) {
-      cargarSenadores(user.circunscripcion);
-    }
-  }, []);
-
-  const cargarSenadores = async (circunscripcion) => {
-    try {
-      //se podria agregar un spinner
-      setLoading(true);
-      console.log("circunscripcion: ", circunscripcion);
-      const data =
-        await legisladoresRepository.getSenadoresByCircunscripcion(
-          circunscripcion,
-        );
-      const dataRandom = data.sort(() => Math.random() - 0.5);
-      setSenadores(dataRandom);
-      console.log("senadores: ");
-      console.log(data);
-    } catch (error) {
-    } finally {
-      setLoading(false);
-      //desactivar spinner
-    }
-  };
-
-  const loadReacciones = async () => {
-    const data = await reaccionesRepository.getReacciones(
-      user.id,
-      "representante",
-    );
-
-    if (data) {
-      const mapReacciones = {};
-      data.forEach((r) => {
-        mapReacciones[r.target_id] = r.tipo_reaccion;
-      });
-      setReacciones(mapReacciones);
-    }
-  };
-
   useFocusEffect(
     useCallback(() => {
-      loadReacciones();
-    }, []),
+      if (!user?.circunscripcion) return;
+
+      cargarSenadores(user.circunscripcion);
+    }, [user?.circunscripcion, cargarSenadores]),
   );
 
-  const handleLike = (id, tipoReaccion) => {
+  const handleLike = async (id, tipoReaccion) => {
     try {
-      const actual = reacciones[id];
+      const resultado = await setReaccionRepresentante(id, tipoReaccion);
 
-      const nueva = actual === tipoReaccion ? "null" : tipoReaccion;
+      if (!resultado) return;
 
-      console.log("intento reaccion");
+      const { anterior, nueva } = resultado;
 
-      const resultado = reaccionesRepository.setReaccion(
-        user.id,
-        id,
-        "representante",
-        nueva,
-      );
+      let cambio = 0;
 
-      setReacciones((prev) => ({
-        ...prev,
-        [id]: nueva,
-      }));
+      if (anterior !== "like" && nueva === "like") cambio = 1;
+      if (anterior === "like" && nueva !== "like") cambio = -1;
+
+      const senadorActual = obtenerSenador(id);
+
+      const totalActual =
+        totalesLikesRepresentantes[id] ??
+        senadorActual?.totalLikes ??
+        0;
+
+      const nuevoTotal = Math.max(Number(totalActual) + cambio, 0);
+
+      actualizarTotalLikesRepresentante(id, nuevoTotal);
     } catch (error) {
-      console.log(error);
+      console.log("Error al reaccionar al senador:", error);
     }
   };
 
   const renderGridItem = ({ item }) => {
-    const reaccion = reacciones[item.id];
+    const reaccion = reaccionesRepresentante[item.id];
 
     return (
       <GridRepresent
@@ -116,14 +88,38 @@ export const Senadores = ({ navigation }) => {
         flexDirection: "row",
         width: "90%",
         alignSelf: "center",
-        paddingVertical: 18,
+        paddingVertical: responsiveHeightScale(18),
       }}
     >
-      <Skeleton width={76} height={76} borderRadius={100} />
-      <View style={{ marginHorizontal: 15 }}>
-        <Skeleton width={250} height={25} borderRadius={4} />
-        <View style={{ marginHorizontal: 5, marginTop: 12 }}>
-          <Skeleton width={120} height={15} borderRadius={4} />
+      <Skeleton
+        width={responsiveWidthScale(76)}
+        height={responsiveWidthScale(76)}
+        borderRadius={responsiveWidthScale(100)}
+      />
+
+      <View
+        style={{
+          marginHorizontal: responsiveWidthScale(15),
+          flex: 1,
+        }}
+      >
+        <Skeleton
+          width="100%"
+          height={responsiveHeightScale(25)}
+          borderRadius={responsiveWidthScale(4)}
+        />
+
+        <View
+          style={{
+            marginHorizontal: responsiveWidthScale(5),
+            marginTop: responsiveHeightScale(12),
+          }}
+        >
+          <Skeleton
+            width={responsiveWidthScale(120)}
+            height={responsiveHeightScale(15)}
+            borderRadius={responsiveWidthScale(4)}
+          />
         </View>
       </View>
     </View>
@@ -132,7 +128,8 @@ export const Senadores = ({ navigation }) => {
   return (
     <>
       <View style={styles.back}></View>
-      {loading ? (
+
+      {loadingSenadores ? (
         <FlatList
           style={styles.container}
           data={[1, 2, 3]}
@@ -156,11 +153,12 @@ export const Senadores = ({ navigation }) => {
 const styles = StyleSheet.create({
   back: {
     backgroundColor: COLORS.back,
-    position: "absolute",
     width: "100%",
     height: "100%",
+    position: "absolute",
   },
+
   container: {
-    marginTop: 5, //StatusBar.currentHeight || 0,
+    marginTop: responsiveHeightScale(5),
   },
 });

@@ -144,15 +144,15 @@ export const CamaraDipu = () => {
 
   const effectiveWidth = Math.min(Math.max(screenWidth, 350), 480);
   const effectiveHeight = Math.min(
-  Math.max(screenHeight, 640),
-  1040,
-);
+    Math.max(screenHeight, 640),
+    1040,
+  );
 
-const esTelefonoBajo =
-  Platform.OS === "android" &&
-  screenWidth <= 375 &&
-  screenHeight <= 680 &&
-  screenHeight > screenWidth;
+  const esTelefonoBajo =
+    Platform.OS === "android" &&
+    screenWidth <= 375 &&
+    screenHeight <= 680 &&
+    screenHeight > screenWidth;
 
   const escalaHemiciclo = Math.min(effectiveWidth / 432, effectiveHeight / 960);
 
@@ -611,7 +611,10 @@ const esTelefonoBajo =
     value,
     representantesModo,
     suffix = representantesModo === "proyectos-acumulada" ? null : "%",
-    tiempo = botonActivo === 3 && (habilitarTransicion || votacionBuscada)
+    tiempo =
+    representantesModo === "asistencia-especifica" ||
+      representantesModo === "votacion-especifica" ||
+      representantesModo === "proyectos-especifica"
       ? `Sesión ${getNumeroSesionActual()}: ${votacionesPorSesion[0]?.fecha}`
       : "Acumulada período 2026-2030",
     icon,
@@ -676,18 +679,18 @@ const esTelefonoBajo =
     }
 
     if (infoModal.representantesModo === "proyectos-especifica") {
-  const voto = getVotoRepresentante(item);
-  const config = getVotoConfig(voto);
+      const voto = getVotoRepresentante(item);
+      const config = getVotoConfig(voto);
 
-  return {
-    ...item,
-    voto,
-    mostrarTooltipVoto: true,
-    icon: config.icon,
-    iconColor: config.iconColor,
-    suffix: null,
-  };
-}
+      return {
+        ...item,
+        voto,
+        mostrarTooltipVoto: true,
+        icon: config.icon,
+        iconColor: config.iconColor,
+        suffix: null,
+      };
+    }
 
     return {
       ...item,
@@ -808,7 +811,9 @@ const esTelefonoBajo =
           modoData: esEspecifica ? MODO_DATA.ESPECIFICA : MODO_DATA.ACUMULADA,
           infoPartido,
           modalData: buildModalData({
-            tipo: "Mociones",
+            tipo: esEspecifica
+              ? votacionesPorSesion[proyectoActivo]?.tipoDocumento || "Mociones"
+              : "Mociones",
             partido,
             partidoId,
             value,
@@ -1564,12 +1569,12 @@ const esTelefonoBajo =
   const navigation = useNavigation();
 
   const handlePressNavigate = (partidoId) => {
-  setModalVisible(false);
+    setModalVisible(false);
 
-  setTimeout(() => {
-    navigation.navigate("EstadisticaPartido", { partidoId });
-  }, 100);
-};
+    setTimeout(() => {
+      navigation.navigate("EstadisticaPartido", { partidoId });
+    }, 100);
+  };
 
   const handlePressPause = () => {
     setPausado((prev) => !prev);
@@ -1859,7 +1864,7 @@ const esTelefonoBajo =
                   }
                   style={[
                     (botonActivo < 2 || botonActivo === 4) &&
-                      styles.activeButton,
+                    styles.activeButton,
                   ]}
                 />
                 <Text
@@ -2042,12 +2047,12 @@ const esTelefonoBajo =
                   </View>
                   <View style={styles.conteiner2}>
                     <TouchableOpacity
-  style={[
-    styles.botonPartido,
-    esTelefonoBajo && styles.botonPartidoTelefonoBajo,
-  ]}
-  onPress={() => handlePressNavigate(infoModal.partidoId)}
->
+                      style={[
+                        styles.botonPartido,
+                        esTelefonoBajo && styles.botonPartidoTelefonoBajo,
+                      ]}
+                      onPress={() => handlePressNavigate(infoModal.partidoId)}
+                    >
                       <View
                         style={[
                           styles.conteinerPartido,
@@ -2061,9 +2066,9 @@ const esTelefonoBajo =
                             styles.infopartido,
                             {
                               fontSize:
-  (infoModal.partido?.length ?? 0) >= 7
-    ? responsiveCamaraText(10.2, 8.5)
-    : responsiveCamaraText(12, 8.5),
+                                (infoModal.partido?.length ?? 0) >= 7
+                                  ? responsiveCamaraText(10.2, 8.5)
+                                  : responsiveCamaraText(12, 8.5),
                             },
                           ]}
                         >
@@ -2187,17 +2192,17 @@ const esTelefonoBajo =
                                 styles.calendarDay,
                                 tieneSesion && styles.calendarDayMarked,
                                 cantidadSesiones === 2 &&
-                                  styles.calendarDayMarkedDouble,
+                                styles.calendarDayMarkedDouble,
                               ]}
                             >
                               <Text
                                 style={[
                                   styles.calendarDayText,
                                   deshabilitado &&
-                                    styles.calendarDayTextDisabled,
+                                  styles.calendarDayTextDisabled,
                                   tieneSesion && styles.calendarDayTextMarked,
                                   cantidadSesiones === 2 &&
-                                    styles.calendarDayTextDouble,
+                                  styles.calendarDayTextDouble,
                                 ]}
                               >
                                 {date.day}
@@ -2535,40 +2540,40 @@ const styles = StyleSheet.create({
     opacity: 0.9,
   },
   containerHoy: {
-  flexDirection: "row",
-  backgroundColor: COLORS.greenM,
-  height: 34,
-  justifyContent: "center",
-  alignItems: "center",
-  borderRadius: 4,
+    flexDirection: "row",
+    backgroundColor: COLORS.greenM,
+    height: 34,
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: 4,
 
-  elevation: 3,
-  shadowColor: COLORS.black,
-  shadowOffset: {
-    width: 0,
-    height: responsiveCamaraSize(2),
+    elevation: 3,
+    shadowColor: COLORS.black,
+    shadowOffset: {
+      width: 0,
+      height: responsiveCamaraSize(2),
+    },
+    shadowOpacity: 0.12,
+    shadowRadius: responsiveCamaraSize(4),
   },
-  shadowOpacity: 0.12,
-  shadowRadius: responsiveCamaraSize(4),
-},
   containerCalendar: {
-  flexDirection: "row",
-  backgroundColor: COLORS.greenM,
-  height: responsiveCamaraSize(38),
-  paddingHorizontal: responsiveCamaraSize(14),
-  justifyContent: "center",
-  alignItems: "center",
-  borderRadius: responsiveCamaraSize(8),
+    flexDirection: "row",
+    backgroundColor: COLORS.greenM,
+    height: responsiveCamaraSize(38),
+    paddingHorizontal: responsiveCamaraSize(14),
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: responsiveCamaraSize(8),
 
-  elevation: 3,
-  shadowColor: COLORS.black,
-  shadowOffset: {
-    width: 0,
-    height: responsiveCamaraSize(2),
+    elevation: 3,
+    shadowColor: COLORS.black,
+    shadowOffset: {
+      width: 0,
+      height: responsiveCamaraSize(2),
+    },
+    shadowOpacity: 0.18,
+    shadowRadius: responsiveCamaraSize(4),
   },
-  shadowOpacity: 0.18,
-  shadowRadius: responsiveCamaraSize(4),
-},
   calendarModal: {
     width: "100%",
     maxWidth: responsiveWidthScale(390),
@@ -2809,27 +2814,27 @@ const styles = StyleSheet.create({
     paddingHorizontal: responsiveWidthScale(18),
   },
   containerPlay: {
-  flexDirection: "row",
-  borderRadius: responsiveCamaraSize(20),
-  width: responsiveCamaraSize(140),
-  height: responsiveCamaraSize(40),
+    flexDirection: "row",
+    borderRadius: responsiveCamaraSize(20),
+    width: responsiveCamaraSize(140),
+    height: responsiveCamaraSize(40),
 
-  elevation: 3,
-  shadowColor: COLORS.black,
-  shadowOffset: {
-    width: 0,
-    height: responsiveCamaraSize(2),
+    elevation: 3,
+    shadowColor: COLORS.black,
+    shadowOffset: {
+      width: 0,
+      height: responsiveCamaraSize(2),
+    },
+    shadowOpacity: 0.12,
+    shadowRadius: responsiveCamaraSize(4),
+
+    paddingHorizontal: responsiveCamaraSize(5),
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: COLORS.greenM,
+    overflow: "hidden",
+    zIndex: 2,
   },
-  shadowOpacity: 0.12,
-  shadowRadius: responsiveCamaraSize(4),
-
-  paddingHorizontal: responsiveCamaraSize(5),
-  justifyContent: "center",
-  alignItems: "center",
-  backgroundColor: COLORS.greenM,
-  overflow: "hidden",
-  zIndex: 2,
-},
   playShimmer: {
     width: responsiveCamaraSize(100),
     height: responsiveCamaraSize(100),
@@ -2874,24 +2879,24 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   estadistica2: {
-  flexDirection: "row",
-  alignItems: "center",
-  justifyContent: "center",
-  borderRadius: responsiveWidthScale(3),
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: responsiveWidthScale(3),
 
-  elevation: 3,
-  shadowColor: COLORS.black,
-  shadowOffset: {
-    width: 0,
-    height: responsiveCamaraSize(2),
+    elevation: 3,
+    shadowColor: COLORS.black,
+    shadowOffset: {
+      width: 0,
+      height: responsiveCamaraSize(2),
+    },
+    shadowOpacity: 0.12,
+    shadowRadius: responsiveCamaraSize(4),
+
+    backgroundColor: COLORS.back,
+    paddingHorizontal: responsiveWidthScale(6),
+    height: responsiveHeightScale(36),
   },
-  shadowOpacity: 0.12,
-  shadowRadius: responsiveCamaraSize(4),
-
-  backgroundColor: COLORS.back,
-  paddingHorizontal: responsiveWidthScale(6),
-  height: responsiveHeightScale(36),
-},
   botonAsistencia: {
     flex: 105,
   },
@@ -3044,11 +3049,11 @@ const styles = StyleSheet.create({
     lineHeight: responsiveCamaraLineHeight(15),
   },
   infoPorcentaje: {
-  fontFamily: FONTS.bold,
-  color: COLORS.greenM,
-  fontSize: responsiveCamaraText(15, 10),
-  lineHeight: responsiveCamaraLineHeight(17),
-},
+    fontFamily: FONTS.bold,
+    color: COLORS.greenM,
+    fontSize: responsiveCamaraText(15, 10),
+    lineHeight: responsiveCamaraLineHeight(17),
+  },
   conteinerRepresentantes: {
     margin: 10,
   },
@@ -3058,6 +3063,6 @@ const styles = StyleSheet.create({
     color: COLORS.greyM,
   },
   botonPartidoTelefonoBajo: {
-  width: responsiveCamaraSize(310),
-},
+    width: responsiveCamaraSize(310),
+  },
 });

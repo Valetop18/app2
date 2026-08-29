@@ -17,27 +17,31 @@ const estadoInicialDiputados = {
   fechaCarga: null,
 };
 
+const estadoInicialSenadores = {
+  datos: [],
+  circunscripcion: null,
+  fechaCarga: null,
+};
+
 export const DataProvider = ({ children }) => {
   const [cacheDiputados, setCacheDiputados] = useState(estadoInicialDiputados);
+  const [cacheSenadores, setCacheSenadores] = useState(estadoInicialSenadores);
+
   const [cacheDetalleDiputados, setCacheDetalleDiputados] = useState({});
+  const [cacheDetalleSenadores, setCacheDetalleSenadores] = useState({});
+
   const [totalesLikesRepresentantes, setTotalesLikesRepresentantes] =
     useState({});
+
   const cargasDetalleDiputadosEnCurso = useRef({});
+  const cargasDetalleSenadoresEnCurso = useRef({});
 
   const [loadingDiputados, setLoadingDiputados] = useState(false);
+  const [loadingSenadores, setLoadingSenadores] = useState(false);
 
-  /*
-   * Evita hacer dos consultas simultáneas si dos componentes
-   * solicitan los diputados del mismo distrito al mismo tiempo.
-   */
   const cargaDiputadosEnCurso = useRef(null);
+  const cargaSenadoresEnCurso = useRef(null);
 
-  /**
-   * Obtiene diputados desde memoria o desde el repositorio.
-   *
-   * Si ya existen datos para el mismo distrito, devuelve el caché.
-   * Si forceRefresh es true, vuelve a consultar aunque exista caché.
-   */
   const cargarDiputados = useCallback(
     async (distrito, opciones = {}) => {
       const { forceRefresh = false } = opciones;
@@ -106,6 +110,82 @@ export const DataProvider = ({ children }) => {
     [cacheDiputados],
   );
 
+  const cargarSenadores = useCallback(
+    async (circunscripcion, opciones = {}) => {
+      const { forceRefresh = false } = opciones;
+
+      if (!circunscripcion) {
+        return [];
+      }
+
+      const mismaCircunscripcion =
+        Number(cacheSenadores.circunscripcion) === Number(circunscripcion);
+
+      const existenDatos = cacheSenadores.datos.length > 0;
+
+      if (!forceRefresh && mismaCircunscripcion && existenDatos) {
+        return cacheSenadores.datos;
+      }
+
+      /*
+       * Si ya existe una consulta en curso para esta circunscripción,
+       * reutilizamos la misma promesa.
+       */
+      if (
+        cargaSenadoresEnCurso.current?.circunscripcion ===
+        Number(circunscripcion)
+      ) {
+        return cargaSenadoresEnCurso.current.promesa;
+      }
+
+      const promesaCarga = (async () => {
+        try {
+          setLoadingSenadores(true);
+
+          const data =
+            await legisladoresRepository.getSenadoresByCircunscripcion(
+              circunscripcion,
+            );
+
+          /*
+           * Igual que con diputados, hacemos una copia antes de ordenar.
+           * El orden queda almacenado en memoria y no cambia cada vez
+           * que se vuelve a abrir la pantalla.
+           */
+          const senadoresOrdenados = [...data].sort(
+            () => Math.random() - 0.5,
+          );
+
+          setCacheSenadores({
+            datos: senadoresOrdenados,
+            circunscripcion: Number(circunscripcion),
+            fechaCarga: Date.now(),
+          });
+
+          return senadoresOrdenados;
+        } catch (error) {
+          console.error(
+            "Error al cargar senadores desde DataContext:",
+            error,
+          );
+
+          return [];
+        } finally {
+          setLoadingSenadores(false);
+          cargaSenadoresEnCurso.current = null;
+        }
+      })();
+
+      cargaSenadoresEnCurso.current = {
+        circunscripcion: Number(circunscripcion),
+        promesa: promesaCarga,
+      };
+
+      return promesaCarga;
+    },
+    [cacheSenadores],
+  );
+
   /**
    * Obliga a volver a consultar los diputados del distrito.
    */
@@ -116,6 +196,15 @@ export const DataProvider = ({ children }) => {
       });
     },
     [cargarDiputados],
+  );
+
+  const refrescarSenadores = useCallback(
+    async (circunscripcion) => {
+      return cargarSenadores(circunscripcion, {
+        forceRefresh: true,
+      });
+    },
+    [cargarSenadores],
   );
 
   /**
@@ -154,6 +243,25 @@ export const DataProvider = ({ children }) => {
         }));
         break;
 
+      case "senadores":
+        setCacheSenadores((prev) => ({
+          ...prev,
+          datos: prev.datos.map((item) => {
+            if (item.id !== id) {
+              return item;
+            }
+
+            const cambiosCalculados =
+              typeof cambios === "function" ? cambios(item) : cambios;
+
+            return {
+              ...item,
+              ...cambiosCalculados,
+            };
+          }),
+        }));
+        break;
+
       default:
         console.warn(
           `La colección "${nombreColeccion}" no existe en DataContext.`,
@@ -173,6 +281,13 @@ export const DataProvider = ({ children }) => {
     [actualizarColeccion],
   );
 
+  const actualizarSenador = useCallback(
+    (id, cambios) => {
+      actualizarColeccion("senadores", id, cambios);
+    },
+    [actualizarColeccion],
+  );
+
   const actualizarTotalLikesRepresentante = useCallback(
     (idRepresentante, nuevoTotal) => {
       if (!idRepresentante) return;
@@ -187,6 +302,19 @@ export const DataProvider = ({ children }) => {
 
       // Lista normal de diputados del distrito.
       setCacheDiputados((prev) => ({
+        ...prev,
+        datos: prev.datos.map((item) =>
+          String(item.id) === String(idRepresentante)
+            ? {
+              ...item,
+              totalLikes: totalNormalizado,
+            }
+            : item,
+        ),
+      }));
+
+      // Lista normal de senadores de la circunscripción.
+      setCacheSenadores((prev) => ({
         ...prev,
         datos: prev.datos.map((item) =>
           String(item.id) === String(idRepresentante)
@@ -222,6 +350,30 @@ export const DataProvider = ({ children }) => {
           },
         };
       });
+
+      setCacheDetalleSenadores((prev) => {
+        const detalleActual = prev[idRepresentante];
+
+        if (!detalleActual) {
+          return prev;
+        }
+
+        return {
+          ...prev,
+          [idRepresentante]: {
+            ...detalleActual,
+            datos: {
+              ...detalleActual.datos,
+              senadorCompleto: detalleActual.datos?.senadorCompleto
+                ? {
+                  ...detalleActual.datos.senadorCompleto,
+                  totalLikes: totalNormalizado,
+                }
+                : detalleActual.datos?.senadorCompleto,
+            },
+          },
+        };
+      });
     },
     [],
   );
@@ -231,6 +383,13 @@ export const DataProvider = ({ children }) => {
       return cacheDiputados.datos.find((diputado) => diputado.id === id);
     },
     [cacheDiputados],
+  );
+
+  const obtenerSenador = useCallback(
+    (id) => {
+      return cacheSenadores.datos.find((senador) => senador.id === id);
+    },
+    [cacheSenadores],
   );
 
   const obtenerDetalleDiputado = useCallback(
@@ -285,6 +444,58 @@ export const DataProvider = ({ children }) => {
     [cacheDetalleDiputados],
   );
 
+  const obtenerDetalleSenador = useCallback(
+    (idSenador) => {
+      return cacheDetalleSenadores[idSenador]?.datos ?? null;
+    },
+    [cacheDetalleSenadores],
+  );
+
+  const cargarDetalleSenador = useCallback(
+    async (
+      idSenador,
+      cargarDesdeRepositorio,
+      { forceRefresh = false } = {},
+    ) => {
+      if (!idSenador || typeof cargarDesdeRepositorio !== "function") {
+        return null;
+      }
+
+      const detalleEnCache = cacheDetalleSenadores[idSenador]?.datos ?? null;
+
+      if (detalleEnCache && !forceRefresh) {
+        return detalleEnCache;
+      }
+
+      if (cargasDetalleSenadoresEnCurso.current[idSenador] && !forceRefresh) {
+        return cargasDetalleSenadoresEnCurso.current[idSenador];
+      }
+
+      const promesaCarga = (async () => {
+        try {
+          const datos = await cargarDesdeRepositorio();
+
+          setCacheDetalleSenadores((prev) => ({
+            ...prev,
+            [idSenador]: {
+              datos,
+              fechaCarga: new Date(),
+            },
+          }));
+
+          return datos;
+        } finally {
+          delete cargasDetalleSenadoresEnCurso.current[idSenador];
+        }
+      })();
+
+      cargasDetalleSenadoresEnCurso.current[idSenador] = promesaCarga;
+
+      return promesaCarga;
+    },
+    [cacheDetalleSenadores],
+  );
+
   /**
    * Elimina toda la información almacenada en memoria.
    *
@@ -292,13 +503,19 @@ export const DataProvider = ({ children }) => {
    */
   const limpiarCache = useCallback(() => {
     setCacheDiputados(estadoInicialDiputados);
+    setCacheSenadores(estadoInicialSenadores);
+
     setCacheDetalleDiputados({});
+    setCacheDetalleSenadores({});
     setTotalesLikesRepresentantes({});
 
     cargaDiputadosEnCurso.current = null;
+    cargaSenadoresEnCurso.current = null;
     cargasDetalleDiputadosEnCurso.current = {};
+    cargasDetalleSenadoresEnCurso.current = {};
 
     setLoadingDiputados(false);
+    setLoadingSenadores(false);
   }, []);
 
   const value = useMemo(
@@ -311,6 +528,16 @@ export const DataProvider = ({ children }) => {
       cargarDiputados,
       refrescarDiputados,
 
+      senadores: cacheSenadores.datos,
+      circunscripcionSenadores: cacheSenadores.circunscripcion,
+      fechaCargaSenadores: cacheSenadores.fechaCarga,
+      loadingSenadores,
+
+      cargarSenadores,
+      refrescarSenadores,
+      obtenerSenador,
+      actualizarSenador,
+
       actualizarColeccion,
       actualizarDiputado,
       obtenerDiputado,
@@ -318,6 +545,9 @@ export const DataProvider = ({ children }) => {
       cacheDetalleDiputados,
       obtenerDetalleDiputado,
       cargarDetalleDiputado,
+      cacheDetalleSenadores,
+      obtenerDetalleSenador,
+      cargarDetalleSenador,
 
       totalesLikesRepresentantes,
       actualizarTotalLikesRepresentante,
@@ -329,6 +559,17 @@ export const DataProvider = ({ children }) => {
       loadingDiputados,
       cargarDiputados,
       refrescarDiputados,
+
+      cacheSenadores,
+      loadingSenadores,
+      cargarSenadores,
+      refrescarSenadores,
+      obtenerSenador,
+      actualizarSenador,
+      cacheDetalleSenadores,
+      obtenerDetalleSenador,
+      cargarDetalleSenador,
+
       actualizarColeccion,
       actualizarDiputado,
       obtenerDiputado,

@@ -4,7 +4,7 @@ import { MaterialIcons } from "@react-native-vector-icons/material-icons";
 import { COLORS } from "../constants/colors";
 import { MsIcon } from "material-symbols-react-native";
 import { useNavigation } from "@react-navigation/native";
-import { FontAwesome } from "@expo/vector-icons";
+import { FontAwesome, MaterialCommunityIcons } from "@expo/vector-icons";
 import {
   msPersonRaisedHand,
   msCloudUpload,
@@ -37,17 +37,27 @@ const coloresPorPartido = {
   DEM: COLORS.DEM,
 };
 
-const GridRepresentPartido = ({ item }) => {
+const GridRepresentPartido = ({ item, tipo = "diputado" }) => {
   const borderColor = coloresPorPartido[item.partido] || "#000";
   const navigation = useNavigation();
   const { reaccionesRepresentante } = useReacciones();
 
   const onSelected = () => {
-    navigation.navigate("Descripcion", {
-      idDiputado: item.id,
-      diputadoInicial: item,
-      from: "EstadisticaPartido",
-    });
+    if (tipo === "senador") {
+  navigation.navigate("DescripcionSenador", {
+    idSenador: item.id,
+    senadorInicial: item,
+    from: "EstadisticaPartidoSenado",
+  });
+
+  return;
+}
+
+navigation.navigate("Descripcion", {
+  idDiputado: item.id,
+  diputadoInicial: item,
+  from: "EstadisticaPartido",
+});
   };
 
   const { totalesLikesRepresentantes } = useData();
@@ -141,9 +151,9 @@ const GridRepresentPartido = ({ item }) => {
             <View style={styles.columnaInfoDerecha}>
               <View style={styles.filaEstadistica}>
                 <View style={styles.iconContainer}>
-                  <FontAwesome
-                    name="handshake-o"
-                    size={responsiveWidthScale(19)}
+                  <MaterialCommunityIcons
+                    name="account-multiple-check"
+                    size={responsiveWidthScale(20)}
                     color={COLORS.greenM}
                   />
                 </View>
