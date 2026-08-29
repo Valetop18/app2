@@ -2,8 +2,19 @@ import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
 import Constants from "expo-constants";
 import { Platform } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const ANDROID_CHANNEL_ID = "updates";
+const PUSH_REGISTRATION_KEY = "@pushRegistration";
+
+Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+        shouldPlaySound: true,
+        shouldShowBanner: true,
+        shouldSetBadge: false,
+        shouldShowList: true
+    })
+})
 
 
 async function ensureAndroidChannel() {
@@ -60,14 +71,11 @@ export async function registerCurrentDeviceForPushNotifications(userId){
         throw new Error("PUSH_USER_REQUERIDO")
     }
 
-    console.log(Device.isDevice)
-
     if (!Device.isDevice) {
         return { status: "dispositivo-no-soportado" }
     }
 
     //crear canal
-    console.log('canal android')
     await ensureAndroidChannel();
 
     const permission = await getNotificationPermission();
@@ -96,12 +104,26 @@ export async function registerCurrentDeviceForPushNotifications(userId){
         throw new Error("PUSH_TOKEN_REQUEST_FAILED", { cause: error} );
     }
 
+    const registration = {
+        userId,
+        expoPushToken,
+        platform: Platform.OS,
+        updatedAt: new Date().toISOString()
+    }
+
+    await AsyncStorage.setItem(
+        PUSH_REGISTRATION_KEY,
+        JSON.stringify(registration)
+    );
+
+    return {
+        status: "registrado-localmente",
+        ...registration
+    }
+
+
+
     //to-do: guardar en tabla de push tokens supabase
-
-    //to-do: guardar push token en async storage
-
-
-
 
 
 

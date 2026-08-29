@@ -11,7 +11,7 @@ import {
   Manrope_800ExtraBold,
 } from "@expo-google-fonts/manrope";
 import { BuscadorProvider } from "./context/BuscadorContext";
-import { AuthProvider } from "./context/AuthContext";
+import { AuthProvider, useAuth } from "./context/AuthContext";
 import { TooltipProvider } from "./context/TooltipProvider";
 import { ReaccionesProvider } from "./context/ReaccionesContext";
 import { DataProvider } from "./context/DataContext";
@@ -24,17 +24,46 @@ Text.defaultProps.maxFontSizeMultiplier = 1.05;
 TextInput.defaultProps = TextInput.defaultProps || {};
 TextInput.defaultProps.maxFontSizeMultiplier = 1.05;
 
-export default function App() {
-  useEffect( () => {
+function RegistrarNotificaciones(){
+  const { user, loading } = useAuth();
 
-    const iniciarNotificaciones = async () => {
-      console.log('iniciadno notificaciones')
-      await registerCurrentDeviceForPushNotifications('12345');
-      
+  useEffect(  () => {
+
+    if (loading || !user?.id) return;
+
+    let active = true;
+
+    async function registerDevice(){
+      try {
+        const result = await registerCurrentDeviceForPushNotifications(user.id);
+
+        if (active) {
+          console.log("Resultado registro notificaciones: ", result.status );
+        }
+
+      } catch (error) {
+
+        if (active) {
+          console.error("No se pudo registrar el dispositivo para notificaciones")
+        }
+        
+      }
     }
-    iniciarNotificaciones();
-  }, [])
 
+    registerDevice();
+
+    return () => {
+      active = false;
+    }
+
+
+
+  }, [loading, user?.id] )
+
+
+}
+
+export default function App() {
   let [fontsLoaded] = useFonts({
     Sedan_400Regular,
     Manrope_500Medium,
@@ -50,6 +79,7 @@ export default function App() {
 
   return (
     <AuthProvider>
+      <RegistrarNotificaciones/>
       <Provider store={store}>
         <BuscadorProvider>
           <TooltipProvider>

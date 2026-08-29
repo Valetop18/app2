@@ -44,7 +44,8 @@
           ]
         }
       ],
-      "expo-fmt-consteval-fix"
+      "expo-fmt-consteval-fix",
+      "expo-notifications"
     ]
   }
 }
