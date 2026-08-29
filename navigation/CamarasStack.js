@@ -4,6 +4,7 @@ import NaveCamaras from "./NaveCamaras";
 import { EstadisticaPartido } from "../screens/EstadisticaPartido";
 import { EstadisticaPartidoSenado } from "../screens/EstadisticaPartidoSenado";
 import { DescripcionDiputado } from "../screens/detallesDipu";
+import { DescripcionSenador } from "../screens/detallesSena";
 
 const Stack = createNativeStackNavigator();
 
@@ -27,6 +28,7 @@ const CamarasStack = () => {
         />
 
         <Stack.Screen name='Descripcion' component={DescripcionDiputado}   />
+        <Stack.Screen name="DescripcionSenador" component={DescripcionSenador} />
 
 
     </Stack.Navigator>)

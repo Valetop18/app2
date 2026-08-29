@@ -326,16 +326,18 @@ const styles = StyleSheet.create({
   },
 
   distritoTitulo: {
-    color: COLORS.verdeclaro,
-    fontFamily: FONTS.bold,
-    letterSpacing: responsiveWidthScale(-2),
-    marginTop: responsiveHeightScale(3),
-  },
+  color: COLORS.verdeclaro,
+  fontFamily: FONTS.bold,
+  letterSpacing: responsiveWidthScale(-2),
+  marginTop: responsiveHeightScale(3),
+  includeFontPadding: false,
+},
 
-  distrito: {
+distrito: {
   color: COLORS.verdeclaro,
   fontFamily: FONTS.bold,
   letterSpacing: responsiveWidthScale(-20),
+  includeFontPadding: false,
   marginTop: -Math.min(
     responsiveWidthScale(100),
     responsiveHeightScale(100),

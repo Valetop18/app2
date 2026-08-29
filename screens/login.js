@@ -50,21 +50,6 @@ const Login = () => {
   const [regionSelect, setRegionSelect] = useState();
   const [distritoSelect, setDistritoSelect] = useState(null);
 
-  const fetchDistrito = async () => {
-    try {
-      const db = await SQLite.openDatabaseAsync("distritoSelect.db");
-      const result = await db.getAllAsync("SELECT * FROM distritoSelect;");
-      if (result.length > 0) {
-        const { distrito, region } = result[0];
-        setDistritoSelect(distrito);
-        setRegionSelect(region);
-        console.log(region, distrito);
-      }
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
   const [input, setInput] = useState(INITIAL_STATE);
 
   const [email, setEmail] = useState("");
@@ -119,7 +104,6 @@ const Login = () => {
         await AsyncStorage.setItem("email", currentEmail);
         await AsyncStorage.setItem("pass", currentPass);
       }
-      fetchDistrito();
 
       const success = await login({
         email: currentEmail,

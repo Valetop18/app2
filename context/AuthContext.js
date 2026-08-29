@@ -238,7 +238,7 @@ console.log("AUTH DEBUG", {
   puedeInteractuar,
 });
   const distrito = user?.distrito ?? "";
-
+  const circunscripcion = user?.circunscripcion ?? "";
 
   async function setDistrito(nuevoDistrito) {
     return actualizarUsuario({
@@ -268,6 +268,7 @@ console.log("AUTH DEBUG", {
         setUser,
         distrito,
         setDistrito,
+        circunscripcion,
       }}
     >
       {children}

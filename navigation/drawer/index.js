@@ -179,9 +179,17 @@ const MyDrawer = () => {
     return route;
   });
 
-  const fromEstadisticaPartido = (rutaActiva, from) => {
+  const fromEstadisticaPartido = (rutaActiva, tipo) => {
+    if (tipo === "senador") {
+      return (
+        rutaActiva?.name === "DescripcionSenador" &&
+        rutaActiva?.params?.from === "EstadisticaPartidoSenado"
+      );
+    }
+
     return (
-      rutaActiva?.name === "Descripcion" && rutaActiva?.params?.from === from
+      rutaActiva?.name === "Descripcion" &&
+      rutaActiva?.params?.from === "EstadisticaPartido"
     );
   };
 
@@ -263,14 +271,15 @@ const MyDrawer = () => {
             if (rutaActiva.name === "EstadisticaPartidoSenado") {
               return <Text style={styles.header}>Cámara de senadores</Text>;
             }
-            if (fromEstadisticaPartido(rutaActiva, "EstadisticaPartido")) {
+            if (fromEstadisticaPartido(rutaActiva, "diputado")) {
               return <Text style={styles.header}>Cámara de diputados</Text>;
             }
-            if (fromEstadisticaPartido(rutaActiva, "EstadistaPartidoSenador")) {
+
+            if (fromEstadisticaPartido(rutaActiva, "senador")) {
               return <Text style={styles.header}>Cámara de senadores</Text>;
             }
             if (
-              rutaActiva.name === "Senadores" ||
+              rutaActiva.name === "ListaSenadores" ||
               rutaActiva.name === "DescripcionSenador"
             ) {
               return (
@@ -312,7 +321,7 @@ const MyDrawer = () => {
                 width: responsiveNavSize(36),
                 height: responsiveNavSize(36),
               },
-              tabBarHideOnKeyboard: true,
+              tabBarHideOnKeyboard: false,
             }}
           >
             {/* forzar keyboard avoiding */}

@@ -1,5 +1,4 @@
 import React, { useContext, useState, useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
 import {
   View,
   Text,
@@ -7,6 +6,10 @@ import {
   TouchableOpacity,
   Modal,
   Pressable,
+  ActivityIndicator,
+  Animated,
+  Platform,
+  ScrollView,
 } from "react-native";
 import { COLORS } from "../constants/colors";
 import { DeskSena } from "../components/deskSena";
@@ -17,17 +20,59 @@ import {
   msCalendarMonth,
   msPersonRaisedHand,
   msCloudUpload,
+  msCalendarMonthFill,
 } from "@material-symbols-react-native/outlined-400";
 import { MsIcon } from "material-symbols-react-native";
 import MaterialIcons from "@react-native-vector-icons/material-icons";
-import { LEYES } from "../data/leyes";
 import Ionicons from "@react-native-vector-icons/ionicons";
 import { FlatList } from "react-native-gesture-handler";
 import RepresentantePartido from "../components/representantePartido";
 import { useNavigation } from "@react-navigation/native";
-import { TouchableWithoutFeedback } from "react-native";
 import { legisladoresRepository } from "../infrastructure/legisladoresRepository";
 import { Skeleton } from "../components/Skeleton";
+import { partidosRepository } from "../infrastructure/partidosRepository";
+import { votacionesRepository } from "../infrastructure/votacionesRepository";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { Calendar, LocaleConfig } from "react-native-calendars";
+import { LinearGradient } from "expo-linear-gradient";
+import { FontAwesome } from "@expo/vector-icons";
+import { useReacciones } from "../context/ReaccionesContext";
+import {
+  responsiveVerticalSize,
+  responsiveWidthScale,
+  responsiveHeightScale,
+  screenWidth,
+  screenHeight,
+} from "../utils/responsive";
+import Tooltip from "../components/tooltip";
+import { TOOLTIPS } from "../components/tooltip";
+import { TooltipProvider } from "../context/TooltipProvider";
+import { FONTS } from "../constants/fonts";
+
+const responsiveCamaraText = (baseValue, minValue = 11) => {
+  return Math.max(
+    minValue,
+    Math.min(responsiveWidthScale(baseValue), responsiveHeightScale(baseValue)),
+  );
+};
+
+const responsiveProyectoText = (baseValue) => {
+  return responsiveCamaraText(baseValue, 10.5);
+};
+
+const responsiveCamaraLineHeight = (baseValue) => {
+  return Math.min(
+    responsiveWidthScale(baseValue),
+    responsiveHeightScale(baseValue),
+  );
+};
+
+const responsiveCamaraSize = (baseValue) => {
+  return Math.min(
+    responsiveWidthScale(baseValue),
+    responsiveHeightScale(baseValue),
+  );
+};
 
 export const CamaraSena = () => {
   const { search, setSearch } = useContext(BuscadorContext);
@@ -35,17 +80,156 @@ export const CamaraSena = () => {
   const [botonActivo, setBotonActivo] = useState(0);
   const [hoyActivo, setHoyActivo] = useState(true);
   const [habilitarTransicion, setHabilitarTransicion] = useState(true);
+  const [pausado, setPausado] = useState(false);
+
   const [modalVisible, setModalVisible] = useState(false);
   const [loading, setLoading] = useState(true);
   const [infoModal, setInfoModal] = useState({
     tipo: "",
     partido: "",
     partidoId: "",
-    porcentaje: "",
+    value: "",
+    suffix: "",
     tiempo: "",
-    representantes: [],
+    representantesModo: "",
+    icon: "",
   });
+
   const [legisladores, setLegisladores] = useState([]);
+  const [asistenciaPartidosAcumulada, setAsistenciaPartidosAcumulada] =
+    useState({});
+  const [asistenciaPartidosSesion, setAsistenciaPartidosSesion] = useState({});
+  const [asistenciaSesionGlobal, setAsistenciaSesionGlobal] = useState(null);
+  const [votacionSesionGlobal, setVotacionSesionGlobal] = useState(null);
+  const [asistenciaGlobal, setAsistenciaGlobal] = useState(null);
+  const [participacionHistoricaGlobal, setParticipacionHistoricaGlobal] =
+    useState(null);
+  const [mocionesHistoricasGlobal, setMocionesHistoricasGlobal] =
+    useState(null);
+
+  const [datosListos, setDatosListos] = useState(false);
+
+  const [votacionesPartidos, setVotacionesPartidos] = useState([]);
+  const [votacionesPorSesion, setVotacionesPorSesion] = useState([]);
+  const [votacionesPorSesion2, setVotacionesPorSesion2] = useState([]);
+  const [votosRepresentantes, setVotosRepresentantes] = useState({});
+  const [votosSenadoresSesion, setVotosSenadoresSesion] = useState({});
+
+  const [calendarVisible, setCalendarVisible] = useState(false);
+  const [calendarData, setCalendarData] = useState({
+    sesiones: {},
+    markedDates: {},
+  });
+  const [calendarLoading, setCalendarLoading] = useState(false);
+  const shimmerAnim = React.useRef(new Animated.Value(-1)).current;
+  const pulseAnim = React.useRef(new Animated.Value(0)).current;
+  const [sesionesDia, setSesionesDia] = useState([]);
+
+  const [votacionesPartidoPorSesion, setVotacionesPartidoPorSesion] = useState(
+    [],
+  );
+  const [votacionBuscada, setVotacionBuscada] = useState(null);
+
+  const [
+    participacionHistoricaSenadorPorPartido,
+    setParticipacionHistoricaSenadorPorPartido,
+  ] = useState({});
+  const [
+    mocionesHistoricasSenadorPorPartido,
+    setMocionesHistoricasSenadorPorPartido,
+  ] = useState({});
+
+  const [mocionesPorPartido, setMocionesPorPartido] = useState({});
+  const { reaccionesLey, setReaccionLey } = useReacciones();
+  const [proyectoActivo, setProyectoActivo] = useState(0);
+
+  const effectiveWidth = Math.min(Math.max(screenWidth, 350), 480);
+  const effectiveHeight = Math.min(
+    Math.max(screenHeight, 640),
+    1040,
+  );
+
+  const esTelefonoBajo =
+    Platform.OS === "android" &&
+    screenWidth <= 375 &&
+    screenHeight <= 680 &&
+    screenHeight > screenWidth;
+
+  const escalaHemiciclo = Math.min(effectiveWidth / 432, effectiveHeight / 960);
+
+  const HEMICICLO_CANVAS = 500;
+  const HEMICICLO_BASE_WIDTH = 345.6;
+  const HEMICICLO_BASE_TOP = 164;
+
+  const anchoHemiciclo = HEMICICLO_BASE_WIDTH * escalaHemiciclo;
+  const altoHemiciclo = HEMICICLO_CANVAS * escalaHemiciclo;
+
+  const compensacionEscala =
+    (HEMICICLO_CANVAS - HEMICICLO_CANVAS * escalaHemiciclo) / 2;
+
+  const MODO_DATA = {
+    ESPECIFICA: "especifica",
+    ACUMULADA: "acumulada",
+    VOTACION_BUSCADA: "votacion_buscada",
+  };
+
+  const SECCION = {
+    ASISTENCIA: "asistencia",
+    VOTACION: "votacion",
+    PROYECTOS: "proyectos",
+  };
+
+  const CONFIG_PORCENTAJES = {
+    favor: { icon: "check-circle", iconColor: COLORS.greenM },
+    contra: { icon: "cancel", iconColor: COLORS.FA },
+    abstencion: { icon: "flaky", iconColor: COLORS.UDI },
+    noVoto: { icon: "do-disturb-on", iconColor: COLORS.greyM },
+    pareo: { icon: "join-right", iconColor: COLORS.PDG }, //definir icono y color
+  };
+
+  LocaleConfig.locales["es"] = {
+    monthNames: [
+      "Enero",
+      "Febrero",
+      "Marzo",
+      "Abril",
+      "Mayo",
+      "Junio",
+      "Julio",
+      "Agosto",
+      "Septiembre",
+      "Octubre",
+      "Noviembre",
+      "Diciembre",
+    ],
+    monthNamesShort: [
+      "Ene.",
+      "Feb.",
+      "Mar.",
+      "Abr.",
+      "May.",
+      "Jun.",
+      "Jul.",
+      "Ago.",
+      "Sep.",
+      "Oct.",
+      "Nov.",
+      "Dic.",
+    ],
+    dayNames: [
+      "Domingo",
+      "Lunes",
+      "Martes",
+      "Miércoles",
+      "Jueves",
+      "Viernes",
+      "Sábado",
+    ],
+    dayNamesShort: ["Dom", "Lun", "Mar", "Mie", "Jue", "Vie", "Sab"],
+    today: "Hoy",
+  };
+
+  LocaleConfig.defaultLocale = "es";
 
   const coloresPorPartido = {
     DES: COLORS.DES,
@@ -163,7 +347,8 @@ export const CamaraSena = () => {
     },
   ];
 
-  const [leyesChilenas, setLeyesChilenas] = useState(LEYES);
+  const [leyesChilenas, setLeyesChilenas] = useState([]);
+  const [buscandoLeyes, setBuscandoLeyes] = useState(false);
   const pelotas = [];
   const infoPartidos = [];
   const partidosCoordenadas = [];
@@ -238,10 +423,308 @@ export const CamaraSena = () => {
     }
   }
 
-  const obtenerLegisladoresPorPartido = async (partidoId) => {
+  const getSeccionActiva = () => {
+    if (botonActivo === 2) return SECCION.VOTACION;
+    if (botonActivo === 3) return SECCION.PROYECTOS;
+    return SECCION.ASISTENCIA;
+  };
+
+  const esVotacionBuscada = !!votacionBuscada;
+
+  const getNumeroSesionActual = () =>
+    votacionBuscada?.numeroSesion ?? asistenciaSesionGlobal?.numeroSesion;
+
+  const getModoData = () => {
+    if (esVotacionBuscada) return MODO_DATA.VOTACION_BUSCADA;
+
+    return habilitarTransicion ? MODO_DATA.ESPECIFICA : MODO_DATA.ACUMULADA;
+  };
+
+  const obtenerVotoMayoritario = (porcentajes) => {
+    if (!porcentajes) return { tipo: "noVoto", porcentaje: 0 };
+    const { favor, contra, abstencion } = porcentajes;
+    if (favor >= contra && favor >= abstencion)
+      return { tipo: "favor", porcentaje: favor };
+    if (contra > favor && contra > abstencion)
+      return { tipo: "contra", porcentaje: contra };
+    return { tipo: "abstencion", porcentaje: abstencion };
+  };
+
+  const getVotoConfig = (voto) => {
+    if (!voto) return CONFIG_PORCENTAJES.noVoto;
+
+    const normalized = voto.toString().toLowerCase();
+
+    if (normalized.includes("favor")) return CONFIG_PORCENTAJES.favor;
+    if (normalized.includes("contra")) return CONFIG_PORCENTAJES.contra;
+    if (normalized.includes("abstenci")) return CONFIG_PORCENTAJES.abstencion;
+    if (normalized.includes("pareo")) return CONFIG_PORCENTAJES.pareo;
+    return CONFIG_PORCENTAJES.noVoto;
+  };
+
+  const getVotoRepresentante = (item) => {
+    const votacionId = votacionesPorSesion[proyectoActivo]?.id;
+    const senadores = votosRepresentantes[votacionId] || [];
+    const representante = senadores.find((senador) => senador.id === item.id);
+    return representante?.voto || null;
+  };
+
+  const buildInfoPartido = ({
+    partido,
+    value,
+    suffix = "%",
+    icon = null,
+    iconColor = null,
+    loading = false,
+  }) => ({
+    partido,
+    value,
+    suffix,
+    icon,
+    iconColor,
+    loading,
+    loadingComponent: (
+      <View paddingVertical={6}>
+        <ActivityIndicator size="small" color={COLORS.greenM} />
+      </View>
+    ),
+  });
+
+  const buildModalData = ({
+    tipo,
+    partido,
+    partidoId,
+    value,
+    representantesModo,
+    suffix = representantesModo === "proyectos-acumulada" ? null : "%",
+    tiempo =
+    representantesModo === "asistencia-especifica" ||
+      representantesModo === "votacion-especifica" ||
+      representantesModo === "proyectos-especifica"
+      ? `Sesión ${getNumeroSesionActual()}: ${votacionesPorSesion[0]?.fecha}`
+      : "Acumulada período 2026-2030",
+    icon,
+  }) => ({
+    tipo,
+    partido,
+    partidoId,
+    value,
+    suffix,
+    tiempo,
+    representantesModo,
+    icon,
+  });
+
+  const getRepresentanteViewData = (item) => {
+    if (infoModal.representantesModo === "asistencia-especifica") {
+      return {
+        ...item,
+        icon: item.asistenciaSesion ? "check-circle" : "cancel",
+        iconColor: item.asistenciaSesion ? COLORS.greenM : COLORS.FA,
+        text: item.asistenciaSesion ? null : item.observacion,
+      };
+    }
+
+    if (infoModal.representantesModo === "votacion-especifica") {
+      const porcentaje = votosSenadoresSesion[item.id]?.porcentaje ?? 0;
+
+      return {
+        ...item,
+        value: porcentaje,
+        suffix: "%",
+        icon: null,
+        iconColor: null,
+        text: null,
+      };
+    }
+
+    if (infoModal.representantesModo === "votacion-acumulada") {
+      const porcentaje = participacionHistoricaSenadorPorPartido[item.id] ?? 0;
+
+      return {
+        ...item,
+        value: porcentaje,
+        suffix: "%",
+        icon: null,
+        iconColor: null,
+        text: null,
+      };
+    }
+
+    if (infoModal.representantesModo === "proyectos-acumulada") {
+      const mociones = mocionesHistoricasSenadorPorPartido[item.id] ?? 0;
+
+      return {
+        ...item,
+        value: mociones,
+        icon: null,
+        iconColor: null,
+        text: null,
+        suffix: null,
+      };
+    }
+
+    if (infoModal.representantesModo === "proyectos-especifica") {
+      const voto = getVotoRepresentante(item);
+      const config = getVotoConfig(voto);
+
+      return {
+        ...item,
+        voto,
+        mostrarTooltipVoto: true,
+        icon: config.icon,
+        iconColor: config.iconColor,
+        suffix: null,
+      };
+    }
+
+    return {
+      ...item,
+      value: item.asistencia ?? 0,
+      suffix: "%",
+      icon: null,
+      iconColor: null,
+      text: null,
+    };
+  };
+
+  const getPartidoViewModel = ({ partido, partidoId }) => {
+    // Modo especial cuando el usuario selecciona una votación desde el buscador.
+    // En este modo no existe animación y solo se muestra una votación.
+    const modoData = getModoData();
+
+    switch (getSeccionActiva()) {
+      case SECCION.ASISTENCIA: {
+        const esEspecifica = modoData === MODO_DATA.ESPECIFICA;
+        const porcentajeData = asistenciaPartidosAcumulada[partidoId] || {};
+
+        const value = esEspecifica
+          ? (asistenciaPartidosSesion[partidoId] ?? 0)
+          : (porcentajeData.porcentajeAsistenciaHistorica ?? 0);
+
+        const representantesModo = esEspecifica
+          ? "asistencia-especifica"
+          : "asistencia-acumulada";
+
+        const infoPartido = buildInfoPartido({
+          partido,
+          value,
+          loading: !datosListos,
+        });
+
+        return {
+          seccion: SECCION.ASISTENCIA,
+          modoData: esEspecifica ? MODO_DATA.ESPECIFICA : MODO_DATA.ACUMULADA,
+          infoPartido,
+          modalData: buildModalData({
+            tipo: "Asistencia",
+            partido,
+            partidoId,
+            value,
+            representantesModo,
+            icon: msCalendarMonthFill,
+          }),
+        };
+      }
+
+      case SECCION.VOTACION: {
+        const esEspecifica = modoData === MODO_DATA.ESPECIFICA;
+
+        const value = esEspecifica
+          ? (votacionesPartidoPorSesion[partidoId] ?? 0)
+          : (votacionesPartidos[partidoId] ?? 0);
+
+        const representantesModo = esEspecifica
+          ? "votacion-especifica"
+          : "votacion-acumulada";
+
+        const infoPartido = buildInfoPartido({
+          partido,
+          value,
+        });
+
+        return {
+          seccion: SECCION.VOTACION,
+          modoData: esEspecifica ? MODO_DATA.ESPECIFICA : MODO_DATA.ACUMULADA,
+          infoPartido,
+          modalData: buildModalData({
+            tipo: "Votaciones",
+            partido,
+            partidoId,
+            value,
+            representantesModo,
+            icon: msPersonRaisedHand,
+          }),
+        };
+      }
+
+      case SECCION.PROYECTOS: {
+        const esEspecifica =
+          modoData === MODO_DATA.ESPECIFICA ||
+          modoData === MODO_DATA.VOTACION_BUSCADA;
+
+        const porcentajes = esEspecifica
+          ? votacionesPorSesion2[proyectoActivo]?.partidos[partidoId]
+          : null;
+
+        const votoMayoritario = obtenerVotoMayoritario(porcentajes);
+
+        const config = esEspecifica
+          ? CONFIG_PORCENTAJES[votoMayoritario.tipo]
+          : null;
+
+        const value = esEspecifica
+          ? votoMayoritario.porcentaje
+          : (mocionesPorPartido[partidoId] ?? 0);
+        const suffix = esEspecifica ? "%" : "";
+
+        const representantesModo = esEspecifica
+          ? "proyectos-especifica"
+          : "proyectos-acumulada";
+
+        const infoPartido = buildInfoPartido({
+          partido,
+          value,
+          suffix,
+          icon: config?.icon,
+          iconColor: config?.iconColor,
+        });
+
+        return {
+          seccion: SECCION.PROYECTOS,
+          modoData: esEspecifica ? MODO_DATA.ESPECIFICA : MODO_DATA.ACUMULADA,
+          infoPartido,
+          modalData: buildModalData({
+            tipo: esEspecifica
+              ? votacionesPorSesion[proyectoActivo]?.boletin
+                ? `Boletín ${votacionesPorSesion[proyectoActivo].boletin}`
+                : "Otra votación"
+              : "Mociones",
+            partido,
+            partidoId,
+            value,
+            representantesModo,
+            icon: msCloudUpload,
+          }),
+        };
+      }
+
+      default:
+        return null;
+    }
+  };
+  const obtenerLegisladoresPorPartido = async (
+    partidoId,
+    numeroSesion = null,
+    modoData,
+  ) => {
     try {
-      const data =
-        await legisladoresRepository.getSenadoresByPartido(partidoId);
+      const data = await legisladoresRepository.getSenadoresByPartido(
+        partidoId,
+        numeroSesion,
+        modoData,
+      );
+
       setLegisladores(data);
     } catch (error) {
       console.error(error);
@@ -250,210 +733,1025 @@ export const CamaraSena = () => {
     }
   };
 
+  const obtenerVotosPartidoPorSesion = async (numeroSesion, partidoId) => {
+    try {
+      const data =
+        await votacionesRepository.getVotosPartidoPorSesionSenadores(
+          numeroSesion,
+          partidoId,
+        );
+
+      const votosMap = data.reduce((acc, row) => {
+        acc[row.id] = row.senadores;
+        return acc;
+      }, {});
+
+      setVotosRepresentantes(votosMap);
+      return data;
+    } catch (error) {
+      setVotosRepresentantes({});
+      return [];
+    }
+  };
+
+  const obtenerVotosPartidoPorVotacion = async (idVotacion, partidoId) => {
+    try {
+      const data =
+        await votacionesRepository.getVotosPartidoPorVotacionSenadores(
+          idVotacion,
+          partidoId,
+        );
+
+      const votosMap = data.reduce((acc, row) => {
+        acc[row.id] = row.senadores;
+        return acc;
+      }, {});
+
+      setVotosRepresentantes(votosMap);
+      return data;
+    } catch (error) {
+      console.error(
+        "Error al obtener votos Senado por partido y votación:",
+        error,
+      );
+      setVotosRepresentantes({});
+      return [];
+    }
+  };
+
+  const obtenerVotacionSenadoresPorSesion = async (
+    numeroSesion,
+    partidoId,
+  ) => {
+    try {
+      const data =
+        await votacionesRepository.getVotacionSenadoresPorSesion(
+          numeroSesion,
+          partidoId,
+        );
+
+      const votosMap = data.reduce((acc, senador) => {
+        acc[senador.id] = senador;
+        return acc;
+      }, {});
+
+      setVotosSenadoresSesion(votosMap);
+
+      return data;
+    } catch (error) {
+      console.error(
+        "Error al obtener votacion senadores por sesion:",
+        error,
+      );
+
+      setVotosSenadoresSesion({});
+      return [];
+    }
+  };
+
+  const obtenerParticipacionHistoricaSenadorPorPartido = async (partidoId) => {
+    try {
+      const data =
+        await partidosRepository.getParticipacionHistoricaSenadorPorPartido(
+          partidoId,
+        );
+
+      setParticipacionHistoricaSenadorPorPartido(data);
+    } catch (error) {
+      console.error(
+        "Error al obtener participacion historica senador por partido:",
+        error,
+      );
+
+      setParticipacionHistoricaSenadorPorPartido({});
+    }
+  };
+
+  const obtenerMocionesHistoricasSenadorPorPartido = async (partidoId) => {
+    try {
+      const data =
+        await partidosRepository.getMocionesHistoricasSenadorPorPartido(
+          partidoId,
+        );
+
+      console.log("MocionesHistoricasSenadorPorPartido");
+      console.log(data);
+
+      setMocionesHistoricasSenadorPorPartido(data);
+    } catch (error) {
+      setMocionesHistoricasSenadorPorPartido({});
+    }
+  };
+
+  const cargarAsistenciaSesionGlobal = async (numeroSesion = null) => {
+    try {
+      const data =
+        await votacionesRepository.getAsistenciaSesionGlobalSenadores(numeroSesion);
+      setAsistenciaSesionGlobal(data);
+      return data?.numeroSesion;
+    } catch (error) {
+      console.error(error);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const cargarVotacionSesionGlobal = async (numeroSesion = null) => {
+    try {
+      const data =
+        await votacionesRepository.getVotacionSesionGlobalSenadores(
+          numeroSesion,
+        );
+
+      setVotacionSesionGlobal(data?.porcentaje ?? 0);
+
+      return data?.numeroSesion ?? null;
+    } catch (error) {
+      console.error(
+        "Error al cargar votacion sesion global:",
+        error,
+      );
+
+      setVotacionSesionGlobal(0);
+      return null;
+    }
+  };
+
+  const cargarAsistenciaGlobal = async () => {
+    try {
+      const data = await votacionesRepository.getAsistenciaGlobalSenadores();
+      setAsistenciaGlobal(data);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const cargarSesionesCalendar = async () => {
+    try {
+      setCalendarLoading(true);
+
+      const data = await votacionesRepository.getFechaSesionCalendarioSenadores();
+
+      const markedDates = {};
+      const sesiones = {};
+
+      data.forEach((item) => {
+        // Agrupar sesiones por fecha
+        if (!sesiones[item.fecha_date]) {
+          sesiones[item.fecha_date] = [];
+        }
+
+        sesiones[item.fecha_date].push(item);
+      });
+
+      Object.keys(sesiones).forEach((fecha) => {
+        markedDates[fecha] = {
+          marked: true,
+        };
+      });
+
+      setCalendarData({
+        sesiones,
+        markedDates,
+      });
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setCalendarLoading(false);
+    }
+  };
+
+  const abrirCalendario = async () => {
+    if (Object.keys(calendarData.sesiones).length === 0) {
+      await cargarSesionesCalendar();
+    }
+
+    setCalendarVisible(true);
+  };
+
+  const seleccionarSesion = async (sesion) => {
+    setVotacionBuscada(null);
+
+    setSesionesDia([]);
+    setCalendarVisible(false);
+
+    await cargarSesionSeleccionada(sesion.numero_sesion);
+  };
+
+  const seleccionarDia = (day) => {
+    const sesiones = calendarData.sesiones[day.dateString];
+
+    if (!sesiones) {
+      setSesionesDia([]);
+      return;
+    }
+
+    if (sesiones.length === 1) {
+      seleccionarSesion(sesiones[0]);
+      return;
+    }
+
+    setSesionesDia(sesiones);
+  };
+
+  const cargarVotacionHistoricaGlobal = async () => {
+    try {
+      const data =
+        await votacionesRepository.getVotacionHistoricaGlobalSenadores();
+
+      setParticipacionHistoricaGlobal(data);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const cargarMocionesHistoricasGlobal = async () => {
+    try {
+      const data =
+        await votacionesRepository.getMocionesHistoricasGlobalSenadores();
+      setMocionesHistoricasGlobal(data);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const cargarVotacionesPorSesion = async (numeroSesion) => {
+    try {
+      const data =
+        await votacionesRepository.getVotacionesPorSesionSenadores(numeroSesion);
+
+      const data2 =
+        await votacionesRepository.getVotacionesPorSesion2Senadores(
+          numeroSesion,
+        );
+      const votacionesPartidosPorId = new Map(
+        data2.map((votacion) => [String(votacion.id), votacion]),
+      );
+
+      const data2Ordenada = data.map((votacion) => {
+        const votacionPartidos = votacionesPartidosPorId.get(
+          String(votacion.id),
+        );
+
+        return {
+          ...votacion,
+          partidos: votacionPartidos?.partidos ?? {},
+        };
+      });
+
+      setVotacionesPorSesion(data);
+      setVotacionesPorSesion2(data2Ordenada);
+    } catch (error) {
+      console.error(error);
+      setVotacionesPorSesion([]);
+      setVotacionesPorSesion2([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const cargarVotacionBuscada = async (idVotacion) => {
+    try {
+      const data2 =
+        await votacionesRepository.getVotacionPorId2Senadores(idVotacion);
+
+      const votacion = data2?.[0];
+
+      if (!votacion) {
+        setVotacionesPorSesion([]);
+        setVotacionesPorSesion2([]);
+        return;
+      }
+
+      setVotacionesPorSesion([votacion]);
+      setVotacionesPorSesion2([votacion]);
+
+      setProyectoActivo(0);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const cargarVotacionPartidoPorSesion = async (numeroSesion) => {
+    if (!numeroSesion) return;
+
+    try {
+      const resultados = await Promise.all(
+        partidos.map(async ({ id }) => {
+          const porcentaje =
+            await votacionesRepository.getVotacionPartidoPorSesionSenadores(
+              numeroSesion,
+              id,
+            );
+          return { id, porcentaje };
+        }),
+      );
+
+      const map = resultados.reduce((acc, item) => {
+        acc[item.id] = item.porcentaje;
+        return acc;
+      }, {});
+
+      setVotacionesPartidoPorSesion(map);
+    } catch (error) {
+      console.error("Error al cargar votacion partido por sesion: ", error);
+    }
+  };
+
+  const cargarMocionesPorPartido = async () => {
+    try {
+      const data =
+        await partidosRepository.getMocionesPorPartidoSenadores();
+
+      setMocionesPorPartido(data);
+    } catch (error) {
+      setMocionesPorPartido({});
+    }
+  };
+
+  const cargarAsistenciaSesion = async (numeroSesion = null) => {
+    const resultados = await Promise.all(
+      partidos.map(async ({ id }) => {
+        const porcentaje = await partidosRepository.getAsistenciaPartidoSesionSenadores(
+          id,
+          numeroSesion,
+        );
+        return { id, porcentaje };
+      }),
+    );
+
+    const map = resultados.reduce((acc, item) => {
+      acc[item.id] = item.porcentaje;
+      return acc;
+    }, {});
+
+    setAsistenciaPartidosSesion(map);
+  };
+
+  const cerrarCalendario = () => {
+    setSesionesDia([]);
+    setCalendarVisible(false);
+  };
+
+  const cargarPorcentajes = async () => {
+    try {
+      const resultados = await Promise.all(
+        partidos.map(async ({ id }) => {
+          try {
+            const porcentajes =
+              await legisladoresRepository.getPorcentajeAsistenciaPartidoSenadores(id);
+
+            return {
+              id,
+              ...porcentajes,
+            };
+          } catch (error) {
+            return {
+              id,
+              porcentajeAsistenciaHoy: 0,
+              porcentajeAsistenciaHistorica: 0,
+            };
+          }
+        }),
+      );
+
+      const map = resultados.reduce((acc, item) => {
+        acc[item.id] = item;
+        return acc;
+      }, {});
+
+      setAsistenciaPartidosAcumulada(map);
+
+      return map;
+    } catch (error) {
+      console.error("Error al cargar porcentajes de asistencia:", error);
+
+      setAsistenciaPartidosAcumulada({});
+
+      return {};
+    }
+  };
+
+  const cargarVotacionesPartidos = async () => {
+    try {
+      const votaciones = await Promise.all(
+        partidos.map(async ({ id, partido }) => {
+          const porcentajeVotaciones =
+            await partidosRepository.getParticipacionHistoricaPartidoSenadores(id);
+
+          return {
+            id,
+            partido,
+            porcentajeVotaciones,
+          };
+        }),
+      );
+
+      const map = votaciones.reduce((acc, item) => {
+        acc[item.id] = Math.round(item.porcentajeVotaciones);
+        return acc;
+      }, {});
+
+      setVotacionesPartidos(map);
+
+      return map;
+    } catch (error) {
+      console.error(
+        "Error al cargar votaciones históricas de partidos:",
+        error,
+      );
+
+      setVotacionesPartidos({});
+
+      return {};
+    }
+  };
+
+  const cargarTodo = async () => {
+    try {
+      setLoading(true);
+      setDatosListos(false);
+
+      // Votaciones determina la última sesión válida
+      const numeroSesion = await cargarVotacionSesionGlobal();
+
+      await Promise.all([
+        cargarPorcentajes(),
+        cargarVotacionesPartidos(),
+
+        cargarAsistenciaSesionGlobal(numeroSesion),
+        cargarAsistenciaSesion(numeroSesion),
+
+        cargarVotacionesPorSesion(numeroSesion),
+        cargarVotacionPartidoPorSesion(numeroSesion),
+
+        cargarAsistenciaGlobal(),
+        cargarVotacionHistoricaGlobal(),
+        cargarMocionesHistoricasGlobal(),
+        cargarMocionesPorPartido(),
+      ]);
+
+      setDatosListos(true);
+    } catch (error) {
+      console.error("Error al cargar los datos de la Cámara:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    cargarTodo();
+  }, []);
+
+  const cargarSesionSeleccionada = async (numeroSesion) => {
+    try {
+      setDatosListos(false);
+      setHabilitarTransicion(false);
+
+      setProyectoActivo(0);
+      setBotonActivo(1);
+      setPausado(false);
+
+      await Promise.all([
+        cargarAsistenciaSesionGlobal(numeroSesion),
+        cargarAsistenciaSesion(numeroSesion),
+        cargarVotacionesPorSesion(numeroSesion),
+        cargarVotacionPartidoPorSesion(numeroSesion),
+        cargarVotacionSesionGlobal(numeroSesion),
+      ]);
+
+      setDatosListos(true);
+      setHabilitarTransicion(true);
+    } catch (error) {
+      console.error("Error al cargar sesión seleccionada:", error);
+      setDatosListos(true);
+    }
+  };
+
+  const pulseOpacity = pulseAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.15, 0.95],
+  });
+
+  const pulseScale = pulseAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.92, 1.08],
+  });
+
   for (const partido in promediosPartidos) {
     const [posicionX, posicionY] = promediosPartidos[partido];
     const id = `${partido}-${posicionX}-${posicionY}`;
 
     const partidoId = partidos.find((p) => p.partido === partido).id;
 
-    let infoPartido;
+    const partidoViewModel = getPartidoViewModel({ partido, partidoId });
 
-    switch (botonActivo) {
-      case 0:
-      case 1:
-        infoPartido = (
-          <InfoPartido
-            partido={partido}
-            porcentajeAsistencia={"60%"}
-            left={posicionX - 18}
-            top={posicionY - 18}
-            key={id}
-            onPress={() => {
-              obtenerLegisladoresPorPartido(partidoId);
-              setModalVisible(true);
-              setInfoModal((prevState) => ({
-                ...prevState,
-                tipo: "Asistencia",
-                partido,
+    if (!partidoViewModel) continue;
+
+    const infoPartidoComponent = (
+      <InfoPartido
+        data={partidoViewModel.infoPartido}
+        left={posicionX - 18}
+        top={posicionY - 18}
+        key={id}
+        onPress={() => {
+          setLoading(true);
+          setLegisladores([]);
+
+          if (partidoViewModel.seccion === SECCION.VOTACION) {
+            obtenerVotacionSenadoresPorSesion(
+              getNumeroSesionActual(),
+              partidoId,
+            );
+          }
+
+          if (
+            partidoViewModel?.modalData?.representantesModo ===
+            "votacion-acumulada"
+          ) {
+            obtenerParticipacionHistoricaSenadorPorPartido(partidoId);
+          }
+
+          if (
+            partidoViewModel?.modalData?.representantesModo ===
+            "proyectos-acumulada"
+          ) {
+            obtenerMocionesHistoricasSenadorPorPartido(partidoId);
+          }
+
+          if (partidoViewModel.seccion === SECCION.PROYECTOS) {
+            if (votacionBuscada) {
+              obtenerVotosPartidoPorVotacion(
+                votacionBuscada.idVotacion,
                 partidoId,
-                porcentaje: "60%",
-                tiempo: "Hoy",
-              }));
-            }}
-          />
-        );
-        break;
-
-      case 2:
-        infoPartido = (
-          <InfoPartido
-            partido={partido}
-            porcentajeVotacion={"30%"}
-            left={posicionX - 18}
-            top={posicionY - 18}
-            key={id}
-            onPress={() => {
-              obtenerLegisladoresPorPartido(partidoId);
-              setModalVisible(true);
-              setInfoModal((prevState) => ({
-                ...prevState,
-                tipo: "Votación",
-                partido,
+              );
+            } else {
+              obtenerVotosPartidoPorSesion(
+                asistenciaSesionGlobal?.numeroSesion,
                 partidoId,
-                porcentaje: "60%",
-                tiempo: "Hoy",
-              }));
-            }}
-          />
-        );
-        break;
+              );
+            }
+          }
 
-      case 3:
-        infoPartido = (
-          <InfoPartido
-            partido={partido}
-            numeroProyectos={50}
-            left={posicionX - 18}
-            top={posicionY - 18}
-            key={id}
-            onPress={() => {
-              obtenerLegisladoresPorPartido(partidoId);
-              setModalVisible(true);
-              setInfoModal((prevState) => ({
-                ...prevState,
-                tipo: "Proyectos",
-                partido,
-                partidoId,
-                porcentaje: "60%",
-                tiempo: "Hoy",
-              }));
-            }}
-          />
-        );
-        break;
+          obtenerLegisladoresPorPartido(
+            partidoId,
+            partidoViewModel.seccion === SECCION.ASISTENCIA
+              ? getNumeroSesionActual()
+              : null,
+            partidoViewModel.modoData,
+          );
 
-      default:
-        break;
-    }
-    infoPartidos.push(infoPartido);
+          setModalVisible(true);
+          setInfoModal(partidoViewModel.modalData);
+        }}
+      />
+    );
+
+    infoPartidos.push(infoPartidoComponent);
   }
 
-  const handleResultPress = (item) => {
+  // Modo especial cuando el usuario selecciona una votación desde el buscador.
+  // En este modo no existe animación y solo se muestra una votación.
+  const handleResultPress = async (item) => {
     setSearch("");
-    setLeyActual(item);
-    setBotonActivo(2);
-    setHoyActivo(false);
-  };
+    setVotacionBuscada(item);
 
-  const filtrarLeyes = (texto) => {
-    const leyesFiltradas = LEYES.filter((ley) => {
-      const nombreLey = ley.nombre ? ley.nombre.toUpperCase() : "";
-      const descLey = ley.descripcion ? ley.descripcion.toUpperCase() : "";
-      const textUpper = texto.toUpperCase();
-      return nombreLey.includes(textUpper) || descLey.includes(textUpper);
-    });
-    setLeyesChilenas(leyesFiltradas);
-    return leyesFiltradas;
+    setDatosListos(false);
+
+    setBotonActivo(3);
+    setProyectoActivo(0);
+
+    setHabilitarTransicion(false);
+    setPausado(true);
+
+    await cargarVotacionBuscada(item.idVotacion);
+
+    setDatosListos(true);
   };
 
   useEffect(() => {
-    filtrarLeyes(search);
+    if (!habilitarTransicion || pausado) return;
+
+    const animation = Animated.loop(
+      Animated.timing(shimmerAnim, {
+        toValue: 1,
+        duration: 1800,
+        useNativeDriver: true,
+      }),
+    );
+
+    shimmerAnim.setValue(-1);
+    animation.start();
+
+    return () => animation.stop();
+  }, [habilitarTransicion, pausado]);
+
+  const shimmerTranslate = shimmerAnim.interpolate({
+    inputRange: [-1, 1],
+    outputRange: [-160, 160],
+  });
+
+  useEffect(() => {
+    if (!habilitarTransicion || pausado) {
+      pulseAnim.setValue(0);
+      return;
+    }
+
+    const animation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 700,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 0,
+          duration: 700,
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+
+    animation.start();
+
+    return () => animation.stop();
+  }, [habilitarTransicion, pausado]);
+
+  useEffect(() => {
+    const texto = search.trim();
+
+    if (texto.length < 2) {
+      setLeyesChilenas([]);
+      setBuscandoLeyes(false);
+      return;
+    }
+
+    setBuscandoLeyes(true);
+
+    const timeout = setTimeout(async () => {
+      try {
+        const data =
+          await votacionesRepository.buscarVotacionesSenado(texto, 15);
+        setLeyesChilenas(data);
+      } catch (error) {
+        console.error("Error buscando votaciones:", error);
+        setLeyesChilenas([]);
+      } finally {
+        setBuscandoLeyes(false);
+      }
+    }, 400);
+
+    return () => clearTimeout(timeout);
   }, [search]);
 
   useEffect(() => {
     if (!habilitarTransicion) return;
+    if (!datosListos) return;
+    if (pausado) return;
+    if (botonActivo === 3 && proyectoActivo < votacionesPorSesion.length - 1)
+      return;
 
     if (botonActivo > 3) {
+      setProyectoActivo(0);
       setHoyActivo(false);
       setBotonActivo(1);
       setHabilitarTransicion(false);
+      return;
     }
 
     const timeout = setTimeout(
       () => {
         setBotonActivo((prev) => prev + 1);
+        if (botonActivo === 3) setProyectoActivo(0); //mostrar info acumulada
       },
 
       2000,
     );
 
     return () => clearTimeout(timeout);
-  }, [botonActivo, habilitarTransicion]);
+  }, [botonActivo, habilitarTransicion, datosListos, pausado, proyectoActivo]);
 
-  const fechaHoy = new Date().toLocaleDateString("es-CL");
+  useEffect(() => {
+    if (botonActivo !== 3) return;
+    if (pausado) return;
 
+    const timeout = setTimeout(() => {
+      setProyectoActivo((prev) =>
+        prev + 1 >= votacionesPorSesion.length ? 0 : prev + 1,
+      );
+    }, 2000);
+
+    return () => clearTimeout(timeout);
+  }, [botonActivo, proyectoActivo, pausado]);
+
+  // Modo especial cuando el usuario selecciona una votación desde el buscador.
+  // En este modo no existe animación y solo se muestra una votación.
   const handlePress = (botonActivo) => {
+    if (votacionBuscada && botonActivo === 3) {
+      setVotacionBuscada(null);
+      setHabilitarTransicion(false);
+      setPausado(false);
+      setProyectoActivo(0);
+      setBotonActivo(3);
+      setLeyActual({ fecha: "", nombre: "" });
+      return;
+    }
+
+    setVotacionBuscada(null);
     setHabilitarTransicion(false);
+    setPausado(false);
     setBotonActivo(botonActivo);
+
     if (botonActivo === 3) {
       setLeyActual({ fecha: "", nombre: "" });
     }
   };
 
-  const handlePressHoy = () => {
-    setHoyActivo(!hoyActivo);
-    setLeyActual({ fecha: "", nombre: "" });
-  };
-
-  const renderGridItem = ({ item }) => <RepresentantePartido item={item} />;
+  const renderGridItem = ({ item }) => (
+    <RepresentantePartido item={getRepresentanteViewData(item)} />
+  );
   const borderColor = coloresPorPartido[infoModal.partido] || "#000";
 
   const navigation = useNavigation();
 
   const handlePressNavigate = (partidoId) => {
-    navigation.navigate("EstadisticaPartidoSenado", { partidoId });
+    setModalVisible(false);
+
+    setTimeout(() => {
+      navigation.navigate("EstadisticaPartidoSenado", {
+        partidoId,
+      });
+    }, 100);
   };
+
+  const handlePressPause = () => {
+    setPausado((prev) => !prev);
+  };
+
+  const handlePressAnterior = () => {
+    if (botonActivo === 3) {
+      if (proyectoActivo > 0) {
+        setProyectoActivo((prev) => prev - 1);
+      } else {
+        setBotonActivo(2);
+        setProyectoActivo(0);
+      }
+      return;
+    }
+
+    setBotonActivo((prev) => {
+      const anterior = prev - 1;
+      return anterior < 1 ? 1 : anterior;
+    });
+  };
+
+  const handlePressSiguiente = () => {
+    if (botonActivo === 3) {
+      if (proyectoActivo < votacionesPorSesion.length - 1) {
+        setProyectoActivo((prev) => prev + 1);
+      } else {
+        setProyectoActivo(0);
+        setBotonActivo(1);
+        setHoyActivo(false);
+        setHabilitarTransicion(false);
+      }
+      return;
+    }
+
+    setBotonActivo((prev) => {
+      const siguiente = prev + 1;
+      return siguiente > 3 ? 3 : siguiente;
+    });
+  };
+
+  const esProyectoEspecifico =
+    botonActivo === 3 && (habilitarTransicion || votacionBuscada);
+
+  const idVotacionActual = esProyectoEspecifico
+    ? votacionesPorSesion[proyectoActivo]?.id
+    : null;
+
+  const reaccionActual = idVotacionActual
+    ? reaccionesLey[idVotacionActual]
+    : null;
 
   const skeletonCard = () => (
     <View
       style={{
         flexDirection: "row",
-        width: 240,
+        width: responsiveWidthScale(240),
         alignSelf: "flex-start",
         alignItems: "center",
-        marginVertical: 4,
+        marginVertical: responsiveCamaraSize(4),
       }}
     >
-      <Skeleton width={26} height={26} borderRadius={100} />
-      <View style={{ marginHorizontal: 12 }}>
-        <Skeleton width={100} height={15} borderRadius={4} />
+      <Skeleton
+        width={responsiveCamaraSize(26)}
+        height={responsiveCamaraSize(26)}
+        borderRadius={100}
+      />
+
+      <View
+        style={{
+          marginHorizontal: responsiveWidthScale(12),
+        }}
+      >
+        <Skeleton
+          width={responsiveWidthScale(100)}
+          height={responsiveCamaraSize(15)}
+          borderRadius={responsiveCamaraSize(4)}
+        />
       </View>
     </View>
   );
 
+  const getTextoInfoEstadistica = () => {
+    switch (botonActivo) {
+      case 0:
+      case 1:
+        if (!datosListos) {
+          return (
+            <View style={styles.infoEstadistica}>
+              <Skeleton
+                width={responsiveWidthScale(220)}
+                height={responsiveCamaraSize(24)}
+                borderRadius={responsiveCamaraSize(4)}
+              />
+            </View>
+          );
+        }
+
+        return habilitarTransicion
+          ? `Sesión ${getNumeroSesionActual()}: ${votacionesPorSesion[0]?.fecha}`
+          : "Acumulada período 2026-2030";
+        break;
+
+      case 2:
+        return habilitarTransicion
+          ? `Sesión ${getNumeroSesionActual()}: ${votacionesPorSesion[0]?.fecha}`
+          : "Acumuladas período 2026-2030";
+        break;
+
+      case 3:
+        return esProyectoEspecifico ? (
+          <View style={styles.resultadoEstilo}>
+            <MaterialCommunityIcons
+              name="chart-donut-variant"
+              size={responsiveCamaraSize(25)}
+              color={COLORS.greenM}
+            />
+            <Text style={styles.resultado}>
+              {votacionesPorSesion[proyectoActivo]?.resultado}
+            </Text>
+          </View>
+        ) : (
+          `Acumuladas período 2026-2030`
+        );
+        break;
+      default:
+        return "Asistencia acumulada período 2026-2030";
+        break;
+    }
+  };
+  const proyectoActual = votacionesPorSesion[proyectoActivo];
+
+  const temaActual = proyectoActual?.tema || "";
+  const boletinActual = proyectoActual?.boletin || "";
+  const quorumActual = proyectoActual?.quorum || "";
+
+  const getSubtituloEstadistica = () => {
+    switch (botonActivo) {
+      case 0:
+      case 1:
+        if (!datosListos) {
+          return (
+            <View style={styles.subtitulo}>
+              <Skeleton
+                width={responsiveWidthScale(220)}
+                height={responsiveCamaraSize(24)}
+                borderRadius={responsiveCamaraSize(4)}
+              />
+            </View>
+          );
+        }
+
+        if (habilitarTransicion) {
+          return (
+            <Tooltip
+              text={TOOLTIPS.asistencia.especifica}
+              width={responsiveWidthScale(320)}
+            >
+              <Text style={styles.subtitulo}>
+                Total camara: {asistenciaSesionGlobal?.porcentaje}%
+              </Text>
+            </Tooltip>
+          );
+        }
+
+        return (
+          <Tooltip
+            text={TOOLTIPS.asistencia.acumulada}
+            width={responsiveWidthScale(320)}
+          >
+            <Text style={styles.subtitulo}>
+              Total camara: {asistenciaGlobal}%
+            </Text>
+          </Tooltip>
+        );
+
+      case 2:
+        if (habilitarTransicion) {
+          return (
+            <Tooltip
+              text={TOOLTIPS.votaciones.especifica}
+              width={responsiveWidthScale(320)}
+            >
+              <Text style={styles.subtitulo}>
+                Total camara: {votacionSesionGlobal ?? 0}%
+              </Text>
+            </Tooltip>
+          );
+        }
+
+        return (
+          <Tooltip
+            text={TOOLTIPS.votaciones.acumulada}
+            width={responsiveWidthScale(320)}
+          >
+            <Text style={styles.subtitulo}>
+              Total camara: {participacionHistoricaGlobal}%
+            </Text>
+          </Tooltip>
+        );
+
+      case 3:
+        if (esProyectoEspecifico) {
+          return (
+            <View>
+              {temaActual ? (
+                <View
+                  style={[
+                    styles.leyesEstilo,
+                    styles.leyesEstiloSoloMateria,
+                  ]}
+                >
+                  <Text style={styles.materia}>
+                    {temaActual}
+                  </Text>
+                </View>
+              ) : null}
+            </View>
+          );
+        }
+
+        return (
+          <Tooltip
+            text={TOOLTIPS.mociones.acumulada}
+            width={responsiveWidthScale(290)}
+          >
+            <Text style={styles.subtitulo}>
+              Total Cámara: {mocionesHistoricasGlobal}
+            </Text>
+          </Tooltip>
+        );
+
+      default:
+        return <Text style={styles.subtitulo}>Total camara: %</Text>;
+    }
+  };
+
   return (
     <View style={styles.container}>
       {search.length > 0 ? (
-        <SearchResults data={leyesChilenas} onSelect={handleResultPress} />
+        <SearchResults
+          data={leyesChilenas}
+          onSelect={handleResultPress}
+          loading={buscandoLeyes}
+        />
       ) : (
         <>
           <View style={styles.informacion}>
-            <TouchableOpacity
-              style={[styles.containerHoy, hoyActivo && styles.activeButton]}
-              onPress={handlePressHoy}
-            >
-              <MsIcon
-                icon={msCalendarMonth}
-                size={20}
-                color={hoyActivo ? COLORS.back : COLORS.greyM}
-              />
-              <Text style={[styles.textHoy, hoyActivo && styles.activeText]}>
-                Hoy
-              </Text>
-            </TouchableOpacity>
             <View style={styles.estadistica}>
               <TouchableOpacity
                 style={[
                   styles.estadistica2,
+                  styles.botonAsistencia,
                   (botonActivo < 2 || botonActivo === 4) && styles.activeButton,
                 ]}
-                width={105}
-                height={30}
                 onPress={() => handlePress(1)}
               >
                 <MaterialIcons
                   name="event-available"
-                  size={20}
+                  size={responsiveCamaraText(20, 16)}
                   color={
                     botonActivo < 2 || botonActivo === 4
                       ? COLORS.back
@@ -461,7 +1759,7 @@ export const CamaraSena = () => {
                   }
                   style={[
                     (botonActivo < 2 || botonActivo === 4) &&
-                      styles.activeButton,
+                    styles.activeButton,
                   ]}
                 />
                 <Text
@@ -469,6 +1767,9 @@ export const CamaraSena = () => {
                     styles.textHoy,
                     (botonActivo < 2 || botonActivo === 4) && styles.activeText,
                   ]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.82}
                 >
                   Asistencia
                 </Text>
@@ -476,15 +1777,14 @@ export const CamaraSena = () => {
               <TouchableOpacity
                 style={[
                   styles.estadistica2,
+                  styles.botonVotaciones,
                   botonActivo === 2 && styles.activeButton,
                 ]}
-                width={112}
-                height={30}
                 onPress={() => handlePress(2)}
               >
                 <MsIcon
                   icon={msPersonRaisedHand}
-                  size={20}
+                  size={responsiveCamaraText(20, 16)}
                   color={botonActivo === 2 ? COLORS.back : COLORS.greyM}
                 />
                 <Text
@@ -492,6 +1792,9 @@ export const CamaraSena = () => {
                     styles.textHoy,
                     botonActivo === 2 && styles.activeText,
                   ]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.82}
                 >
                   Votaciones
                 </Text>
@@ -499,15 +1802,14 @@ export const CamaraSena = () => {
               <TouchableOpacity
                 style={[
                   styles.estadistica2,
+                  styles.botonProyectos,
                   botonActivo === 3 && styles.activeButton,
                 ]}
-                width={104}
-                height={30}
                 onPress={() => handlePress(3)}
               >
                 <MsIcon
                   icon={msCloudUpload}
-                  size={20}
+                  size={responsiveCamaraText(20, 16)}
                   color={botonActivo === 3 ? COLORS.back : COLORS.greyM}
                 />
                 <Text
@@ -515,122 +1817,548 @@ export const CamaraSena = () => {
                     styles.textHoy,
                     botonActivo === 3 && styles.activeText,
                   ]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.82}
                 >
                   Proyectos
                 </Text>
               </TouchableOpacity>
             </View>
           </View>
-          {leyActual?.fecha !== "" && (
-            <Text style={styles.fecha}> {leyActual.fecha} </Text>
-          )}
 
-          {leyActual?.nombre !== "" ? null : hoyActivo ? (
-            <Text style={styles.fecha}>{hoyActivo && fechaHoy}</Text>
-          ) : (
-            <Text style={styles.fecha}>PERÍODO ACUMULADO</Text>
-          )}
+          <View
+            style={[
+              styles.infoBloque,
+              esProyectoEspecifico
+                ? styles.infoBloqueProyecto
+                : styles.infoBloqueCentrado,
+            ]}
+          >
+            <Text style={styles.infoEstadistica}>
+              {getTextoInfoEstadistica()}
+            </Text>
 
-          <Text style={styles.infoEstadistica}>
-            {botonActivo < 2 && "Asistencia Total Cámara:"}
-            {botonActivo === 4 && "Asistencia Total Cámara:"}
-            {botonActivo === 2 && "Votación Total Cámara:"}
-            {botonActivo === 3 && "Proyectos Totales Cámara:"}
-          </Text>
+            {getSubtituloEstadistica()}
 
-          <Text style={styles.textInfo}>
-            {leyActual?.nombre !== "" && (
-              <Text style={styles.textLey}>{leyActual.nombre}:</Text>
+            {!esProyectoEspecifico && (
+              <Text style={styles.textInfo}>
+                {leyActual?.nombre !== "" && (
+                  <Text style={styles.textLey}>{leyActual.nombre}:</Text>
+                )}
+                <Text style={styles.textDescripcion}>
+                  {" "}
+                  {leyActual.descripcion}
+                </Text>
+              </Text>
             )}
-            <Text style={styles.textDescripcion}> {leyActual.descripcion}</Text>
-          </Text>
+          </View>
+          {idVotacionActual && (
+            <View style={styles.reaccionesContainer}>
+              <TouchableOpacity
+                style={styles.reaccionDislike}
+                hitSlop={8}
+                onPress={() => setReaccionLey(idVotacionActual, "dislike")}
+              >
+                <FontAwesome
+                  name="thumbs-down"
+                  size={responsiveCamaraSize(25)}
+                  color={
+                    reaccionActual === "dislike" ? COLORS.greenM : COLORS.grey
+                  }
+                  style={{ transform: [{ scaleX: -1 }] }}
+                />
+              </TouchableOpacity>
 
-          <View style={styles.camara}>
-            {pelotas}
-            {infoPartidos}
+              <TouchableOpacity
+                style={styles.reaccionLike}
+                hitSlop={8}
+                onPress={() => setReaccionLey(idVotacionActual, "like")}
+              >
+                <FontAwesome
+                  name="thumbs-up"
+                  size={responsiveCamaraSize(25)}
+                  color={
+                    reaccionActual === "like" ? COLORS.greenM : COLORS.grey
+                  }
+                />
+              </TouchableOpacity>
+            </View>
+          )}
+          <View
+            style={[
+              styles.camaraViewport,
+              {
+                width: anchoHemiciclo,
+                height: altoHemiciclo,
+                top: HEMICICLO_BASE_TOP * escalaHemiciclo,
+                marginLeft: -(anchoHemiciclo / 2),
+              },
+            ]}
+          >
+            <View
+              style={[
+                styles.camaraCanvas,
+                {
+                  left: -compensacionEscala,
+                  top: -compensacionEscala,
+                  transform: [{ scale: escalaHemiciclo }],
+                },
+              ]}
+            >
+              {pelotas}
+              {infoPartidos}
+            </View>
           </View>
 
-          <Modal visible={modalVisible} transparent animationType="fade">
-            <View style={styles.overlay}>
-              <Pressable
-                style={StyleSheet.absoluteFill}
-                onPress={() => setModalVisible(false)}
-              />
+          {esProyectoEspecifico && (
+            <View style={styles.sesionProyecto}>
+              {!!boletinActual && (
+                <Text style={styles.sesionDato}>
+                  Boletín {boletinActual}
+                </Text>
+              )}
 
-              <View style={styles.modalContainer}>
-                <View style={styles.tituloContainer}>
-                  <View>
-                    <Text style={styles.tituloText}>{infoModal.tipo}</Text>
-                    <Text style={styles.tituloText}>{infoModal.tiempo}</Text>
+              {!!quorumActual && (
+                <Text style={styles.sesionDato}>
+                  Quórum: {quorumActual}
+                </Text>
+              )}
+
+              <Text style={styles.sesionFecha}>
+                Sesión {getNumeroSesionActual()}:{" "}
+                {votacionesPorSesion[0]?.fecha}
+              </Text>
+            </View>
+          )}
+
+          <Modal visible={modalVisible} transparent animationType="slide">
+            <TooltipProvider>
+              <View style={styles.overlay}>
+                <Pressable
+                  style={StyleSheet.absoluteFill}
+                  onPress={() => setModalVisible(false)}
+                />
+
+                <View style={styles.modalContainer}>
+                  <View style={styles.tituloContainer}>
+                    <View style={styles.tituloContainerText}>
+                      <MsIcon
+                        icon={infoModal.icon}
+                        size={responsiveCamaraSize(18)}
+                        color={COLORS.back}
+                      />
+                      <Text style={styles.tituloText}>{infoModal.tipo}</Text>
+                    </View>
+                    <Text style={styles.subTituloText}>{infoModal.tiempo}</Text>
                   </View>
-                  <MaterialIcons
-                    name="event-available"
-                    size={50}
-                    color={COLORS.back}
-                  />
-                </View>
-                <View style={styles.conteiner2}>
-                  <TouchableOpacity
-                    style={styles.botonPartido}
-                    onPress={() =>
-                      handlePressNavigate(
-                        infoModal.partidoId,
-                        console.log("partido salida: ", infoModal.partidoId),
-                      )
-                    }
-                  >
-                    <View
-                      style={{
-                        width: 55,
-                        height: 55,
-                        backgroundColor: COLORS.back,
-                        borderRadius: 100,
-                        borderColor,
-                        borderWidth: 3,
-                        justifyContent: "center",
-                        alignItems: "center",
-                      }}
+                  <View style={styles.conteiner2}>
+                    <TouchableOpacity
+                      style={[
+                        styles.botonPartido,
+                        esTelefonoBajo && styles.botonPartidoTelefonoBajo,
+                      ]}
+                      onPress={() => handlePressNavigate(infoModal.partidoId)}
                     >
-                      <Text style={styles.infopartido}>
-                        {infoModal.partido}
-                      </Text>
-                      <Text style={styles.infoPorcentaje}>
-                        {infoModal.porcentaje}
-                      </Text>
-                    </View>
-                    <View>
-                      <Text style={styles.textBoton}>
-                        Estadísticas del Partido
-                      </Text>
-                    </View>
+                      <View
+                        style={[
+                          styles.conteinerPartido,
+                          {
+                            borderColor,
+                          },
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.infopartido,
+                            {
+                              fontSize:
+                                (infoModal.partido?.length ?? 0) >= 7
+                                  ? responsiveCamaraText(10.2, 8.5)
+                                  : responsiveCamaraText(12, 8.5),
+                            },
+                          ]}
+                        >
+                          {infoModal.partido}
+                        </Text>
+                        <Text style={styles.infoPorcentaje}>
+                          {infoModal.value}
+                          {infoModal.suffix}
+                        </Text>
+                      </View>
+                      <View>
+                        <Text style={styles.textBoton}>
+                          Estadísticas del Partido
+                        </Text>
+                      </View>
+                      <Ionicons
+                        name="chevron-forward-circle"
+                        size={responsiveCamaraSize(20)}
+                        color={COLORS.greenM}
+                      />
+                    </TouchableOpacity>
+                    {loading ? (
+                      <FlatList
+                        style={{ marginTop: responsiveCamaraSize(5) }}
+                        data={[1, 2, 3]}
+                        renderItem={skeletonCard}
+                        numColumns={1}
+                        keyExtractor={(item) => item.toString()}
+                      />
+                    ) : (
+                      <FlatList
+                        data={legisladores.senadores}
+                        renderItem={renderGridItem}
+                        numColumns={1}
+                        scrollEnabled={true}
+                        style={{
+                          flexGrow: 0,
+                          marginTop: responsiveCamaraSize(5),
+                          marginVertical: responsiveCamaraSize(15),
+                        }}
+                        keyboardShouldPersistTaps="handled"
+                      />
+                    )}
+                  </View>
+                </View>
+              </View>
+            </TooltipProvider>
+          </Modal>
+
+          <Modal
+            visible={calendarVisible}
+            animationType="fade"
+            transparent
+            onRequestClose={cerrarCalendario}
+          >
+            <Pressable
+              style={styles.modalBackground}
+              onPress={cerrarCalendario}
+            >
+              <Pressable
+                style={styles.calendarModal}
+                onPress={(event) => event.stopPropagation()}
+              >
+                <View style={styles.calendarHandle} />
+
+                <View style={styles.calendarHeader}>
+                  <View style={styles.calendarHeaderIcon}>
+                    <MaterialIcons
+                      name="calendar-month"
+                      size={responsiveCamaraSize(27)}
+                      color={COLORS.greenM}
+                    />
+                  </View>
+
+                  <View style={styles.calendarHeaderText}>
+                    <Text style={styles.calendarTitle}>
+                      Calendario de sesiones
+                    </Text>
+
+                    <Text style={styles.calendarSubtitle}>
+                      Selecciona una fecha y una sesión
+                    </Text>
+                  </View>
+
+                  <TouchableOpacity
+                    style={styles.calendarCloseButton}
+                    onPress={cerrarCalendario}
+                    hitSlop={8}
+                  >
                     <Ionicons
-                      name="chevron-forward-circle"
-                      size={20}
+                      name="close"
+                      size={responsiveCamaraSize(24)}
                       color={COLORS.greenM}
                     />
                   </TouchableOpacity>
-                  {loading ? (
-                    <FlatList
-                      style={{ marginTop: 5 }}
-                      data={[1, 2, 3]}
-                      renderItem={skeletonCard}
-                      numColumns={1}
-                      keyExtractor={(item) => item.toString()}
-                    />
+                </View>
+
+                <View style={styles.calendarCard}>
+                  {calendarLoading ? (
+                    <View style={styles.calendarLoading}>
+                      <ActivityIndicator size="large" color={COLORS.greenM} />
+                    </View>
                   ) : (
-                    <FlatList
-                      data={legisladores}
-                      renderItem={renderGridItem}
-                      numColumns={1}
-                      scrollEnabled={true}
-                      style={{ flexGrow: 0, marginTop: 5, marginVertical: 15 }}
-                      keyboardShouldPersistTaps="handled"
-                    />
+                    <>
+                      <Calendar
+                        markedDates={calendarData.markedDates}
+                        onDayPress={seleccionarDia}
+                        dayComponent={({ date, state }) => {
+                          const sesiones =
+                            calendarData.sesiones[date.dateString];
+
+                          const tieneSesion = !!sesiones;
+                          const cantidadSesiones = sesiones?.length ?? 0;
+                          const deshabilitado = state === "disabled";
+
+                          return (
+                            <TouchableOpacity
+                              disabled={!tieneSesion}
+                              onPress={() => seleccionarDia(date)}
+                              style={[
+                                styles.calendarDay,
+                                tieneSesion && styles.calendarDayMarked,
+                                cantidadSesiones >= 2 &&
+                                styles.calendarDayMarkedMultiple,
+                              ]}
+                            >
+                              <Text
+                                style={[
+                                  styles.calendarDayText,
+                                  deshabilitado &&
+                                  styles.calendarDayTextDisabled,
+                                  tieneSesion && styles.calendarDayTextMarked,
+                                  cantidadSesiones >= 2 &&
+                                  styles.calendarDayTextMultiple,
+                                ]}
+                              >
+                                {date.day}
+                              </Text>
+                            </TouchableOpacity>
+                          );
+                        }}
+                        theme={{
+                          backgroundColor: COLORS.back,
+                          calendarBackground: COLORS.back,
+
+                          dayTextColor: COLORS.black,
+                          textDisabledColor: COLORS.grey,
+
+                          todayTextColor: COLORS.greenM,
+
+                          monthTextColor: COLORS.greenM,
+                          arrowColor: COLORS.greenM,
+
+                          textSectionTitleColor: COLORS.greyM,
+
+                          textDayFontFamily: FONTS.regular,
+                          textMonthFontFamily: FONTS.bold,
+                          textDayHeaderFontFamily: FONTS.bold,
+
+                          textDayFontSize: responsiveCamaraText(14),
+                          textMonthFontSize: responsiveCamaraText(17),
+                          textDayHeaderFontSize: responsiveCamaraText(12),
+                        }}
+                      />
+
+                      <View style={styles.calendarLegend}>
+                        <View style={styles.calendarLegendItem}>
+                          <View
+                            style={[
+                              styles.calendarLegendDot,
+                              styles.calendarLegendDotOne,
+                            ]}
+                          />
+                          <Text style={styles.calendarLegendText}>
+                            1 sesión
+                          </Text>
+                        </View>
+
+                        <View style={styles.calendarLegendItem}>
+                          <View
+                            style={[
+                              styles.calendarLegendDot,
+                              styles.calendarLegendDotTwo,
+                            ]}
+                          />
+                          <Text style={styles.calendarLegendText}>
+                            2 o más
+                          </Text>
+                        </View>
+
+                        <View style={styles.calendarLegendItem}>
+                          <View
+                            style={[
+                              styles.calendarLegendDot,
+                              styles.calendarLegendDotDisabled,
+                            ]}
+                          />
+                          <Text style={styles.calendarLegendText}>
+                            Sin sesiones
+                          </Text>
+                        </View>
+                      </View>
+                    </>
+                  )}
+
+                  {sesionesDia.length > 0 && (
+                    <View style={styles.sesionesContainer}>
+                      <View style={styles.sesionesHeader}>
+                        <View style={styles.sesionesHeaderIcon}>
+                          <MaterialIcons
+                            name="format-list-bulleted"
+                            size={responsiveCamaraSize(21)}
+                            color={COLORS.greenM}
+                          />
+                        </View>
+
+                        <View>
+                          <Text style={styles.sesionesTitulo}>
+                            Sesiones disponibles
+                          </Text>
+
+                          <Text style={styles.sesionesCantidad}>
+                            {sesionesDia.length}{" "}
+                            {sesionesDia.length === 1
+                              ? "sesión disponible"
+                              : "sesiones disponibles"}
+                          </Text>
+                        </View>
+                      </View>
+
+                      <ScrollView
+                        style={styles.sesionesLista}
+                        contentContainerStyle={styles.sesionesListaContent}
+                        showsVerticalScrollIndicator={false}
+                        nestedScrollEnabled
+                      >
+                        {sesionesDia.map((sesion) => (
+                          <Pressable
+                            key={sesion.numero_sesion}
+                            onPress={() => seleccionarSesion(sesion)}
+                            style={({ pressed }) => [
+                              styles.sesionCard,
+                              pressed && styles.sesionCardPressed,
+                            ]}
+                          >
+                            <View style={styles.sesionCardAccent} />
+
+                            <View style={styles.sesionCardIcon}>
+                              <MaterialIcons
+                                name={
+                                  sesion.tipo === "Especial"
+                                    ? "event-note"
+                                    : "event-available"
+                                }
+                                size={responsiveCamaraSize(22)}
+                                color={COLORS.greenM}
+                              />
+                            </View>
+
+                            <View style={styles.sesionCardContent}>
+                              <Text style={styles.sesionNumero}>
+                                Sesión N°{sesion.numero_sesion}
+                              </Text>
+
+                              {!!sesion.tipo && (
+                                <Text style={styles.sesionTipo}>
+                                  {sesion.tipo}
+                                </Text>
+                              )}
+                            </View>
+
+                            <Ionicons
+                              name="chevron-forward"
+                              size={responsiveCamaraSize(21)}
+                              color={COLORS.greenM}
+                            />
+                          </Pressable>
+                        ))}
+                      </ScrollView>
+                    </View>
                   )}
                 </View>
-              </View>
-            </View>
+              </Pressable>
+            </Pressable>
           </Modal>
+
+          <View style={styles.botonCalendar}>
+            {habilitarTransicion && !pausado && (
+              <Animated.View
+                pointerEvents="none"
+                style={[
+                  styles.iconoAnimacionActiva,
+                  {
+                    opacity: pulseOpacity,
+                    transform: [{ scale: pulseScale }],
+                  },
+                ]}
+              >
+                <Ionicons
+                  name="play-forward"
+                  size={responsiveCamaraSize(80)}
+                  color={COLORS.verdeclaro}
+                />
+              </Animated.View>
+            )}
+            {habilitarTransicion ? (
+              <View style={styles.containerPlay}>
+                <Animated.View
+                  style={{
+                    position: "absolute",
+                    transform: [
+                      { translateX: shimmerTranslate },
+                      { rotate: "18deg" },
+                    ],
+                  }}
+                >
+                  <LinearGradient
+                    colors={[
+                      "rgba(218,241,222,0.00)",
+                      "rgba(218,241,222,0.08)",
+                      "rgba(218,241,222,0.20)",
+                      "rgba(218,241,222,0.38)",
+                      "rgba(218,241,222,0.55)",
+                      "rgba(218,241,222,0.38)",
+                      "rgba(218,241,222,0.20)",
+                      "rgba(218,241,222,0.08)",
+                      "rgba(218,241,222,0.00)",
+                    ]}
+                    locations={[0, 0.12, 0.24, 0.38, 0.5, 0.62, 0.76, 0.88, 1]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.playShimmer}
+                  />
+                </Animated.View>
+                <TouchableOpacity
+                  style={[styles.botonPlay]}
+                  onPress={handlePressAnterior}
+                >
+                  <Ionicons
+                    name="play-skip-back-circle-outline"
+                    size={responsiveCamaraSize(28)}
+                    color={COLORS.back}
+                  />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.botonPlay]}
+                  onPress={handlePressPause}
+                >
+                  <Ionicons
+                    name={
+                      pausado ? "play-circle-outline" : "pause-circle-outline"
+                    }
+                    size={responsiveCamaraSize(35)}
+                    color={COLORS.back}
+                  />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.botonPlay]}
+                  onPress={handlePressSiguiente}
+                >
+                  <Ionicons
+                    name="play-skip-forward-circle-outline"
+                    size={responsiveCamaraSize(28)}
+                    color={COLORS.back}
+                  />
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <TouchableOpacity
+                style={[styles.containerCalendar, hoyActivo]}
+                onPress={abrirCalendario}
+              >
+                <MsIcon
+                  icon={msCalendarMonth}
+                  size={responsiveCamaraText(20, 16)}
+                  color={COLORS.back}
+                />
+                <Text style={[styles.textCalendar, hoyActivo]}>
+                  Calendario Sesiones
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
         </>
       )}
     </View>
@@ -650,10 +2378,36 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   modalContainer: {
-    width: "74%",
+    width: "75%",
     maxHeight: "90%",
     backgroundColor: COLORS.back,
-    borderRadius: 15,
+    borderRadius: responsiveCamaraSize(10),
+    overflow: "hidden",
+  },
+  iconoAnimacionActiva: {
+    position: "absolute",
+    right: -responsiveCamaraSize(104),
+    bottom: -responsiveCamaraSize(20),
+    zIndex: 1,
+    elevation: 1,
+  },
+  reaccionesContainer: {
+    width: "100%",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: responsiveWidthScale(22),
+    zIndex: 2,
+  },
+
+  reaccionDislike: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  reaccionLike: {
+    alignItems: "center",
+    justifyContent: "center",
   },
   pelota: {
     width: 20,
@@ -663,38 +2417,375 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  camara: {
-    width: "80%",
-    height: "80%",
+  camaraViewport: {
     position: "absolute",
-    marginTop: "38%",
+    left: "50%",
+    overflow: "visible",
+  },
+
+  camaraCanvas: {
+    position: "absolute",
+    width: 500,
+    height: 500,
+    overflow: "visible",
+  },
+  leyesEstilo: {
+    width: "98%",
+  },
+  leyesEstiloSoloMateria: {
+
+  },
+  infoBloque: {
+    width: "100%",
+    alignItems: "center",
+  },
+  infoBloqueCentrado: {
+    minHeight: responsiveVerticalSize(115),
+    justifyContent: "center",
+  },
+  infoBloqueProyecto: {
+    justifyContent: "flex-start",
+  },
+  botonCalendar: {
+    position: "absolute",
+    bottom: responsiveHeightScale(10),
+    alignSelf: "center",
+    zIndex: 2,
+  },
+  sesionCardPressed: {
+    transform: [{ scale: 0.98 }],
+    opacity: 0.9,
   },
   containerHoy: {
     flexDirection: "row",
-    backgroundColor: COLORS.back,
-    marginVertical: 10,
-    width: 70,
-    height: 30,
-    alignItems: "center",
+    backgroundColor: COLORS.greenM,
+    height: 34,
     justifyContent: "center",
-    borderRadius: 3,
+    alignItems: "center",
+    borderRadius: 4,
+
     elevation: 3,
     shadowColor: COLORS.black,
+    shadowOffset: {
+      width: 0,
+      height: responsiveCamaraSize(2),
+    },
+    shadowOpacity: 0.12,
+    shadowRadius: responsiveCamaraSize(4),
+  },
+  containerCalendar: {
+    flexDirection: "row",
+    backgroundColor: COLORS.greenM,
+    height: responsiveCamaraSize(38),
+    paddingHorizontal: responsiveCamaraSize(14),
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: responsiveCamaraSize(8),
+
+    elevation: 3,
+    shadowColor: COLORS.black,
+    shadowOffset: {
+      width: 0,
+      height: responsiveCamaraSize(2),
+    },
+    shadowOpacity: 0.18,
+    shadowRadius: responsiveCamaraSize(4),
+  },
+  calendarModal: {
+    width: "100%",
+    maxWidth: responsiveWidthScale(390),
+    maxHeight: "92%",
+    backgroundColor: COLORS.back,
+    borderRadius: responsiveCamaraSize(24),
+    paddingTop: responsiveCamaraSize(8),
+    paddingHorizontal: responsiveWidthScale(14),
+    paddingBottom: responsiveCamaraSize(14),
+
+    elevation: 12,
+    shadowColor: COLORS.black,
+    shadowOffset: {
+      width: 0,
+      height: responsiveCamaraSize(6),
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: responsiveCamaraSize(14),
+  },
+  calendarHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: responsiveWidthScale(4),
+    marginBottom: responsiveCamaraSize(16),
+  },
+  calendarHeaderIcon: {
+    width: responsiveCamaraSize(48),
+    height: responsiveCamaraSize(48),
+    borderRadius: responsiveCamaraSize(24),
+    backgroundColor: COLORS.verdeclaro,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  calendarHeaderText: {
+    flex: 1,
+    marginLeft: responsiveWidthScale(12),
+  },
+  calendarTitle: {
+    fontSize: responsiveCamaraText(18),
+    fontFamily: FONTS.bold,
+    color: COLORS.greenM,
+    lineHeight: responsiveCamaraLineHeight(24),
+  },
+  calendarSubtitle: {
+    fontSize: responsiveCamaraText(13),
+    fontFamily: FONTS.regular,
+    color: COLORS.greyM,
+    lineHeight: responsiveCamaraLineHeight(18),
+  },
+  calendarCloseButton: {
+    width: responsiveCamaraSize(38),
+    height: responsiveCamaraSize(38),
+    borderRadius: responsiveCamaraSize(19),
+    backgroundColor: COLORS.verdeclaro,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  calendarCard: {
+    borderWidth: 1,
+    borderColor: "#E6EAE7",
+    borderRadius: responsiveCamaraSize(20),
+    backgroundColor: COLORS.back,
+    overflow: "hidden",
+  },
+  calendarLoading: {
+    minHeight: responsiveCamaraSize(330),
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  calendarDay: {
+    width: Math.max(28, responsiveCamaraSize(31)),
+    height: Math.max(28, responsiveCamaraSize(31)),
+    borderRadius: 16,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  calendarDayMarked: {
+    backgroundColor: COLORS.greenM,
+  },
+  calendarDayMarkedMultiple: {
+    backgroundColor: COLORS.verdeclaro,
+  },
+
+  calendarDayTextMultiple: {
+    color: COLORS.greenM,
+    fontFamily: FONTS.bold,
+  },
+
+  calendarDayText: {
+    fontSize: responsiveCamaraText(14),
+    color: COLORS.black,
+    fontFamily: FONTS.regular,
+  },
+
+  calendarDayTextDisabled: {
+    color: COLORS.grey,
+  },
+
+  calendarDayTextMarked: {
+    color: COLORS.back,
+    fontFamily: FONTS.bold,
+  },
+  calendarDayTextMultiple: {
+    color: COLORS.greenM,
+    fontFamily: FONTS.bold,
+  },
+  calendarLegend: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: "center",
+    paddingHorizontal: responsiveWidthScale(12),
+    paddingVertical: responsiveCamaraSize(13),
+    borderTopWidth: 1,
+    borderTopColor: "#ECEFEC",
+  },
+  calendarLegendItem: {
+    flexShrink: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  calendarLegendDot: {
+    width: responsiveCamaraSize(10),
+    height: responsiveCamaraSize(10),
+    borderRadius: responsiveCamaraSize(5),
+    marginRight: responsiveWidthScale(6),
+  },
+  calendarLegendDotOne: {
+    backgroundColor: COLORS.greenM,
+  },
+
+  calendarLegendDotTwo: {
+    backgroundColor: COLORS.verdeclaro,
+    borderWidth: 1,
+    borderColor: COLORS.greenM,
+  },
+
+  calendarLegendDotDisabled: {
+    backgroundColor: COLORS.grey,
+  },
+  calendarLegendText: {
+    flexShrink: 1,
+    fontSize: responsiveCamaraText(11),
+    fontFamily: FONTS.regular,
+    color: COLORS.greyM,
+  },
+  sesionesContainer: {
+    paddingHorizontal: responsiveWidthScale(12),
+    paddingTop: responsiveCamaraSize(14),
+    paddingBottom: responsiveCamaraSize(4),
+    borderTopWidth: 1,
+    borderTopColor: "#ECEFEC",
+  },
+  sesionesHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: responsiveCamaraSize(12),
+  },
+  sesionesHeaderIcon: {
+    width: responsiveCamaraSize(38),
+    height: responsiveCamaraSize(38),
+    borderRadius: responsiveCamaraSize(19),
+    backgroundColor: COLORS.verdeclaro,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: responsiveWidthScale(10),
+  },
+  sesionesTitulo: {
+    fontSize: responsiveCamaraText(15),
+    fontFamily: FONTS.bold,
+    color: COLORS.greenM,
+    lineHeight: responsiveCamaraLineHeight(20),
+  },
+  sesionesCantidad: {
+    fontSize: responsiveCamaraText(12),
+    fontFamily: FONTS.regular,
+    color: COLORS.greyM,
+    lineHeight: responsiveCamaraLineHeight(17),
+  },
+  sesionCard: {
+    minHeight: responsiveCamaraSize(68),
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: COLORS.back,
+    borderWidth: 1,
+    borderColor: "#E7EBE8",
+    borderRadius: responsiveCamaraSize(14),
+    marginBottom: responsiveCamaraSize(10),
+    paddingRight: responsiveWidthScale(14),
+    overflow: "hidden",
+
+    elevation: 2,
+    shadowColor: COLORS.black,
+    shadowOffset: {
+      width: 0,
+      height: responsiveCamaraSize(2),
+    },
+    shadowOpacity: 0.08,
+    shadowRadius: responsiveCamaraSize(5),
+  },
+
+  sesionCardPressed: {
+    transform: [{ scale: 0.985 }],
+    backgroundColor: "#F7FBF8",
+  },
+
+  sesionCardAccent: {
+    width: responsiveWidthScale(5),
+    alignSelf: "stretch",
+    backgroundColor: COLORS.greenM,
+  },
+  sesionCardIcon: {
+    width: responsiveCamaraSize(42),
+    height: responsiveCamaraSize(42),
+    borderRadius: responsiveCamaraSize(21),
+    backgroundColor: COLORS.verdeclaro,
+    justifyContent: "center",
+    alignItems: "center",
+    marginHorizontal: responsiveWidthScale(12),
+  },
+  sesionCardContent: {
+    flex: 1,
+  },
+  sesionNumero: {
+    fontSize: responsiveCamaraText(15),
+    fontFamily: FONTS.bold,
+    color: COLORS.black,
+    lineHeight: responsiveCamaraLineHeight(20),
+  },
+  sesionTipo: {
+    fontSize: responsiveCamaraText(13),
+    fontFamily: FONTS.medium,
+    color: COLORS.greenM,
+    lineHeight: responsiveCamaraLineHeight(18),
+  },
+  modalBackground: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.48)",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: responsiveWidthScale(18),
+  },
+  containerPlay: {
+    flexDirection: "row",
+    borderRadius: responsiveCamaraSize(20),
+    width: responsiveCamaraSize(140),
+    height: responsiveCamaraSize(40),
+
+    elevation: 3,
+    shadowColor: COLORS.black,
+    shadowOffset: {
+      width: 0,
+      height: responsiveCamaraSize(2),
+    },
+    shadowOpacity: 0.12,
+    shadowRadius: responsiveCamaraSize(4),
+
+    paddingHorizontal: responsiveCamaraSize(5),
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: COLORS.greenM,
+    overflow: "hidden",
+    zIndex: 2,
+  },
+  playShimmer: {
+    width: responsiveCamaraSize(100),
+    height: responsiveCamaraSize(100),
   },
   informacion: {
+    width: "100%",
     flexDirection: "row",
-    justifyContent: "space-between",
-    width: "95%",
-    paddingTop: 5,
+    justifyContent: "center",
+    paddingTop: responsiveHeightScale(12),
+    paddingHorizontal: responsiveWidthScale(12),
   },
+  botonPlay: {
+    backgroundColor: COLORS.greenM,
+    marginHorizontal: responsiveCamaraSize(4),
+  },
+
   textHoy: {
-    fontSize: 13,
-    fontFamily: "NotoSansMyanmar_700Bold",
+    flexShrink: 1,
+    fontSize: responsiveCamaraText(14.7),
+    fontFamily: FONTS.bold,
     color: COLORS.greyM,
     paddingVertical: 0,
-    paddingBottom: 0,
-    paddingTop: 0,
-    marginHorizontal: 4,
+    marginHorizontal: responsiveWidthScale(4),
+    letterSpacing: responsiveWidthScale(0.25),
+  },
+  textCalendar: {
+    fontSize: responsiveCamaraText(14.5),
+    fontFamily: FONTS.bold,
+    color: COLORS.back,
+    paddingVertical: 0,
+    marginLeft: responsiveWidthScale(10),
   },
   activeButton: {
     backgroundColor: COLORS.greenM,
@@ -703,6 +2794,7 @@ const styles = StyleSheet.create({
     color: COLORS.back,
   },
   estadistica: {
+    width: "100%",
     flexDirection: "row",
     alignItems: "center",
   },
@@ -710,23 +2802,86 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 3,
+    borderRadius: responsiveWidthScale(3),
+
     elevation: 3,
     shadowColor: COLORS.black,
+    shadowOffset: {
+      width: 0,
+      height: responsiveCamaraSize(2),
+    },
+    shadowOpacity: 0.12,
+    shadowRadius: responsiveCamaraSize(4),
+
     backgroundColor: COLORS.back,
-    paddingHorizontal: 7,
-    height: 30,
+    paddingHorizontal: responsiveWidthScale(6),
+    height: responsiveHeightScale(36),
   },
-  fecha: {
-    fontFamily: "NotoSansMyanmar_700Bold",
-    fontSize: 14,
+  botonAsistencia: {
+    flex: 105,
+  },
+  botonVotaciones: {
+    flex: 112,
+  },
+  botonProyectos: {
+    flex: 104,
+  },
+  subtitulo: {
+    fontFamily: FONTS.bold,
+    fontSize: responsiveCamaraText(14.5),
+    color: COLORS.black,
+    textAlign: "center",
+    lineHeight: responsiveCamaraLineHeight(20),
+  },
+  materia: {
+    fontFamily: FONTS.bold,
+    fontSize: responsiveProyectoText(13.5),
+    color: COLORS.black,
+    textAlign: "center",
+    lineHeight: responsiveCamaraLineHeight(15),
+  },
+  articulo: {
+    fontFamily: FONTS.regular,
+    paddingTop: responsiveHeightScale(3),
+    fontSize: responsiveProyectoText(13),
+    color: COLORS.black,
+    lineHeight: responsiveCamaraLineHeight(15),
+    textAlign: "center",
+  },
+  resultadoEstilo: {
+    paddingTop: responsiveHeightScale(3),
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  sesionProyecto: {
+    position: "absolute",
+    bottom: responsiveHeightScale(56),
+    alignSelf: "center",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 2,
+  },
+  resultado: {
+    fontFamily: FONTS.bold,
+    fontSize: responsiveCamaraText(15),
     color: COLORS.greenM,
-    marginTop: 10,
+    paddingHorizontal: responsiveWidthScale(3),
+    textTransform: "uppercase",
+    letterSpacing: responsiveWidthScale(0.25),
+  },
+  sesionFecha: {
+    fontFamily: FONTS.bold,
+    fontSize: responsiveCamaraText(15),
+    color: COLORS.greenM,
+    letterSpacing: responsiveWidthScale(0.25),
+    lineHeight: responsiveCamaraLineHeight(25),
   },
   infoEstadistica: {
-    fontFamily: "NotoSansMyanmar_700Bold",
-    fontSize: 13,
+    fontFamily: FONTS.bold,
+    fontSize: responsiveCamaraText(15),
     color: COLORS.greenM,
+    marginTop: responsiveHeightScale(8),
   },
   textInfo: {
     width: "90%",
@@ -735,79 +2890,117 @@ const styles = StyleSheet.create({
   },
   textLey: {
     fontFamily: "Sedan_400Regular",
-    fontSize: 16,
+    fontSize: responsiveCamaraText(16),
     color: COLORS.greenM,
   },
   textDescripcion: {
-    fontFamily: "NotoSansMyanmar_400Regular",
-    fontSize: 12,
+    fontFamily: FONTS.regular,
+    fontSize: responsiveCamaraText(12),
     color: COLORS.black,
     textAlign: "justify",
-    marginHorizontal: "2%",
-    lineHeight: 18,
+    marginHorizontal: responsiveWidthScale(8),
+    lineHeight: responsiveCamaraLineHeight(18),
   },
   tituloContainer: {
-    height: 75,
+    minHeight: responsiveCamaraSize(65),
     width: "100%",
     backgroundColor: COLORS.greenM,
-    flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    borderTopEndRadius: 15,
-    borderTopLeftRadius: 15,
-    paddingTop: 4,
+    borderTopRightRadius: responsiveCamaraSize(10),
+    borderTopLeftRadius: responsiveCamaraSize(10),
+    paddingTop: responsiveCamaraSize(4),
+    paddingHorizontal: responsiveWidthScale(8),
+  },
+  tituloContainerText: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
   },
   tituloText: {
-    fontFamily: "NotoSansMyanmar_700Bold",
-    fontSize: 20,
+    fontFamily: FONTS.bold,
+    fontSize: responsiveCamaraText(16),
     color: COLORS.back,
-    lineHeight: 22,
-    marginRight: 40,
-    alignSelf: "center",
-    paddingTop: 2,
+    lineHeight: responsiveCamaraLineHeight(22),
+    letterSpacing: responsiveWidthScale(0.4),
+    marginLeft: responsiveWidthScale(6),
+  },
+  subTituloText: {
+    fontFamily: FONTS.regular,
+    fontSize: responsiveCamaraText(14),
+    color: COLORS.back,
+    lineHeight: responsiveCamaraLineHeight(24),
+    textAlign: "center",
+    letterSpacing: responsiveWidthScale(0.3),
   },
   conteiner2: {
-    paddingTop: 20,
+    paddingTop: responsiveCamaraSize(20),
     flexShrink: 1,
     alignItems: "center",
   },
   botonPartido: {
-    width: 285,
-    height: 72,
+    width: responsiveCamaraSize(285),
+    height: responsiveCamaraSize(72),
     backgroundColor: COLORS.verdeclaro,
-    borderRadius: 20,
+    borderRadius: responsiveCamaraSize(30),
     alignItems: "center",
     justifyContent: "space-between",
     flexDirection: "row",
-    padding: 10,
+    padding: responsiveCamaraSize(10),
   },
   conteinerPartido: {
-    width: 55,
-    height: 55,
-    backgroundColor: "rgba(255, 255, 255, 0.80)",
-    borderRadius: 100,
-    borderWidth: 3,
+    width: responsiveCamaraSize(55),
+    height: responsiveCamaraSize(55),
+    backgroundColor: COLORS.back,
+    borderRadius: responsiveCamaraSize(100),
+    borderWidth: responsiveCamaraSize(3),
     justifyContent: "center",
     alignItems: "center",
   },
   textBoton: {
-    fontFamily: "NotoSansMyanmar_700Bold",
-    fontSize: 15,
+    flexShrink: 1,
+    fontFamily: FONTS.bold,
+    fontSize: responsiveCamaraText(15),
     color: COLORS.greenM,
+    textAlign: "center",
   },
   infopartido: {
-    fontFamily: "NotoSansMyanmar_700Bold",
-    fontSize: 10,
+    fontFamily: FONTS.bold,
     color: COLORS.greenM,
-    top: 9,
-    lineHeight: 15,
+    top: responsiveCamaraSize(4),
+    lineHeight: responsiveCamaraLineHeight(15),
   },
   infoPorcentaje: {
-    fontFamily: "NotoSansMyanmar_700Bold",
+    fontFamily: FONTS.bold,
     color: COLORS.greenM,
-    fontSize: 15,
+    fontSize: responsiveCamaraText(15, 10),
+    lineHeight: responsiveCamaraLineHeight(17),
   },
   conteinerRepresentantes: {
     margin: 10,
+  },
+  resumenIA: {
+    fontFamily: FONTS.bold,
+    fontSize: responsiveProyectoText(11.5),
+    color: COLORS.greyM,
+  },
+  botonPartidoTelefonoBajo: {
+    width: responsiveCamaraSize(310),
+  },
+  sesionesLista: {
+    maxHeight: Math.min(
+      responsiveHeightScale(225),
+      screenHeight * 0.24,
+    ),
+  },
+  sesionesListaContent: {
+    paddingBottom: responsiveCamaraSize(2),
+  },
+  sesionDato: {
+    fontFamily: FONTS.bold,
+    fontSize: responsiveCamaraText(13),
+    color: COLORS.black,
+    textAlign: "center",
+    lineHeight: responsiveCamaraLineHeight(22),
   },
 });

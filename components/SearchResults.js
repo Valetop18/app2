@@ -187,7 +187,11 @@ export const SearchResults = ({ data = [], onSelect, representante }) => {
               <View flexDirection={"row"} justifyContent={"space-between"}>
                 <View style={styles.containerNombre}>
                   <View flexDirection={"row"} alignItems={"center"}>
-                    <Text style={styles.nombre}> {item.tipoDocumento} </Text>
+                    <Text style={styles.nombre}>
+                      {item.boletin
+                        ? `Boletín N° ${item.boletin}`
+                        : item.tipoDocumento}
+                    </Text>
 
                     <View style={styles.reaccionesResumen}>
                       <TouchableOpacity
@@ -200,7 +204,7 @@ export const SearchResults = ({ data = [], onSelect, representante }) => {
                           style={[
                             styles.reaccionCantidad,
                             reaccion === "like" &&
-                              styles.reaccionCantidadActiva,
+                            styles.reaccionCantidadActiva,
                           ]}
                         >
                           {item.totalLikes ?? 0}
@@ -234,7 +238,7 @@ export const SearchResults = ({ data = [], onSelect, representante }) => {
                           style={[
                             styles.reaccionCantidad,
                             reaccion === "dislike" &&
-                              styles.reaccionCantidadActiva,
+                            styles.reaccionCantidadActiva,
                           ]}
                         >
                           {item.totalDislikes ?? 0}
@@ -286,22 +290,37 @@ export const SearchResults = ({ data = [], onSelect, representante }) => {
                 </View>
               </View>
               <TouchableOpacity onPress={() => onSelect(item)}>
-                {item.materia_resumen ? (
+                {item.tema ? (
+                  // SENADORES
                   <Text style={styles.descripcion}>
-                    {item.materia_resumen}
-                    <Text style={styles.resumenIA}>✨Resumen IA</Text>
+                    {item.tema}
                   </Text>
                 ) : (
-                  <Text style={styles.descripcion}> {item.materia} </Text>
+                  // DIPUTADOS
+                  <>
+                    {item.materia_resumen ? (
+                      <Text style={styles.descripcion}>
+                        {item.materia_resumen}
+                        <Text style={styles.resumenIA}>✨Resumen IA</Text>
+                      </Text>
+                    ) : (
+                      <Text style={styles.descripcion}>
+                        {item.materia}
+                      </Text>
+                    )}
+
+                    {item.articulo_resumen ? (
+                      <Text style={styles.articulo}>
+                        {item.articulo_resumen}{" "}
+                        <Text style={styles.resumenIA}>✨Resumen IA</Text>
+                      </Text>
+                    ) : item.articulo ? (
+                      <Text style={styles.articulo}>
+                        {item.articulo}
+                      </Text>
+                    ) : null}
+                  </>
                 )}
-                {item.articulo_resumen ? (
-                  <Text style={styles.articulo}>
-                    {item.articulo_resumen}{" "}
-                    <Text style={styles.resumenIA}>✨Resumen IA</Text>
-                  </Text>
-                ) : item.articulo ? (
-                  <Text style={styles.articulo}> {item.articulo} </Text>
-                ) : null}
               </TouchableOpacity>
             </View>
           );
@@ -314,26 +333,26 @@ export const SearchResults = ({ data = [], onSelect, representante }) => {
 
 const styles = StyleSheet.create({
   container: {
-  flex: 1,
-  backgroundColor: COLORS.back,
-  width: "96%",
-  marginTop: "1%",
-  marginVertical: "0.5%",
-  marginHorizontal: "2%",
-  borderRadius: responsiveWidthScale(10),
+    flex: 1,
+    backgroundColor: COLORS.back,
+    width: "96%",
+    marginTop: "1%",
+    marginVertical: "0.5%",
+    marginHorizontal: "2%",
+    borderRadius: responsiveWidthScale(10),
 
-  // Android
-  elevation: 3,
+    // Android
+    elevation: 3,
 
-  // iOS
-  shadowColor: COLORS.black,
-  shadowOffset: {
-    width: 0,
-    height: responsiveWidthScale(2),
+    // iOS
+    shadowColor: COLORS.black,
+    shadowOffset: {
+      width: 0,
+      height: responsiveWidthScale(2),
+    },
+    shadowOpacity: 0.12,
+    shadowRadius: responsiveWidthScale(4),
   },
-  shadowOpacity: 0.12,
-  shadowRadius: responsiveWidthScale(4),
-},
 
   containerNombre: {
     flexDirection: "row",

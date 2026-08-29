@@ -171,12 +171,12 @@ export const DescripcionDiputado = ({ route }) => {
   });
 
   const normalizarBusqueda = (texto = "") => {
-  return String(texto)
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .trim();
-};
+    return String(texto)
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .trim();
+  };
 
   useEffect(() => {
     if (!diputadoCache) return;
@@ -426,11 +426,11 @@ export const DescripcionDiputado = ({ route }) => {
   };
 
   const cargarDetalleMociones = async () => {
-  if (!idDiputadoCamara) return;
+    if (!idDiputadoCamara) return;
 
-  setBusquedaMociones("");
+    setBusquedaMociones("");
 
-  try {
+    try {
       setLoadingMociones(true);
 
       const data =
@@ -534,28 +534,28 @@ export const DescripcionDiputado = ({ route }) => {
   };
 
   const detalleMocionesFiltradas = detalleMociones.filter((mocion) => {
-  const busqueda = normalizarBusqueda(busquedaMociones);
+    const busqueda = normalizarBusqueda(busquedaMociones);
 
-  if (!busqueda) return true;
+    if (!busqueda) return true;
 
-  const contenidoMocion = [
-    mocion.numeroBoletin,
-    mocion.titulo,
+    const contenidoMocion = [
+      mocion.numeroBoletin,
+      mocion.titulo,
 
-    ...mocion.votaciones.flatMap((votacion) => [
-      votacion.materia,
-      votacion.materiaResumen,
-      votacion.materiaMostrar,
-      votacion.articulo,
-      votacion.articuloResumen,
-      votacion.articuloMostrar,
-    ]),
-  ]
-    .filter(Boolean)
-    .join(" ");
+      ...mocion.votaciones.flatMap((votacion) => [
+        votacion.materia,
+        votacion.materiaResumen,
+        votacion.materiaMostrar,
+        votacion.articulo,
+        votacion.articuloResumen,
+        votacion.articuloMostrar,
+      ]),
+    ]
+      .filter(Boolean)
+      .join(" ");
 
-  return normalizarBusqueda(contenidoMocion).includes(busqueda);
-});
+    return normalizarBusqueda(contenidoMocion).includes(busqueda);
+  });
 
   const getUltimasVotaciones = async (idDiputadoCamara) => {
     const votaciones = await votacionesRepository.getUltimasVotaciones(
@@ -1344,13 +1344,13 @@ export const DescripcionDiputado = ({ route }) => {
               subtitle="Iniciativas ingresadas por el representante"
               onClose={() => setModalMocionesVisible(false)}
             />
-<View style={styles.buscadorMociones}>
-  <Buscador
-    value={busquedaMociones}
-    onChangeText={setBusquedaMociones}
-    placeholder="Buscar boletín, proyecto o tema..."
-  />
-</View>
+            <View style={styles.buscadorMociones}>
+              <Buscador
+                value={busquedaMociones}
+                onChangeText={setBusquedaMociones}
+                placeholder="Buscar boletín, proyecto o tema..."
+              />
+            </View>
             {loadingMociones ? (
               <View style={styles.loadingMociones}>
                 <ActivityIndicator size="large" color={COLORS.greenM} />
@@ -1361,10 +1361,10 @@ export const DescripcionDiputado = ({ route }) => {
                 keyExtractor={(item) => item.numeroBoletin}
                 contentContainerStyle={styles.listaMociones}
                 ListEmptyComponent={
-  <Text style={styles.sinResultadosMociones}>
-    No se encontraron proyectos relacionados.
-  </Text>
-}
+                  <Text style={styles.sinResultadosMociones}>
+                    No se encontraron proyectos relacionados.
+                  </Text>
+                }
                 renderItem={({ item }) => (
                   <View style={styles.mocionCard}>
                     <Text style={styles.mocionBoletin}>
@@ -1647,6 +1647,7 @@ const styles = StyleSheet.create({
     fontSize: Math.max(11, responsiveWidthScale(21)),
     fontFamily: FONTS.bold,
     color: COLORS.black,
+    marginTop: '0.8%'
   },
   comentarioModal: {
     fontSize: Math.max(11, responsiveWidthScale(14)),
@@ -1751,6 +1752,7 @@ const styles = StyleSheet.create({
   },
   estadistica: {
     marginLeft: "-5%",
+    marginTop: '-1%'
   },
   info: {},
   informacion: {
@@ -1802,7 +1804,7 @@ const styles = StyleSheet.create({
     maxWidth: "98%",
     marginHorizontal: "2%",
     flexDirection: "row",
-    marginLeft: "5%",
+    marginLeft: "3.5%",
     marginVertical: "0.5%",
     justifyContent: "space-between",
   },
@@ -2149,19 +2151,19 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   buscadorMociones: {
-  width: "100%",
-  paddingHorizontal: responsiveWidthScale(14),
-  paddingTop: responsiveWidthScale(10),
-  paddingBottom: responsiveWidthScale(4),
-  backgroundColor: COLORS.back,
-},
+    width: "100%",
+    paddingHorizontal: responsiveWidthScale(14),
+    paddingTop: responsiveWidthScale(10),
+    paddingBottom: responsiveWidthScale(4),
+    backgroundColor: COLORS.back,
+  },
 
-sinResultadosMociones: {
-  paddingVertical: responsiveWidthScale(28),
-  paddingHorizontal: responsiveWidthScale(15),
-  fontFamily: FONTS.regular,
-  fontSize: Math.max(11, responsiveWidthScale(13)),
-  color: COLORS.greyM,
-  textAlign: "center",
-},
+  sinResultadosMociones: {
+    paddingVertical: responsiveWidthScale(28),
+    paddingHorizontal: responsiveWidthScale(15),
+    fontFamily: FONTS.regular,
+    fontSize: Math.max(11, responsiveWidthScale(13)),
+    color: COLORS.greyM,
+    textAlign: "center",
+  },
 });
