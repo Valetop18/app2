@@ -293,7 +293,10 @@ export const SearchResults = ({ data = [], onSelect, representante }) => {
                 {item.tema ? (
                   // SENADORES
                   <Text style={styles.descripcion}>
-                    {item.tema}
+                    {item.tema_resumen || item.tema}
+                    {item.tema_resumen && (
+                      <Text style={styles.resumenIA}> ✨Resumen IA</Text>
+                    )}
                   </Text>
                 ) : (
                   // DIPUTADOS

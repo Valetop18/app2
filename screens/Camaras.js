@@ -1959,7 +1959,14 @@ export const CamaraDipu = () => {
             )}
           </View>
           {idVotacionActual && (
-            <View style={styles.reaccionesContainer}>
+            <View
+              style={[
+                styles.reaccionesContainer,
+                esProyectoEspecifico &&
+                !tieneArticulo &&
+                styles.reaccionesContainerSinArticulo,
+              ]}
+            >
               <TouchableOpacity
                 style={styles.reaccionDislike}
                 hitSlop={8}
@@ -3065,4 +3072,7 @@ const styles = StyleSheet.create({
   botonPartidoTelefonoBajo: {
     width: responsiveCamaraSize(310),
   },
+  reaccionesContainerSinArticulo: {
+  marginTop: -responsiveHeightScale(35),
+},
 });

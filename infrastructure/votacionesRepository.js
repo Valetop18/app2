@@ -107,6 +107,7 @@ export const votacionesRepository = {
           numero_sesion,
           fecha_texto,
           tema,
+          tema_resumen,
           boletin,
           resultado
         `,
@@ -169,6 +170,7 @@ export const votacionesRepository = {
         numeroSesion: v.numero_sesion,
         fechaTexto: v.fecha_texto,
         tema: v.tema || "",
+        tema_resumen: v.tema_resumen || "",
         boletin: v.boletin || "",
 
         resultado: v.resultado || "",
@@ -264,9 +266,8 @@ export const votacionesRepository = {
         numeroSesion: v.numero_sesion,
         fechaTexto: v.fecha_texto,
         tema: v.tema || "",
+        tema_resumen: v.tema_resumen || "",
         boletin: v.boletin || "",
-
-        // Lo dejamos preparado
         resultado: v.resultado || "",
       }));
     } catch (error) {
@@ -403,6 +404,7 @@ export const votacionesRepository = {
           numero_sesion,
           fecha_texto,
           tema,
+          tema_resumen,
           boletin,
           resultado,
           quorum
@@ -417,6 +419,7 @@ export const votacionesRepository = {
         id: v.id_votacion,
         fecha: v.fecha_texto || "",
         tema: v.tema || "",
+        tema_resumen: v.tema_resumen || "",
         boletin: v.boletin || "",
         resultado: v.resultado || "",
         quorum: v.quorum || "",
@@ -573,6 +576,7 @@ export const votacionesRepository = {
             id: row.id_votacion,
             fecha: row.fecha_texto,
             tema: row.tema || "",
+            tema_resumen: row.tema_resumen || "",
             boletin: row.boletin || "",
             resultado: row.resultado || "",
             quorum: row.quorum || "",

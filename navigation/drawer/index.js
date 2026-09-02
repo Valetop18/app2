@@ -1,5 +1,5 @@
 import "react-native-gesture-handler";
-import { React } from "react";
+import React, { useState } from "react";
 import {
   StyleSheet,
   View,
@@ -7,6 +7,7 @@ import {
   Platform,
   Pressable,
   useWindowDimensions,
+  Modal
 } from "react-native";
 import {
   createDrawerNavigator,
@@ -28,6 +29,7 @@ import {
   msFavorite,
   msDirectorySync,
   msLogout,
+  msGppMaybe,
 } from "@material-symbols-react-native/outlined-400";
 import { MsIcon } from "material-symbols-react-native";
 
@@ -61,6 +63,8 @@ const responsiveNavText = (baseValue, minValue = 11) => {
 function CustomDrawerContent(props) {
   const { logout } = useAuth();
   const navigation = useNavigation();
+  const [modalDistritoVisible, setModalDistritoVisible] =
+    useState(false);
 
   const { width, height } = useWindowDimensions();
 
@@ -79,82 +83,182 @@ function CustomDrawerContent(props) {
   };
 
   const cambioDistrito = () => {
-    navigation.navigate("SelectDistrito");
-  };
+  setModalDistritoVisible(true);
+};
+
+const cancelarCambioDistrito = () => {
+  setModalDistritoVisible(false);
+};
+
+const aceptarCambioDistrito = () => {
+  setModalDistritoVisible(false);
+  navigation.navigate("SelectDistrito");
+};
 
   return (
-    <DrawerContentScrollView
-      {...props}
-      style={{
-        backgroundColor: COLORS.greenM,
-        marginTop: 0,
-        paddingTop: responsiveHeightScale(70),
-      }}
-    >
-      <DrawerItemList {...props} />
-      <DrawerItem
-        pressOpacity={0.5}
-        icon={({ focused, color }) => (
-          <MsIcon
-            icon={msDirectorySync}
-            size={responsiveNavSize(16)}
-            color={COLORS.back}
+    <>
+
+      <Modal
+        visible={modalDistritoVisible}
+        transparent
+        animationType="fade"
+        presentationStyle="overFullScreen"
+        onRequestClose={cancelarCambioDistrito}
+      >
+        <View style={styles.modalDistritoOverlay}>
+          <Pressable
+            style={StyleSheet.absoluteFill}
+            onPress={cancelarCambioDistrito}
           />
-        )}
-        label="Cambio de distrito"
-        onPress={cambioDistrito}
-        labelStyle={{
-          fontFamily: FONTS.bold,
-          fontSize: responsiveNavText(14),
-          margin: 0,
-        }}
+
+          <View style={styles.modalDistritoContainer}>
+            <View style={styles.modalDistritoHeader}>
+              <View style={styles.modalDistritoIcon}>
+                <MaterialIcons
+                  name="location-on"
+                  size={responsiveNavSize(25)}
+                  color={COLORS.greenM}
+                />
+              </View>
+
+              <View style={styles.modalDistritoTitulos}>
+                <Text style={styles.modalDistritoTitulo}>
+                  Cambio de distrito
+                </Text>
+
+                <Text style={styles.modalDistritoSubtitulo}>
+                  Actualización de ubicación electoral
+                </Text>
+              </View>
+
+              <Pressable
+                style={styles.modalDistritoCerrar}
+                onPress={cancelarCambioDistrito}
+                hitSlop={10}
+              >
+                <Ionicons
+                  name="close"
+                  size={responsiveNavSize(18)}
+                  color={COLORS.greenM}
+                />
+              </Pressable>
+            </View>
+
+            <View style={styles.modalDistritoMensaje}>
+              <Ionicons
+                name="information-circle-outline"
+                size={responsiveNavSize(20)}
+                color={COLORS.greenM}
+              />
+
+              <Text style={styles.modalDistritoTexto}>
+                El distrito solo puede cambiarse una vez cada 6 meses.
+                Si continúas, podrás seleccionar nuevamente tu región y
+                comuna.
+              </Text>
+            </View>
+
+            <View style={styles.modalDistritoBotones}>
+              <Pressable
+                style={[
+                  styles.modalDistritoBoton,
+                  styles.modalDistritoCancelar,
+                ]}
+                onPress={cancelarCambioDistrito}
+              >
+                <Text style={styles.modalDistritoCancelarTexto}>
+                  CANCELAR
+                </Text>
+              </Pressable>
+
+              <Pressable
+                style={[
+                  styles.modalDistritoBoton,
+                  styles.modalDistritoAceptar,
+                ]}
+                onPress={aceptarCambioDistrito}
+              >
+                <Text style={styles.modalDistritoAceptarTexto}>
+                  CONTINUAR
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <DrawerContentScrollView
+        {...props}
         style={{
-          marginLeft: esTelefonoBajo ? "-7%" : "-6%",
-          borderRadius: 0,
-          width: 500,
-          ...(esTelefonoBajo && {
-            height: 48,
-            marginVertical: 0,
-          }),
+          backgroundColor: COLORS.greenM,
+          marginTop: 0,
+          paddingTop: responsiveHeightScale(70),
         }}
-        activeBackgroundColor={COLORS.verdeclaro}
-        activeTintColor={COLORS.greenM}
-        inactiveBackgroundColor={COLORS.greenM}
-        inactiveTintColor={COLORS.back}
-        pressColor={COLORS.back}
-      />
-      <DrawerItem
-        icon={({ focused, color }) => (
-          <MsIcon
-            icon={msLogout}
-            size={responsiveNavSize(16)}
-            color={COLORS.back}
-          />
-        )}
-        label="Cerrar Sesión"
-        onPress={submit}
-        labelStyle={{
-          fontFamily: FONTS.bold,
-          fontSize: responsiveNavText(14),
-          margin: 0,
-        }}
-        style={{
-          marginLeft: esTelefonoBajo ? "-7%" : "-6%",
-          borderRadius: 0,
-          width: 500,
-          ...(esTelefonoBajo && {
-            height: 48,
-            marginVertical: 0,
-          }),
-        }}
-        activeBackgroundColor={COLORS.verdeclaro}
-        activeTintColor={COLORS.greenM}
-        inactiveBackgroundColor={COLORS.greenM}
-        inactiveTintColor={COLORS.back}
-        pressColor={COLORS.back}
-      />
-    </DrawerContentScrollView>
-  );
+      >
+        <DrawerItemList {...props} />
+        <DrawerItem
+          pressOpacity={0.5}
+          icon={({ focused, color }) => (
+            <MsIcon
+              icon={msDirectorySync}
+              size={responsiveNavSize(16)}
+              color={COLORS.back}
+            />
+          )}
+          label="Cambio de distrito"
+          onPress={cambioDistrito}
+          labelStyle={{
+            fontFamily: FONTS.bold,
+            fontSize: responsiveNavText(14),
+            margin: 0,
+          }}
+          style={{
+            marginLeft: esTelefonoBajo ? "-7%" : "-6%",
+            borderRadius: 0,
+            width: 500,
+            ...(esTelefonoBajo && {
+              height: 48,
+              marginVertical: 0,
+            }),
+          }}
+          activeBackgroundColor={COLORS.verdeclaro}
+          activeTintColor={COLORS.greenM}
+          inactiveBackgroundColor={COLORS.greenM}
+          inactiveTintColor={COLORS.back}
+          pressColor={COLORS.back}
+        />
+        <DrawerItem
+          icon={({ focused, color }) => (
+            <MsIcon
+              icon={msLogout}
+              size={responsiveNavSize(16)}
+              color={COLORS.back}
+            />
+          )}
+          label="Cerrar Sesión"
+          onPress={submit}
+          labelStyle={{
+            fontFamily: FONTS.bold,
+            fontSize: responsiveNavText(14),
+            margin: 0,
+          }}
+          style={{
+            marginLeft: esTelefonoBajo ? "-7%" : "-6%",
+            borderRadius: 0,
+            width: 500,
+            ...(esTelefonoBajo && {
+              height: 48,
+              marginVertical: 0,
+            }),
+          }}
+          activeBackgroundColor={COLORS.verdeclaro}
+          activeTintColor={COLORS.greenM}
+          inactiveBackgroundColor={COLORS.greenM}
+          inactiveTintColor={COLORS.back}
+          pressColor={COLORS.back}
+        />
+      </DrawerContentScrollView>
+    </>);
 }
 
 const MyDrawer = () => {
@@ -426,6 +530,137 @@ const styles = StyleSheet.create({
     fontWeight: "bold"
   },
   buscador: {},
+  modalDistritoOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  modalDistritoContainer: {
+    width: "91%",
+    backgroundColor: COLORS.back,
+    borderRadius: responsiveWidthScale(22),
+    overflow: "hidden",
+    elevation: 12,
+    shadowColor: COLORS.black,
+    shadowOffset: {
+      width: 0,
+      height: responsiveWidthScale(6),
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: responsiveWidthScale(14),
+  },
+
+  modalDistritoHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: responsiveWidthScale(18),
+    paddingTop: responsiveWidthScale(18),
+    paddingBottom: responsiveWidthScale(14),
+  },
+
+  modalDistritoIcon: {
+    width: responsiveWidthScale(46),
+    height: responsiveWidthScale(46),
+    borderRadius: responsiveWidthScale(23),
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: COLORS.verdeclaro,
+  },
+
+  modalDistritoTitulos: {
+    flex: 1,
+    marginLeft: responsiveWidthScale(12),
+    paddingRight: responsiveWidthScale(20),
+  },
+
+  modalDistritoTitulo: {
+    color: COLORS.greenM,
+    fontSize: responsiveNavText(17),
+    lineHeight: responsiveWidthScale(23),
+    fontFamily: FONTS.bold,
+  },
+
+  modalDistritoSubtitulo: {
+    color: COLORS.greyM,
+    fontSize: responsiveNavText(12.5),
+    lineHeight: responsiveWidthScale(18),
+    fontFamily: FONTS.regular,
+  },
+
+  modalDistritoCerrar: {
+    position: "absolute",
+    top: responsiveWidthScale(12),
+    right: responsiveWidthScale(12),
+    width: responsiveWidthScale(24),
+    height: responsiveWidthScale(24),
+    borderRadius: responsiveWidthScale(14),
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: COLORS.verdeclaro,
+    zIndex: 10,
+  },
+
+  modalDistritoMensaje: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    marginHorizontal: responsiveWidthScale(16),
+    padding: responsiveWidthScale(14),
+    borderRadius: responsiveWidthScale(14),
+    backgroundColor: "#F7FAF8",
+    borderWidth: responsiveWidthScale(1),
+    borderColor: "#E7ECE8",
+  },
+
+  modalDistritoTexto: {
+    flex: 1,
+    marginLeft: responsiveWidthScale(9),
+    color: COLORS.black,
+    fontSize: responsiveNavText(13.5),
+    lineHeight: responsiveWidthScale(19),
+    fontFamily: FONTS.regular,
+  },
+
+  modalDistritoBotones: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    paddingHorizontal: responsiveWidthScale(16),
+    paddingTop: responsiveWidthScale(16),
+    paddingBottom: responsiveWidthScale(18),
+    gap: responsiveWidthScale(10),
+  },
+
+  modalDistritoBoton: {
+    minWidth: responsiveWidthScale(105),
+    height: responsiveHeightScale(40),
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: responsiveWidthScale(20),
+    paddingHorizontal: responsiveWidthScale(15),
+  },
+
+  modalDistritoCancelar: {
+    backgroundColor: COLORS.back,
+    borderWidth: responsiveWidthScale(1),
+    borderColor: COLORS.greenM,
+  },
+
+  modalDistritoAceptar: {
+    backgroundColor: COLORS.greenM,
+  },
+
+  modalDistritoCancelarTexto: {
+    color: COLORS.greenM,
+    fontSize: responsiveNavText(12.5),
+    fontFamily: FONTS.bold,
+  },
+
+  modalDistritoAceptarTexto: {
+    color: COLORS.back,
+    fontSize: responsiveNavText(12.5),
+    fontFamily: FONTS.bold,
+  },
 });
 
 export default MyDrawer;

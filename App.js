@@ -2,8 +2,6 @@ import "react-native-gesture-handler";
 import React from "react";
 import { useFonts } from "expo-font";
 import MainNavigation from "./navigation/index";
-import store from "./store";
-import { Provider } from "react-redux";
 import { Sedan_400Regular } from "@expo-google-fonts/sedan";
 import {
   Manrope_500Medium,
@@ -37,17 +35,15 @@ export default function App() {
 
   return (
     <AuthProvider>
-      <Provider store={store}>
-        <BuscadorProvider>
-          <TooltipProvider>
-            <ReaccionesProvider>
-              <DataProvider>
-                <MainNavigation />
-              </DataProvider>
-            </ReaccionesProvider>
-          </TooltipProvider>
-        </BuscadorProvider>
-      </Provider>
+      <BuscadorProvider>
+        <TooltipProvider>
+          <ReaccionesProvider>
+            <DataProvider>
+              <MainNavigation />
+            </DataProvider>
+          </ReaccionesProvider>
+        </TooltipProvider>
+      </BuscadorProvider>
     </AuthProvider>
   );
 }
