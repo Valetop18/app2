@@ -9,11 +9,7 @@ import {
   ScrollView,
 } from "react-native";
 import Input from "../components/input";
-import { useDispatch, useSelector } from "react-redux";
-import { filteredDiputados } from "../store/actions/diputado.action";
-import { filteredSenadores } from "../store/actions/senador.action";
 import { COLORS } from "../constants/colors";
-import * as SQLite from "expo-sqlite";
 import { FontAwesome } from "@expo/vector-icons";
 import { Ionicons } from "@react-native-vector-icons/ionicons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -43,12 +39,8 @@ const INITIAL_STATE = {
 };
 
 const Login = () => {
-  const dispatch = useDispatch();
   const { authError, login } = useAuth();
   const [modalVisible, setModalVisible] = useState(false);
-
-  const [regionSelect, setRegionSelect] = useState();
-  const [distritoSelect, setDistritoSelect] = useState(null);
 
   const [input, setInput] = useState(INITIAL_STATE);
 
@@ -115,11 +107,6 @@ const Login = () => {
         return;
       }
 
-      dispatch(
-        filteredDiputados(distritoSelect),
-        filteredSenadores(regionSelect),
-      );
-      //validar respuesta de login, si es exitosa hacer navigate a MyDrawer
     } catch (error) {
       console.log(error);
     }

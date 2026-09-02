@@ -1624,7 +1624,11 @@ export const CamaraSena = () => {
   };
   const proyectoActual = votacionesPorSesion[proyectoActivo];
 
-  const temaActual = proyectoActual?.tema || "";
+  const esTemaResumen = !!proyectoActual?.tema_resumen;
+
+  const temaActual =
+    proyectoActual?.tema_resumen || proyectoActual?.tema || "";
+
   const boletinActual = proyectoActual?.boletin || "";
   const quorumActual = proyectoActual?.quorum || "";
 
@@ -1706,6 +1710,9 @@ export const CamaraSena = () => {
                 >
                   <Text style={styles.materia}>
                     {temaActual}
+                    {esTemaResumen && (
+                      <Text style={styles.resumenIA}> ✨Resumen IA</Text>
+                    )}
                   </Text>
                 </View>
               ) : null}

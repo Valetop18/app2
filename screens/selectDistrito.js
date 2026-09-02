@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, Alert, TouchableOpacity} from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Modal, TouchableWithoutFeedback } from "react-native";
 import SelectorRegistro from "../components/SelectorRegistro";
 import { REGIONES } from "../data/regiones";
 import { COMUNAS } from "../data/comunas";
@@ -12,12 +12,22 @@ import {
   responsiveHeightScale,
 } from "../utils/responsive";
 import { FONTS } from "../constants/fonts";
+import MaterialIcons from "@react-native-vector-icons/material-icons";
+import { msGppMaybe } from "@material-symbols-react-native/outlined-400";
+import { MsIcon } from "material-symbols-react-native";
 
 const SelectDistrito = () => {
   const [regionSelect, setRegionSelect] = useState();
   const [comunaSelect, setComunaSelect] = useState();
   const [distritoSelect, setDistritoSelect] = useState(null);
   const { user, tipoAuth, setTipoAuth, actualizarUsuario } = useAuth();
+  const [modalVisible, setModalVisible] = useState(false);
+  const [mensajeModal, setMensajeModal] = useState("");
+
+  const mostrarModal = (mensaje) => {
+    setMensajeModal(mensaje);
+    setModalVisible(true);
+  };
 
   const navigation = useNavigation();
 
@@ -25,22 +35,45 @@ const SelectDistrito = () => {
     (comunas) => comunas.key === regionSelect,
   ).sort((a, b) => a.label.localeCompare(b.label));
 
-  // const userData = useSelector(state => state.login.user);
-  // console.log("userdata: ", userData);
-
   const onChangeDistrito = async () => {
-    if (!regionSelect || !distritoSelect || !user?.id) return;
+    if (
+      !regionSelect ||
+      !comunaSelect ||
+      !distritoSelect ||
+      !user?.id
+    ) {
+      return;
+    }
+
+    const regionSeleccionada = REGIONES.find(
+      (region) => region.value === regionSelect,
+    );
+
+    const comunaSeleccionada = COMUNAS.find(
+      (comuna) => comuna.value === comunaSelect,
+    );
+
+    if (!regionSeleccionada || !comunaSeleccionada) {
+      mostrarModal(
+        "No se pudo identificar la región o comuna seleccionada.",
+      );
+      return;
+    }
 
     try {
       await profilesRepository.updateCircunscripcionAndDistrito(
         user.id,
         regionSelect,
         distritoSelect,
+        regionSeleccionada.label,
+        comunaSeleccionada.label,
       );
 
       await actualizarUsuario({
         distrito: distritoSelect,
         circunscripcion: regionSelect,
+        region: regionSeleccionada.label,
+        comuna: comunaSeleccionada.label,
       });
 
       // Usuario que acaba de completar el registro.
@@ -63,11 +96,21 @@ const SelectDistrito = () => {
         },
       });
     } catch (error) {
-      console.error("Error al actualizar distrito y circunscripción:", error);
+      console.error("Error al actualizar ubicación:", error);
 
-      Alert.alert(
-        "Error",
-        "No se pudo guardar tu distrito. Inténtalo nuevamente.",
+      const mensajeError = error?.message || "";
+
+      if (mensajeError.includes("CAMBIO_UBICACION_BLOQUEADO")) {
+        const mensajeLimpio = mensajeError
+          .replace("CAMBIO_UBICACION_BLOQUEADO:", "")
+          .trim();
+
+        mostrarModal(mensajeLimpio);
+        return;
+      }
+
+      mostrarModal(
+        "No se pudo guardar tu ubicación. Inténtalo nuevamente.",
       );
     }
   };
@@ -131,7 +174,7 @@ const SelectDistrito = () => {
     } else if (comuna < 345) {
       setDistritoSelect(28);
     } else {
-      Alert.alert("Error");
+      mostrarModal("No se pudo identificar el distrito seleccionado.");
     }
   };
 
@@ -147,6 +190,51 @@ const SelectDistrito = () => {
 
   return (
     <View style={styles.container}>
+
+      <Modal
+        visible={modalVisible}
+        transparent
+        animationType="slide"
+        statusBarTranslucent
+        presentationStyle="overFullScreen"
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <TouchableWithoutFeedback
+          onPress={() => setModalVisible(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback onPress={() => { }}>
+              <View style={styles.modalAlerta}>
+                <View style={styles.modalCerrarContainer}>
+                  <TouchableOpacity
+                    onPress={() => setModalVisible(false)}
+                    hitSlop={8}
+                  >
+                    <MaterialIcons
+                      name="cancel"
+                      size={responsiveWidthScale(20)}
+                      color={COLORS.grey}
+                    />
+                  </TouchableOpacity>
+                </View>
+
+                <View style={styles.modalContenido}>
+                  <MsIcon
+                    icon={msGppMaybe}
+                    size={responsiveWidthScale(45)}
+                    color={COLORS.greenM}
+                  />
+
+                  <Text style={styles.textModal}>
+                    {mensajeModal}
+                  </Text>
+                </View>
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
+
       {comunaSelect ? (
         <View style={styles.containerDistrito}>
           <View style={styles.distritoLabel}>
@@ -182,34 +270,34 @@ const SelectDistrito = () => {
       <View style={styles.containerSelect}>
         <Text style={styles.label}>Región:</Text>
         <View style={styles.input}>
-  <SelectorRegistro
-    value={regionSelect}
-    placeholder="Selecciona tu región"
-    title="Selecciona tu región"
-    options={REGIONES.map((region) => ({
-      label: region.label,
-      value: region.value,
-    }))}
-    onChange={(value) => {
-      setRegionSelect(value);
-      setComunaSelect(undefined);
-      setDistritoSelect(null);
-    }}
-  />
-</View>
+          <SelectorRegistro
+            value={regionSelect}
+            placeholder="Selecciona tu región"
+            title="Selecciona tu región"
+            options={REGIONES.map((region) => ({
+              label: region.label,
+              value: region.value,
+            }))}
+            onChange={(value) => {
+              setRegionSelect(value);
+              setComunaSelect(undefined);
+              setDistritoSelect(null);
+            }}
+          />
+        </View>
         <Text style={[styles.label, styles.comunaLabel]}>Comuna:</Text>
         <View style={styles.input}>
-  <SelectorRegistro
-    value={comunaSelect}
-    placeholder="Selecciona tu comuna"
-    title="Selecciona tu comuna"
-    options={COMUNASSELECTED.map((comuna) => ({
-      label: comuna.label,
-      value: comuna.value,
-    }))}
-    onChange={handlerSelectDistrito}
-  />
-</View>
+          <SelectorRegistro
+            value={comunaSelect}
+            placeholder="Selecciona tu comuna"
+            title="Selecciona tu comuna"
+            options={COMUNASSELECTED.map((comuna) => ({
+              label: comuna.label,
+              value: comuna.value,
+            }))}
+            onChange={handlerSelectDistrito}
+          />
+        </View>
       </View>
       <View style={styles.containerButon}>
         <TouchableOpacity style={styles.buton} onPress={onChangeDistrito}>
@@ -326,22 +414,58 @@ const styles = StyleSheet.create({
   },
 
   distritoTitulo: {
-  color: COLORS.verdeclaro,
-  fontFamily: FONTS.bold,
-  letterSpacing: responsiveWidthScale(-2),
-  marginTop: responsiveHeightScale(3),
-  includeFontPadding: false,
-},
+    color: COLORS.verdeclaro,
+    fontFamily: FONTS.bold,
+    letterSpacing: responsiveWidthScale(-2),
+    marginTop: responsiveHeightScale(3),
+    includeFontPadding: false,
+  },
 
-distrito: {
-  color: COLORS.verdeclaro,
-  fontFamily: FONTS.bold,
-  letterSpacing: responsiveWidthScale(-20),
-  includeFontPadding: false,
-  marginTop: -Math.min(
-    responsiveWidthScale(100),
-    responsiveHeightScale(100),
-  ),
-},
+  distrito: {
+    color: COLORS.verdeclaro,
+    fontFamily: FONTS.bold,
+    letterSpacing: responsiveWidthScale(-20),
+    includeFontPadding: false,
+    marginTop: -Math.min(
+      responsiveWidthScale(100),
+      responsiveHeightScale(100),
+    ),
+  },
+  modalAlerta: {
+    minHeight: responsiveHeightScale(154),
+    width: "100%",
+    backgroundColor: COLORS.back,
+    justifyContent: "center",
+    alignItems: "center",
+    borderTopRightRadius: responsiveWidthScale(5),
+    borderTopLeftRadius: responsiveWidthScale(5),
+    paddingHorizontal: responsiveWidthScale(25),
+    paddingVertical: responsiveHeightScale(20),
+  },
+
+  modalCerrarContainer: {
+    position: "absolute",
+    top: responsiveHeightScale(14),
+    right: responsiveWidthScale(25),
+    zIndex: 2,
+  },
+
+  modalContenido: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  textModal: {
+    fontFamily: FONTS.bold,
+    color: COLORS.black,
+    fontSize: Math.max(11, responsiveWidthScale(15)),
+    marginTop: responsiveHeightScale(6),
+    textAlign: "center",
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: "flex-end",
+    backgroundColor: "rgba(0, 0, 0, 0.45)",
+  },
 });
 export default SelectDistrito;

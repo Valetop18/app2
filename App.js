@@ -1,9 +1,7 @@
 import "react-native-gesture-handler";
-import React, {useEffect} from "react";
+import React, { useEffect } from "react";
 import { useFonts } from "expo-font";
 import MainNavigation from "./navigation/index";
-import store from "./store";
-import { Provider } from "react-redux";
 import { Sedan_400Regular } from "@expo-google-fonts/sedan";
 import {
   Manrope_500Medium,
@@ -24,21 +22,21 @@ Text.defaultProps.maxFontSizeMultiplier = 1.05;
 TextInput.defaultProps = TextInput.defaultProps || {};
 TextInput.defaultProps.maxFontSizeMultiplier = 1.05;
 
-function RegistrarNotificaciones(){
+function RegistrarNotificaciones() {
   const { user, loading } = useAuth();
 
-  useEffect(  () => {
+  useEffect(() => {
 
     if (loading || !user?.id) return;
 
     let active = true;
 
-    async function registerDevice(){
+    async function registerDevice() {
       try {
         const result = await registerCurrentDeviceForPushNotifications(user.id);
 
         if (active) {
-          console.log("Resultado registro notificaciones: ", result.status );
+          console.log("Resultado registro notificaciones: ", result.status);
         }
 
       } catch (error) {
@@ -46,7 +44,7 @@ function RegistrarNotificaciones(){
         if (active) {
           console.error("No se pudo registrar el dispositivo para notificaciones")
         }
-        
+
       }
     }
 
@@ -58,7 +56,7 @@ function RegistrarNotificaciones(){
 
 
 
-  }, [loading, user?.id] )
+  }, [loading, user?.id])
 
 
 }
@@ -79,18 +77,16 @@ export default function App() {
 
   return (
     <AuthProvider>
-      <RegistrarNotificaciones/>
-      <Provider store={store}>
-        <BuscadorProvider>
-          <TooltipProvider>
-            <ReaccionesProvider>
-              <DataProvider>
-                <MainNavigation />
-              </DataProvider>
-            </ReaccionesProvider>
-          </TooltipProvider>
-        </BuscadorProvider>
-      </Provider>
+      <RegistrarNotificaciones />
+      <BuscadorProvider>
+        <TooltipProvider>
+          <ReaccionesProvider>
+            <DataProvider>
+              <MainNavigation />
+            </DataProvider>
+          </ReaccionesProvider>
+        </TooltipProvider>
+      </BuscadorProvider>
     </AuthProvider>
   );
 }
