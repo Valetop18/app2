@@ -42,7 +42,7 @@ function RegistrarNotificaciones() {
       } catch (error) {
 
         if (active) {
-          console.error("No se pudo registrar el dispositivo para notificaciones")
+          console.error("No se pudo registrar el dispositivo para notificaciones", error)
         }
 
       }

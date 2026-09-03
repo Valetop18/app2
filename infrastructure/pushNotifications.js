@@ -3,6 +3,7 @@ import * as Notifications from "expo-notifications";
 import Constants from "expo-constants";
 import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { pushNotificationsRepository } from "./pushNotificationsRepository";
 
 const ANDROID_CHANNEL_ID = "updates";
 const PUSH_REGISTRATION_KEY = "@pushRegistration";
@@ -111,13 +112,29 @@ export async function registerCurrentDeviceForPushNotifications(userId){
         updatedAt: new Date().toISOString()
     }
 
+    try {
+        await pushNotificationsRepository.registrarToken(registration);
+    } catch (error) {
+
+        console.error("Error supabase", {
+            message: error.message,
+            code: error.code,
+            details: error.details,
+            hint: error.hint
+        });
+
+        throw new Error("PUSH_REMOTE_REGISTRATION_FAILED", error);
+        
+    }
+
+
     await AsyncStorage.setItem(
         PUSH_REGISTRATION_KEY,
         JSON.stringify(registration)
     );
 
     return {
-        status: "registrado-localmente",
+        status: "registrado",
         ...registration
     }
 
@@ -128,4 +145,36 @@ export async function registerCurrentDeviceForPushNotifications(userId){
 
 
 
+}
+
+export async function unregisterCurrentDeviceForPushNotifications(userId) {
+
+    if (!userId) {
+        throw new Error("PUSH_USER_REQUERIDO");
+    }
+
+    const storedRegistration = await AsyncStorage.getItem(PUSH_REGISTRATION_KEY);
+
+    if (!storedRegistration) {
+        return { status: "sin-registro-local" };
+    }
+
+    let registration;
+
+    try {
+        registration = JSON.parse(storedRegistration);
+    } catch (error) {
+        await AsyncStorage.removeItem(PUSH_REGISTRATION_KEY);
+        return { status: "registro-local-invalido" };
+    }
+
+    if (registration.userId !== userId || !registration.expoPushToken) {
+        throw new Error("PUSH_STORED_REGISTRATION_NO_COINCIDE");
+    }
+
+    await pushNotificationsRepository.eliminarToken({ userId, expoPushToken: registration.expoPushToken });
+
+    await AsyncStorage.removeItem(PUSH_REGISTRATION_KEY);
+
+    return { status: "unregistered"};
 }
