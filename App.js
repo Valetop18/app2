@@ -14,11 +14,15 @@ import { TooltipProvider } from "./context/TooltipProvider";
 import { ReaccionesProvider } from "./context/ReaccionesContext";
 import { DataProvider } from "./context/DataContext";
 import { Text, TextInput } from "react-native";
+<<<<<<< HEAD
 import { 
   obtenerUltimaNotificacionAbierta, 
   registerCurrentDeviceForPushNotifications, 
   suscribirEventosNotificaciones 
 } from "./infrastructure/pushNotifications";
+=======
+import { OnboardingProvider } from "./context/OnboardingContext";
+>>>>>>> origin
 
 Text.defaultProps = Text.defaultProps || {};
 Text.defaultProps.maxFontSizeMultiplier = 1.05;
@@ -132,6 +136,7 @@ function EscucharEventosNotificaciones(){
 
   return (
     <AuthProvider>
+<<<<<<< HEAD
       <RegistrarNotificaciones />
       <BuscadorProvider>
         <TooltipProvider>
@@ -142,6 +147,19 @@ function EscucharEventosNotificaciones(){
           </ReaccionesProvider>
         </TooltipProvider>
       </BuscadorProvider>
+=======
+      <OnboardingProvider>
+        <BuscadorProvider>
+          <TooltipProvider>
+            <ReaccionesProvider>
+              <DataProvider>
+                <MainNavigation />
+              </DataProvider>
+            </ReaccionesProvider>
+          </TooltipProvider>
+        </BuscadorProvider>
+      </OnboardingProvider>
+>>>>>>> origin
     </AuthProvider>
   );
 }
