@@ -17,6 +17,50 @@ Notifications.setNotificationHandler({
     })
 })
 
+function normalizadorNotificacion(notificacion){
+    const request = notificacion?.request;
+    const content = notificacion?.content;
+
+    return {
+        identifier: request?.identifier ?? null,
+        title: content?.title ?? null,
+        body: content?.body ?? null,
+        data: content?.data ?? null,
+        receivedAt: notificacion?.date ?? null
+    };
+}
+
+function normalizarRespuestaNotificacion(response){
+    return {
+        ...normalizadorNotificacion(response?.notification),
+        actionIdentifier: response?.actionIdentifier ?? null
+    }
+}
+
+export function suscribirEventosNotificaciones( { alRecibir, alAbrir }  ) {
+
+    const receivedSubscription = 
+        Notifications.addNotificationReceivedListener( (notificacion) => {
+            alRecibir?.( normalizadorNotificacion(notificacion) );
+        } )
+
+    const responseSubscription = 
+        Notifications.addNotificationResponseReceivedListener((response) => {
+            alAbrir?.(normalizarRespuestaNotificacion(response));
+        });
+
+    return () => {
+        receivedSubscription.remove();
+        responseSubscription.remove();
+    }
+
+}
+
+export async function obtenerUltimaNotificacionAbierta() {
+    const response = await Notifications.getLastNotificationResponseAsync();
+    return response ? normalizarRespuestaNotificacion(response) : null;
+}
+
 
 async function ensureAndroidChannel() {
     if (Platform.OS !== "android" ) return;

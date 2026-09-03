@@ -14,7 +14,11 @@ import { TooltipProvider } from "./context/TooltipProvider";
 import { ReaccionesProvider } from "./context/ReaccionesContext";
 import { DataProvider } from "./context/DataContext";
 import { Text, TextInput } from "react-native";
-import { registerCurrentDeviceForPushNotifications } from "./infrastructure/pushNotifications";
+import { 
+  obtenerUltimaNotificacionAbierta, 
+  registerCurrentDeviceForPushNotifications, 
+  suscribirEventosNotificaciones 
+} from "./infrastructure/pushNotifications";
 
 Text.defaultProps = Text.defaultProps || {};
 Text.defaultProps.maxFontSizeMultiplier = 1.05;
@@ -62,6 +66,57 @@ function RegistrarNotificaciones() {
 }
 
 export default function App() {
+
+function EscucharEventosNotificaciones(){
+
+  useEffect( () => {
+
+    let active = true;
+    const openedNotifications = new Set();
+
+    function handleOpenedNotifications(notification, source ){
+      if (!active) return;
+
+      const eventId = `${notification.identifier}:${notification.actionIdentifier}`;
+
+      if( openedNotifications.has(eventId)) return;
+
+      openedNotifications.add(eventId);
+      console.log(`Notificacion abierta (${source}): `, notification);
+
+    }
+
+    const unsubscribe = suscribirEventosNotificaciones({
+      alRecibir: (notification) => {
+        if(active){
+          console.log("Notificacion recibida: ", notification)
+        }
+      },
+      alAbrir: (notification) => {
+        handleOpenedNotifications(notification, "listener");
+      }
+    });
+
+    async function revisarNotificacionInicial() {
+
+      try {
+        const notificacion = await obtenerUltimaNotificacionAbierta();
+
+        if (notificacion) {
+          handleOpenedNotifications(notificacion, "inicio")
+        }
+      } catch (error) {
+        if (active) {
+          console.error("no se pudo leer la notificacion inicial: ", error)          
+        }
+      }
+      
+    }
+
+
+  }, [] )
+
+}
   let [fontsLoaded] = useFonts({
     Sedan_400Regular,
     Manrope_500Medium,
