@@ -14,15 +14,12 @@ import { TooltipProvider } from "./context/TooltipProvider";
 import { ReaccionesProvider } from "./context/ReaccionesContext";
 import { DataProvider } from "./context/DataContext";
 import { Text, TextInput } from "react-native";
-<<<<<<< HEAD
-import { 
-  obtenerUltimaNotificacionAbierta, 
-  registerCurrentDeviceForPushNotifications, 
-  suscribirEventosNotificaciones 
+import {
+  obtenerUltimaNotificacionAbierta,
+  registerCurrentDeviceForPushNotifications,
+  suscribirEventosNotificaciones
 } from "./infrastructure/pushNotifications";
-=======
 import { OnboardingProvider } from "./context/OnboardingContext";
->>>>>>> origin
 
 Text.defaultProps = Text.defaultProps || {};
 Text.defaultProps.maxFontSizeMultiplier = 1.05;
@@ -71,56 +68,56 @@ function RegistrarNotificaciones() {
 
 export default function App() {
 
-function EscucharEventosNotificaciones(){
+  function EscucharEventosNotificaciones() {
 
-  useEffect( () => {
+    useEffect(() => {
 
-    let active = true;
-    const openedNotifications = new Set();
+      let active = true;
+      const openedNotifications = new Set();
 
-    function handleOpenedNotifications(notification, source ){
-      if (!active) return;
+      function handleOpenedNotifications(notification, source) {
+        if (!active) return;
 
-      const eventId = `${notification.identifier}:${notification.actionIdentifier}`;
+        const eventId = `${notification.identifier}:${notification.actionIdentifier}`;
 
-      if( openedNotifications.has(eventId)) return;
+        if (openedNotifications.has(eventId)) return;
 
-      openedNotifications.add(eventId);
-      console.log(`Notificacion abierta (${source}): `, notification);
+        openedNotifications.add(eventId);
+        console.log(`Notificacion abierta (${source}): `, notification);
 
-    }
-
-    const unsubscribe = suscribirEventosNotificaciones({
-      alRecibir: (notification) => {
-        if(active){
-          console.log("Notificacion recibida: ", notification)
-        }
-      },
-      alAbrir: (notification) => {
-        handleOpenedNotifications(notification, "listener");
       }
-    });
 
-    async function revisarNotificacionInicial() {
-
-      try {
-        const notificacion = await obtenerUltimaNotificacionAbierta();
-
-        if (notificacion) {
-          handleOpenedNotifications(notificacion, "inicio")
+      const unsubscribe = suscribirEventosNotificaciones({
+        alRecibir: (notification) => {
+          if (active) {
+            console.log("Notificacion recibida: ", notification)
+          }
+        },
+        alAbrir: (notification) => {
+          handleOpenedNotifications(notification, "listener");
         }
-      } catch (error) {
-        if (active) {
-          console.error("no se pudo leer la notificacion inicial: ", error)          
+      });
+
+      async function revisarNotificacionInicial() {
+
+        try {
+          const notificacion = await obtenerUltimaNotificacionAbierta();
+
+          if (notificacion) {
+            handleOpenedNotifications(notificacion, "inicio")
+          }
+        } catch (error) {
+          if (active) {
+            console.error("no se pudo leer la notificacion inicial: ", error)
+          }
         }
+
       }
-      
-    }
 
 
-  }, [] )
+    }, [])
 
-}
+  }
   let [fontsLoaded] = useFonts({
     Sedan_400Regular,
     Manrope_500Medium,
@@ -136,18 +133,7 @@ function EscucharEventosNotificaciones(){
 
   return (
     <AuthProvider>
-<<<<<<< HEAD
       <RegistrarNotificaciones />
-      <BuscadorProvider>
-        <TooltipProvider>
-          <ReaccionesProvider>
-            <DataProvider>
-              <MainNavigation />
-            </DataProvider>
-          </ReaccionesProvider>
-        </TooltipProvider>
-      </BuscadorProvider>
-=======
       <OnboardingProvider>
         <BuscadorProvider>
           <TooltipProvider>
@@ -159,7 +145,6 @@ function EscucharEventosNotificaciones(){
           </TooltipProvider>
         </BuscadorProvider>
       </OnboardingProvider>
->>>>>>> origin
     </AuthProvider>
   );
 }
