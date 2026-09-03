@@ -114,9 +114,14 @@ export default function App() {
 
       }
 
+      revisarNotificacionInicial();
 
+      return () => {
+        active = false;
+        unsubscribe();
+      }
     }, [])
-
+    return null;
   }
   let [fontsLoaded] = useFonts({
     Sedan_400Regular,
@@ -129,11 +134,10 @@ export default function App() {
     return null;
   }
 
-
-
   return (
     <AuthProvider>
       <RegistrarNotificaciones />
+      <EscucharEventosNotificaciones />
       <OnboardingProvider>
         <BuscadorProvider>
           <TooltipProvider>
