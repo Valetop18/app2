@@ -1,10 +1,16 @@
 import React from "react";
-import { View, Text, Image, StyleSheet, TouchableOpacity } from "react-native";
+import {
+  Animated,
+  View,
+  Text,
+  Image,
+  StyleSheet,
+  TouchableOpacity,
+} from "react-native";
 import { MaterialIcons } from "@react-native-vector-icons/material-icons";
 import { COLORS } from "../constants/colors";
 import { FONTS } from "../constants/fonts";
 import Ionicons from "@react-native-vector-icons/ionicons";
-import { useState, useEffect } from "react";
 import { msPersonRaisedHand } from "@material-symbols-react-native/outlined-400";
 import { MsIcon } from "material-symbols-react-native";
 import { responsiveWidthScale } from "../utils/responsive";
@@ -32,7 +38,15 @@ const coloresPorPartido = {
   DEM: COLORS.DEM,
 };
 
-const GridRepresent = ({ item, reaccion, onSelected, handleLike }) => {
+const GridRepresent = ({
+  item,
+  reaccion,
+  onSelected,
+  handleLike,
+  cardRef,
+  escalaOnboarding = 1,
+  bloquearLike = false,
+}) => {
   //const isLiked = item
   const borderColor = coloresPorPartido[item.partido] || "#000";
 
@@ -45,79 +59,64 @@ const GridRepresent = ({ item, reaccion, onSelected, handleLike }) => {
 
   return (
     <View style={styles.card}>
-      <TouchableOpacity
-        onPress={() => onSelected(item)}
-        style={{ ...styles.container }}
+      <Animated.View
+        ref={cardRef}
+        collapsable={false}
+        style={[
+          styles.container,
+          {
+            transform: [{ scale: escalaOnboarding }],
+          },
+        ]}
       >
-        <View style={styles.containImage}>
-          <Image
-            style={{
-              borderColor,
-              width: responsiveWidthScale(76),
-              height: responsiveWidthScale(76),
-              borderRadius: responsiveWidthScale(100),
-              borderWidth: responsiveWidthScale(3),
-            }}
-            source={{ uri: item.foto }}
-          />
-          <Text style={styles.partido}>
-            {item.partido}
-            {item.estado && <Text> - {item.estado}</Text>}
-          </Text>
-        </View>
-        <View style={styles.infoEscrita}>
-          <View flexDirection={"row"} alignItems={"center"}>
-            <Text
-              style={styles.name}
-              numberOfLines={1}
-              adjustsFontSizeToFit
-              minimumFontScale={0.85}
-            >
-              {item.nombre}
+        <TouchableOpacity
+          activeOpacity={1}
+          onPress={() => onSelected(item)}
+          style={styles.touchable}
+        >
+          <View style={styles.containImage}>
+            <Image
+              style={{
+                borderColor,
+                width: responsiveWidthScale(76),
+                height: responsiveWidthScale(76),
+                borderRadius: responsiveWidthScale(100),
+                borderWidth: responsiveWidthScale(3),
+              }}
+              source={{ uri: item.foto }}
+            />
+            <Text style={styles.partido}>
+              {item.partido}
+              {item.estado && <Text> - {item.estado}</Text>}
             </Text>
-            <Text style={styles.totLikes}>
-              {totalLikesVisible > 0 ? totalLikesVisible : ""}
-            </Text>
-            <TouchableOpacity
-              style={styles.icono}
-              marginTop={"-1%"}
-              onPress={() => handleLike(item.id, "like")}
-            >
-              <Ionicons
-                name="heart-circle-outline"
-                size={responsiveWidthScale(26)}
-                color={reaccion === "like" ? COLORS.greenM : COLORS.grey}
-              />
-            </TouchableOpacity>
           </View>
-          <View style={styles.containerInfo}>
-            <View>
-              <View
-                flexDirection={"row"}
-                alignItems={"center"}
-                marginVertical={responsiveWidthScale(6)}
+          <View style={styles.infoEscrita}>
+            <View flexDirection={"row"} alignItems={"center"}>
+              <Text
+                style={styles.name}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.85}
               >
-                <MaterialIcons
-                  name="event-available"
-                  size={responsiveWidthScale(17)}
-                  color={COLORS.greenM}
+                {item.nombre}
+              </Text>
+              <Text style={styles.totLikes}>
+                {totalLikesVisible > 0 ? totalLikesVisible : ""}
+              </Text>
+              <TouchableOpacity
+                style={styles.icono}
+                marginTop={"-1%"}
+                onPress={() => handleLike(item.id, "like")}
+                disabled={bloquearLike}
+              >
+                <Ionicons
+                  name="heart-circle-outline"
+                  size={responsiveWidthScale(26)}
+                  color={reaccion === "like" ? COLORS.greenM : COLORS.grey}
                 />
-                <Text style={styles.informacion}>
-                  {item.asistencia ?? 0}% Asistencia{" "}
-                </Text>
-              </View>
-              <View flexDirection={"row"} alignItems={"center"} marginTop={responsiveWidthScale(3)}>
-                <MsIcon
-                  icon={msPersonRaisedHand}
-                  size={responsiveWidthScale(17)}
-                  color={COLORS.greenM}
-                />
-                <Text style={styles.informacion}>
-                  {item.votaciones ?? 0}% Votaciones{" "}
-                </Text>
-              </View>
+              </TouchableOpacity>
             </View>
-            <View style={styles.info}>
+            <View style={styles.containerInfo}>
               <View>
                 <View
                   flexDirection={"row"}
@@ -125,40 +124,68 @@ const GridRepresent = ({ item, reaccion, onSelected, handleLike }) => {
                   marginVertical={responsiveWidthScale(6)}
                 >
                   <MaterialIcons
-                    name="assignment-late"
-                    size={responsiveWidthScale(17)}
-                    color={COLORS.greenM}
-                  />
-                  <Text style={styles.informacion} marginLeft={"1%"}>
-                    {item.oficios ?? 0} oficios
-                  </Text>
-                </View>
-                <View flexDirection={"row"} alignItems={"center"} marginTop={responsiveWidthScale(3)}>
-                  <MaterialIcons
-                    name="addchart"
+                    name="event-available"
                     size={responsiveWidthScale(17)}
                     color={COLORS.greenM}
                   />
                   <Text style={styles.informacion}>
-                    {item.mociones ?? 0} mociones{" "}
+                    {item.asistencia ?? 0}% Asistencia{" "}
+                  </Text>
+                </View>
+                <View flexDirection={"row"} alignItems={"center"} marginTop={responsiveWidthScale(3)}>
+                  <MsIcon
+                    icon={msPersonRaisedHand}
+                    size={responsiveWidthScale(17)}
+                    color={COLORS.greenM}
+                  />
+                  <Text style={styles.informacion}>
+                    {item.votaciones ?? 0}% Votaciones{" "}
                   </Text>
                 </View>
               </View>
-            </View>
-            <View style={styles.dataUsage}>
-              <MaterialIcons
-                name="data-usage"
-                size={responsiveWidthScale(40)}
-                color={COLORS.verdeclaro}
-                position={"absolute"}
-              />
-              <Text style={styles.data2}>
-                {item.representacionDistrital ?? 0}%
-              </Text>
+              <View style={styles.info}>
+                <View>
+                  <View
+                    flexDirection={"row"}
+                    alignItems={"center"}
+                    marginVertical={responsiveWidthScale(6)}
+                  >
+                    <MaterialIcons
+                      name="assignment-late"
+                      size={responsiveWidthScale(17)}
+                      color={COLORS.greenM}
+                    />
+                    <Text style={styles.informacion} marginLeft={"1%"}>
+                      {item.oficios ?? 0} oficios
+                    </Text>
+                  </View>
+                  <View flexDirection={"row"} alignItems={"center"} marginTop={responsiveWidthScale(3)}>
+                    <MaterialIcons
+                      name="addchart"
+                      size={responsiveWidthScale(17)}
+                      color={COLORS.greenM}
+                    />
+                    <Text style={styles.informacion}>
+                      {item.mociones ?? 0} mociones{" "}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+              <View style={styles.dataUsage}>
+                <MaterialIcons
+                  name="data-usage"
+                  size={responsiveWidthScale(40)}
+                  color={COLORS.verdeclaro}
+                  position={"absolute"}
+                />
+                <Text style={styles.data2}>
+                  {item.representacionDistrital ?? 0}%
+                </Text>
+              </View>
             </View>
           </View>
-        </View>
-      </TouchableOpacity>
+        </TouchableOpacity>
+      </Animated.View>
     </View>
   );
 };
@@ -189,6 +216,10 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.12,
     shadowRadius: responsiveWidthScale(4),
+  },
+  touchable: {
+    width: "100%",
+    flexDirection: "row",
   },
 
   containImage: {

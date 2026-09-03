@@ -83,17 +83,17 @@ function CustomDrawerContent(props) {
   };
 
   const cambioDistrito = () => {
-  setModalDistritoVisible(true);
-};
+    setModalDistritoVisible(true);
+  };
 
-const cancelarCambioDistrito = () => {
-  setModalDistritoVisible(false);
-};
+  const cancelarCambioDistrito = () => {
+    setModalDistritoVisible(false);
+  };
 
-const aceptarCambioDistrito = () => {
-  setModalDistritoVisible(false);
-  navigation.navigate("SelectDistrito");
-};
+  const aceptarCambioDistrito = () => {
+    setModalDistritoVisible(false);
+    navigation.navigate("SelectDistrito");
+  };
 
   return (
     <>
@@ -383,6 +383,7 @@ const MyDrawer = () => {
               return <Text style={styles.header}>Cámara de senadores</Text>;
             }
             if (
+              rutaActiva.name === "Senadores" ||
               rutaActiva.name === "ListaSenadores" ||
               rutaActiva.name === "DescripcionSenador"
             ) {

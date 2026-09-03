@@ -14,6 +14,7 @@ import { TooltipProvider } from "./context/TooltipProvider";
 import { ReaccionesProvider } from "./context/ReaccionesContext";
 import { DataProvider } from "./context/DataContext";
 import { Text, TextInput } from "react-native";
+import { OnboardingProvider } from "./context/OnboardingContext";
 
 Text.defaultProps = Text.defaultProps || {};
 Text.defaultProps.maxFontSizeMultiplier = 1.05;
@@ -35,15 +36,17 @@ export default function App() {
 
   return (
     <AuthProvider>
-      <BuscadorProvider>
-        <TooltipProvider>
-          <ReaccionesProvider>
-            <DataProvider>
-              <MainNavigation />
-            </DataProvider>
-          </ReaccionesProvider>
-        </TooltipProvider>
-      </BuscadorProvider>
+      <OnboardingProvider>
+        <BuscadorProvider>
+          <TooltipProvider>
+            <ReaccionesProvider>
+              <DataProvider>
+                <MainNavigation />
+              </DataProvider>
+            </ReaccionesProvider>
+          </TooltipProvider>
+        </BuscadorProvider>
+      </OnboardingProvider>
     </AuthProvider>
   );
 }
