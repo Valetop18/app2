@@ -35,6 +35,7 @@ import Tooltip from "../components/tooltip";
 import { TOOLTIPS } from "../components/tooltip";
 import { FONTS } from "../constants/fonts";
 import Buscador from "../components/Buscador";
+import { useOnboarding } from "../context/OnboardingContext";
 
 const coloresPorPartido = {
   DES: COLORS.DES,
@@ -104,6 +105,15 @@ const ModalHeader = ({ icon, title, subtitle, onClose }) => {
 export const EstadisticaPartido = ({ route }) => {
   const navigation = useNavigation();
   const { user } = useAuth();
+
+  const {
+    activo,
+    pasoActual,
+    finalizarRecorrido,
+  } = useOnboarding();
+
+  const [mostrarCierreOnboarding, setMostrarCierreOnboarding] =
+    useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [diputados, setDiputados] = useState([]);
   const [partido, setPartido] = useState({});
@@ -596,6 +606,42 @@ export const EstadisticaPartido = ({ route }) => {
       ? (anchoGrafico - responsiveWidthScale(36)) /
       (dataRepresentacion.length - 1)
       : responsiveWidthScale(50);
+
+  useEffect(() => {
+    if (
+      !activo ||
+      pasoActual !== 11 ||
+      loading
+    ) {
+      setMostrarCierreOnboarding(false);
+      return;
+    }
+
+    // Primero dejamos ver la pantalla de estadísticas limpia.
+    const temporizadorMensaje = setTimeout(() => {
+      setMostrarCierreOnboarding(true);
+    }, 3000);
+
+    // Después mostramos el mensaje durante otros 2 segundos.
+    const temporizadorFinal = setTimeout(async () => {
+      await finalizarRecorrido();
+
+      navigation.getParent()?.navigate("Diputados", {
+        screen: "ListaDiputados",
+      });
+    }, 5000);
+
+    return () => {
+      clearTimeout(temporizadorMensaje);
+      clearTimeout(temporizadorFinal);
+    };
+  }, [
+    activo,
+    pasoActual,
+    loading,
+    finalizarRecorrido,
+    navigation,
+  ]);
 
   return (
     <KeyboardAvoidingView
@@ -1294,6 +1340,18 @@ export const EstadisticaPartido = ({ route }) => {
           </Modal>
         </ScrollView>
       )}
+      {mostrarCierreOnboarding && (
+        <View style={styles.cierreOnboarding}>
+          <Text style={styles.tituloCierreOnboarding}>
+            Tu recorrido de bienvenida{"\n"}
+            ha terminado
+          </Text>
+
+          <Text style={styles.textoCierreOnboarding}>
+            ¡Disfruta Nawi!
+          </Text>
+        </View>
+      )}
     </KeyboardAvoidingView>
   );
 };
@@ -1768,6 +1826,37 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.regular,
     fontSize: Math.max(11, responsiveWidthScale(13)),
     color: COLORS.greyM,
+    textAlign: "center",
+  },
+  cierreOnboarding: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: responsiveWidthScale(25),
+    paddingVertical: responsiveWidthScale(20),
+    paddingHorizontal: responsiveWidthScale(20),
+    backgroundColor: "rgba(255,255,255,0.80)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 50,
+  },
+
+  tituloCierreOnboarding: {
+    color: COLORS.black,
+    fontFamily: FONTS.bold,
+    fontSize: Math.max(11, responsiveWidthScale(18)),
+    lineHeight: responsiveWidthScale(25),
+    letterSpacing: responsiveWidthScale(1),
+    textAlign: "center",
+  },
+
+  textoCierreOnboarding: {
+    marginTop: responsiveWidthScale(18),
+    color: COLORS.greenM,
+    fontFamily: FONTS.bold,
+    fontSize: Math.max(18, responsiveWidthScale(26)),
+    lineHeight: responsiveWidthScale(34),
+    letterSpacing: responsiveWidthScale(1),
     textAlign: "center",
   },
 });

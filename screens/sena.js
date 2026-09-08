@@ -1,10 +1,18 @@
-import React from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useRef,
+} from "react";
 import GridRepresent from "../components/gridRepresents";
-import { FlatList, StyleSheet, View } from "react-native";
+import {
+  Animated,
+  FlatList,
+  StyleSheet,
+  View,
+} from "react-native";
 import { COLORS } from "../constants/colors";
 import { useAuth } from "../context/AuthContext";
 import { useReacciones } from "../context/ReaccionesContext";
-import { useCallback } from "react";
 import { useData } from "../context/DataContext";
 import { useFocusEffect } from "@react-navigation/native";
 import { Skeleton } from "../components/Skeleton";
@@ -12,9 +20,20 @@ import {
   responsiveWidthScale,
   responsiveHeightScale,
 } from "../utils/responsive";
+import OnboardingSenadores from "../components/OnboardingSenadores";
+import { useOnboarding } from "../context/OnboardingContext";
 
 export const Senadores = ({ navigation }) => {
   const { user } = useAuth();
+
+  const {
+    activo,
+    pasoActual,
+    cargandoOnboarding,
+    avanzarPaso,
+    irAlPaso,
+    omitirRecorrido,
+  } = useOnboarding();
 
   const { reaccionesRepresentante, setReaccionRepresentante } = useReacciones();
 
@@ -26,6 +45,45 @@ export const Senadores = ({ navigation }) => {
     totalesLikesRepresentantes,
     actualizarTotalLikesRepresentante,
   } = useData();
+
+  const animacionPulso = useRef(
+    new Animated.Value(0),
+  ).current;
+
+  const animacionPulsoRef = useRef(null);
+  const navegandoCamarasRef = useRef(false);
+
+  const datosListos =
+    !loadingSenadores &&
+    senadores.length > 0;
+
+  const navegarACamaras = useCallback(() => {
+    if (
+      navegandoCamarasRef.current ||
+      pasoActual !== 7
+    ) {
+      return;
+    }
+
+    navegandoCamarasRef.current = true;
+
+    if (animacionPulsoRef.current) {
+      animacionPulsoRef.current.stop();
+      animacionPulsoRef.current = null;
+    }
+
+    animacionPulso.stopAnimation();
+    animacionPulso.setValue(0);
+
+    avanzarPaso();
+
+    navigation.getParent()?.navigate("Cámaras");
+  }, [
+    pasoActual,
+    animacionPulso,
+    avanzarPaso,
+    navigation,
+  ]);
 
   const handleSelected = (item) => {
     navigation.navigate("DescripcionSenador", {
@@ -40,6 +98,86 @@ export const Senadores = ({ navigation }) => {
       cargarSenadores(user.circunscripcion);
     }, [user?.circunscripcion, cargarSenadores]),
   );
+
+  useEffect(() => {
+    if (
+      !activo ||
+      cargandoOnboarding ||
+      !datosListos ||
+      pasoActual !== 6
+    ) {
+      return;
+    }
+
+    const temporizadorCamaras = setTimeout(() => {
+      irAlPaso(7);
+    }, 2000);
+
+    return () => {
+      clearTimeout(temporizadorCamaras);
+    };
+  }, [
+    activo,
+    cargandoOnboarding,
+    datosListos,
+    pasoActual,
+    irAlPaso,
+  ]);
+
+  useEffect(() => {
+    if (
+      !activo ||
+      cargandoOnboarding ||
+      !datosListos ||
+      pasoActual !== 7
+    ) {
+      return;
+    }
+
+    navegandoCamarasRef.current = false;
+    animacionPulso.setValue(0);
+
+    animacionPulsoRef.current = Animated.loop(
+      Animated.sequence([
+        Animated.timing(animacionPulso, {
+          toValue: 1,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+        Animated.timing(animacionPulso, {
+          toValue: 0,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+        Animated.delay(350),
+      ]),
+    );
+
+    animacionPulsoRef.current.start();
+
+    const temporizadorNavegacion = setTimeout(() => {
+      navegarACamaras();
+    }, 2000);
+
+    return () => {
+      clearTimeout(temporizadorNavegacion);
+
+      if (animacionPulsoRef.current) {
+        animacionPulsoRef.current.stop();
+        animacionPulsoRef.current = null;
+      }
+
+      animacionPulso.stopAnimation();
+      animacionPulso.setValue(0);
+    };
+  }, [
+    activo,
+    cargandoOnboarding,
+    datosListos,
+    pasoActual,
+    animacionPulso,
+    navegarACamaras,
+  ]);
 
   const handleLike = async (id, tipoReaccion) => {
     try {
@@ -146,6 +284,18 @@ export const Senadores = ({ navigation }) => {
           keyExtractor={(item) => item.id}
         />
       )}
+      <OnboardingSenadores
+        visible={
+          activo &&
+          !cargandoOnboarding &&
+          datosListos &&
+          pasoActual === 7
+        }
+        pasoActual={pasoActual}
+        animacionPulso={animacionPulso}
+        onPressCamaras={navegarACamaras}
+        onOmitir={omitirRecorrido}
+      />
     </>
   );
 };

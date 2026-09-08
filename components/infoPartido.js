@@ -1,5 +1,11 @@
 import React from "react";
-import { View, StyleSheet, Text, TouchableOpacity } from "react-native";
+import {
+  Animated,
+  View,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+} from "react-native";
 import { COLORS } from "../constants/colors";
 import MaterialIcons from "@react-native-vector-icons/material-icons";
 import { FONTS } from "../constants/fonts";
@@ -26,7 +32,14 @@ const coloresPorPartido = {
   DEM: COLORS.DEM,
 };
 
-export const InfoPartido = ({ data, left, top, onPress }) => {
+export const InfoPartido = ({
+  data,
+  left,
+  top,
+  onPress,
+  buttonRef,
+  escalaOnboarding = 1,
+}) => {
   if (!data) return null;
 
   const borderColor = coloresPorPartido[data.partido] || "#000";
@@ -63,35 +76,43 @@ export const InfoPartido = ({ data, left, top, onPress }) => {
   };
 
   return (
-    <TouchableOpacity
-      onPress={onPress}
+    <Animated.View
+      ref={buttonRef}
+      collapsable={false}
       style={{
-        width: 55,
-        height: 55,
-        backgroundColor: "rgba(255, 255, 255, 0.80)",
-        borderColor,
-        borderRadius: 100,
-        borderWidth: 3,
         position: "absolute",
-        justifyContent: "center",
-        alignItems: "center",
         left,
         top,
+        transform: [{ scale: escalaOnboarding }],
       }}
     >
-      <Text
+      <TouchableOpacity
+        activeOpacity={1}
+        onPress={onPress}
         style={[
-          styles.infopartido,
+          styles.burbuja,
           {
-            fontSize: (data.partido?.length ?? 0) >= 7 ? 10.2 : 12,
+            borderColor,
           },
         ]}
       >
-        {data.partido}
-      </Text>
+        <Text
+          style={[
+            styles.infopartido,
+            {
+              fontSize:
+                (data.partido?.length ?? 0) >= 7
+                  ? 10.2
+                  : 12,
+            },
+          ]}
+        >
+          {data.partido}
+        </Text>
 
-      {TextoDinamico()}
-    </TouchableOpacity>
+        {TextoDinamico()}
+      </TouchableOpacity>
+    </Animated.View>
   );
 };
 
@@ -117,5 +138,14 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.bold,
     color: COLORS.greenM,
     fontSize: 14,
+  },
+  burbuja: {
+    width: 55,
+    height: 55,
+    backgroundColor: "rgba(255, 255, 255, 0.80)",
+    borderRadius: 100,
+    borderWidth: 3,
+    justifyContent: "center",
+    alignItems: "center",
   },
 });

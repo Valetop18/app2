@@ -1,4 +1,9 @@
-import React, { useContext, useState, useEffect } from "react";
+import React, {
+  useContext,
+  useState,
+  useEffect,
+  useRef,
+} from "react";
 import {
   View,
   Text,
@@ -47,6 +52,8 @@ import Tooltip from "../components/tooltip";
 import { TOOLTIPS } from "../components/tooltip";
 import { TooltipProvider } from "../context/TooltipProvider";
 import { FONTS } from "../constants/fonts";
+import OnboardingCamaraDipu from "../components/OnboardingCamaraDipu";
+import { useOnboarding } from "../context/OnboardingContext";
 
 const responsiveCamaraText = (baseValue, minValue = 11) => {
   return Math.max(
@@ -75,11 +82,64 @@ const responsiveCamaraSize = (baseValue) => {
 
 export const CamaraDipu = () => {
   const { search, setSearch } = useContext(BuscadorContext);
+
+  const {
+    activo,
+    pasoActual,
+    cargandoOnboarding,
+    irAlPaso,
+    omitirRecorrido,
+    finalizarRecorrido,
+  } = useOnboarding();
+
+  const pantallaCamaraRef = useRef(null);
+  const hemicicloRef = useRef(null);
+  const controlesAnimacionRef = useRef(null);
+
+  const burbujaOnboardingRef = useRef(null);
+  const abrirBurbujaOnboardingRef = useRef(null);
+
+  const botonEstadisticasRef = useRef(null);
+  const modalPartidoRef = useRef(null);
+
+  const [medidasBotonEstadisticas, setMedidasBotonEstadisticas] =
+    useState(null);
+  const [medidasModalPartido, setMedidasModalPartido] =
+    useState(null);
+
+  const escalaBurbujaOnboarding = useRef(
+    new Animated.Value(1),
+  ).current;
+
+  const [medidasBurbuja, setMedidasBurbuja] = useState(null);
+
+  const animacionPulsoOnboarding = useRef(
+    new Animated.Value(0),
+  ).current;
+  const abriendoModalOnboardingRef = useRef(false);
+
+  const [faseOnboardingCamara, setFaseOnboardingCamara] =
+    useState("introduccion");
+
+  const [medidasHemiciclo, setMedidasHemiciclo] =
+    useState(null);
+
+  const [medidasControles, setMedidasControles] =
+    useState(null);
+
+  const [medidasPestanaSenadores, setMedidasPestanaSenadores] =
+    useState(null);
+
   const [leyActual, setLeyActual] = useState({ fecha: "", nombre: "" });
   const [botonActivo, setBotonActivo] = useState(0);
   const [hoyActivo, setHoyActivo] = useState(true);
   const [habilitarTransicion, setHabilitarTransicion] = useState(true);
   const [pausado, setPausado] = useState(false);
+
+  const [mostrarAyudaModal, setMostrarAyudaModal] =
+    useState(false);
+
+  const navegandoEstadisticasRef = useRef(false);
 
   const [modalVisible, setModalVisible] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -582,6 +642,11 @@ export const CamaraDipu = () => {
     const representante = diputados.find((dipu) => dipu.id === item.id);
     return representante?.voto || null;
   };
+
+  const cantidadVotacionesAnimacion =
+    activo && pasoActual === 8
+      ? Math.min(votacionesPorSesion.length, 3)
+      : votacionesPorSesion.length;
 
   const buildInfoPartido = ({
     partido,
@@ -1333,6 +1398,85 @@ export const CamaraDipu = () => {
     outputRange: [0.92, 1.08],
   });
 
+  const abrirModalPartido = (
+    partidoViewModel,
+    partidoId,
+  ) => {
+    setLoading(true);
+    setLegisladores([]);
+
+    if (partidoViewModel.seccion === SECCION.VOTACION) {
+      obtenerVotacionDiputadosPorSesion(
+        getNumeroSesionActual(),
+        partidoId,
+      );
+    }
+
+    if (
+      partidoViewModel?.modalData?.representantesModo ===
+      "votacion-acumulada"
+    ) {
+      obtenerParticipacionHistoricaDiputadoPorPartido(
+        partidoId,
+      );
+    }
+
+    if (
+      partidoViewModel?.modalData?.representantesModo ===
+      "proyectos-acumulada"
+    ) {
+      obtenerMocionesHistoricasDiputadoPorPartido(
+        partidoId,
+      );
+    }
+
+    if (partidoViewModel.seccion === SECCION.PROYECTOS) {
+      if (votacionBuscada) {
+        obtenerVotosPartidoPorVotacion(
+          votacionBuscada.idVotacion,
+          partidoId,
+        );
+      } else {
+        obtenerVotosPartidoPorSesion(
+          asistenciaSesionGlobal?.numeroSesion,
+          partidoId,
+        );
+      }
+    }
+
+    obtenerLegisladoresPorPartido(
+      partidoId,
+      partidoViewModel.seccion === SECCION.ASISTENCIA
+        ? getNumeroSesionActual()
+        : null,
+      partidoViewModel.modoData,
+    );
+
+    setModalVisible(true);
+    setInfoModal(partidoViewModel.modalData);
+  };
+
+  const abrirBurbujaDesdeOnboarding = () => {
+    if (
+      pasoActual !== 9 ||
+      !abrirBurbujaOnboardingRef.current ||
+      abriendoModalOnboardingRef.current
+    ) {
+      return;
+    }
+
+    abriendoModalOnboardingRef.current = true;
+
+    // Primero cerramos el modal del onboarding.
+    irAlPaso(10);
+
+    // Luego abrimos el modal del partido cuando el anterior
+    // ya terminó de desaparecer.
+    setTimeout(() => {
+      abrirBurbujaOnboardingRef.current?.();
+    }, 350);
+  };
+
   for (const partido in promediosPartidos) {
     const [posicionX, posicionY] = promediosPartidos[partido];
     const id = `${partido}-${posicionX}-${posicionY}`;
@@ -1343,62 +1487,32 @@ export const CamaraDipu = () => {
 
     if (!partidoViewModel) continue;
 
+    const esBurbujaOnboarding = partido === "FRVS";
+
+    if (esBurbujaOnboarding) {
+      abrirBurbujaOnboardingRef.current = () =>
+        abrirModalPartido(partidoViewModel, partidoId);
+    }
+
     const infoPartidoComponent = (
       <InfoPartido
         data={partidoViewModel.infoPartido}
         left={posicionX - 18}
         top={posicionY - 18}
         key={id}
-        onPress={() => {
-          setLoading(true);
-          setLegisladores([]);
-
-          if (partidoViewModel.seccion === SECCION.VOTACION) {
-            obtenerVotacionDiputadosPorSesion(
-              getNumeroSesionActual(),
-              partidoId,
-            );
-          }
-
-          if (
-            partidoViewModel?.modalData?.representantesModo ===
-            "votacion-acumulada"
-          ) {
-            obtenerParticipacionHistoricaDiputadoPorPartido(partidoId);
-          }
-
-          if (
-            partidoViewModel?.modalData?.representantesModo ===
-            "proyectos-acumulada"
-          ) {
-            obtenerMocionesHistoricasDiputadoPorPartido(partidoId);
-          }
-
-          if (partidoViewModel.seccion === SECCION.PROYECTOS) {
-            if (votacionBuscada) {
-              obtenerVotosPartidoPorVotacion(
-                votacionBuscada.idVotacion,
-                partidoId,
-              );
-            } else {
-              obtenerVotosPartidoPorSesion(
-                asistenciaSesionGlobal?.numeroSesion,
-                partidoId,
-              );
-            }
-          }
-
-          obtenerLegisladoresPorPartido(
-            partidoId,
-            partidoViewModel.seccion === SECCION.ASISTENCIA
-              ? getNumeroSesionActual()
-              : null,
-            partidoViewModel.modoData,
-          );
-
-          setModalVisible(true);
-          setInfoModal(partidoViewModel.modalData);
-        }}
+        buttonRef={
+          esBurbujaOnboarding
+            ? burbujaOnboardingRef
+            : undefined
+        }
+        escalaOnboarding={
+          esBurbujaOnboarding
+            ? escalaBurbujaOnboarding
+            : 1
+        }
+        onPress={() =>
+          abrirModalPartido(partidoViewModel, partidoId)
+        }
       />
     );
 
@@ -1502,8 +1616,12 @@ export const CamaraDipu = () => {
     if (!habilitarTransicion) return;
     if (!datosListos) return;
     if (pausado) return;
-    if (botonActivo === 3 && proyectoActivo < votacionesPorSesion.length - 1)
+    if (
+      botonActivo === 3 &&
+      proyectoActivo < cantidadVotacionesAnimacion - 1
+    ) {
       return;
+    }
 
     if (botonActivo > 3) {
       setProyectoActivo(0);
@@ -1523,7 +1641,14 @@ export const CamaraDipu = () => {
     );
 
     return () => clearTimeout(timeout);
-  }, [botonActivo, habilitarTransicion, datosListos, pausado, proyectoActivo]);
+  }, [
+    botonActivo,
+    habilitarTransicion,
+    datosListos,
+    pausado,
+    proyectoActivo,
+    cantidadVotacionesAnimacion,
+  ]);
 
   useEffect(() => {
     if (botonActivo !== 3) return;
@@ -1531,12 +1656,19 @@ export const CamaraDipu = () => {
 
     const timeout = setTimeout(() => {
       setProyectoActivo((prev) =>
-        prev + 1 >= votacionesPorSesion.length ? 0 : prev + 1,
+        prev + 1 >= cantidadVotacionesAnimacion
+          ? 0
+          : prev + 1,
       );
     }, 2000);
 
     return () => clearTimeout(timeout);
-  }, [botonActivo, proyectoActivo, pausado]);
+  }, [
+    botonActivo,
+    proyectoActivo,
+    pausado,
+    cantidadVotacionesAnimacion,
+  ]);
 
   // Modo especial cuando el usuario selecciona una votación desde el buscador.
   // En este modo no existe animación y solo se muestra una votación.
@@ -1578,6 +1710,20 @@ export const CamaraDipu = () => {
 
   const handlePressPause = () => {
     setPausado((prev) => !prev);
+  };
+
+  const abrirEstadisticasDesdeOnboarding = () => {
+  if (navegandoEstadisticasRef.current) return;
+
+  navegandoEstadisticasRef.current = true;
+
+  irAlPaso(11);
+  handlePressNavigate(infoModal.partidoId);
+};
+
+  const omitirDesdeModalPartido = () => {
+    setModalVisible(false);
+    omitirRecorrido();
   };
 
   const handlePressAnterior = () => {
@@ -1834,8 +1980,341 @@ export const CamaraDipu = () => {
     }
   };
 
+  useEffect(() => {
+    if (
+      !activo ||
+      cargandoOnboarding ||
+      !datosListos ||
+      pasoActual !== 8
+    ) {
+      return;
+    }
+
+    setFaseOnboardingCamara("introduccion");
+
+    const temporizadorMedicion = setTimeout(() => {
+      hemicicloRef.current?.measureInWindow(
+        (x, y, width, height) => {
+          if (width <= 0 || height <= 0) return;
+
+          setMedidasHemiciclo({
+            x,
+            y,
+            width,
+            height,
+          });
+        },
+      );
+
+      controlesAnimacionRef.current?.measureInWindow(
+        (x, y, width, height) => {
+          if (width <= 0 || height <= 0) return;
+
+          setMedidasControles({
+            x,
+            y,
+            width,
+            height,
+          });
+        },
+      );
+
+      pantallaCamaraRef.current?.measureInWindow(
+        (x, y, width) => {
+          if (width <= 0) return;
+
+          const altoPestana = responsiveHeightScale(48);
+
+          setMedidasPestanaSenadores({
+            x: x + width / 2,
+            y: y - altoPestana,
+            width: width / 2,
+            height: altoPestana,
+          });
+        },
+      );
+    }, 150);
+
+    return () => {
+      clearTimeout(temporizadorMedicion);
+    };
+  }, [
+    activo,
+    cargandoOnboarding,
+    datosListos,
+    pasoActual,
+  ]);
+
+  useEffect(() => {
+    if (
+      !activo ||
+      cargandoOnboarding ||
+      !datosListos ||
+      pasoActual !== 8 ||
+      faseOnboardingCamara !== "introduccion"
+    ) {
+      return;
+    }
+
+    if (habilitarTransicion && botonActivo === 3) {
+      setFaseOnboardingCamara("controles");
+    }
+  }, [
+    activo,
+    cargandoOnboarding,
+    datosListos,
+    pasoActual,
+    faseOnboardingCamara,
+    habilitarTransicion,
+    botonActivo,
+  ]);
+
+  useEffect(() => {
+    if (
+      !activo ||
+      cargandoOnboarding ||
+      pasoActual !== 8 ||
+      faseOnboardingCamara !== "controles" ||
+      habilitarTransicion
+    ) {
+      return;
+    }
+
+    controlesAnimacionRef.current?.measureInWindow(
+      (x, y, width, height) => {
+        if (width <= 0 || height <= 0) return;
+
+        setMedidasControles({
+          x,
+          y,
+          width,
+          height,
+        });
+
+        setFaseOnboardingCamara("calendario");
+      },
+    );
+  }, [
+    activo,
+    cargandoOnboarding,
+    pasoActual,
+    faseOnboardingCamara,
+    habilitarTransicion,
+  ]);
+
+  useEffect(() => {
+    if (
+      !activo ||
+      cargandoOnboarding ||
+      pasoActual !== 8 ||
+      faseOnboardingCamara !== "calendario"
+    ) {
+      return;
+    }
+
+    const temporizadorBurbuja = setTimeout(() => {
+      burbujaOnboardingRef.current?.measureInWindow(
+        (x, y, width, height) => {
+          if (width <= 0 || height <= 0) return;
+
+          setMedidasBurbuja({
+            x,
+            y,
+            width,
+            height,
+          });
+
+          setFaseOnboardingCamara("burbuja");
+          irAlPaso(9);
+        },
+      );
+    }, 5000);
+
+    return () => {
+      clearTimeout(temporizadorBurbuja);
+    };
+  }, [
+    activo,
+    cargandoOnboarding,
+    pasoActual,
+    faseOnboardingCamara,
+    irAlPaso,
+  ]);
+
+  useEffect(() => {
+    const mostrarPulsoBurbuja =
+      pasoActual === 9 &&
+      faseOnboardingCamara === "burbuja";
+
+    const mostrarPulsoModal =
+      pasoActual === 10 &&
+      modalVisible &&
+      mostrarAyudaModal;
+
+    if (
+      !activo ||
+      cargandoOnboarding ||
+      (!mostrarPulsoBurbuja && !mostrarPulsoModal)
+    ) {
+      animacionPulsoOnboarding.stopAnimation();
+      animacionPulsoOnboarding.setValue(0);
+      return;
+    }
+
+    animacionPulsoOnboarding.setValue(0);
+
+    const animacion = Animated.loop(
+      Animated.sequence([
+        Animated.timing(animacionPulsoOnboarding, {
+          toValue: 1,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+
+        Animated.timing(animacionPulsoOnboarding, {
+          toValue: 0,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+
+        Animated.delay(350),
+      ]),
+    );
+
+    animacion.start();
+
+    return () => {
+      animacion.stop();
+      animacionPulsoOnboarding.stopAnimation();
+      animacionPulsoOnboarding.setValue(0);
+    };
+  }, [
+    activo,
+    cargandoOnboarding,
+    pasoActual,
+    faseOnboardingCamara,
+    modalVisible,
+    mostrarAyudaModal,
+    animacionPulsoOnboarding,
+  ]);
+
+  useEffect(() => {
+    if (
+      !activo ||
+      cargandoOnboarding ||
+      pasoActual !== 9 ||
+      faseOnboardingCamara !== "burbuja"
+    ) {
+      return;
+    }
+
+    abriendoModalOnboardingRef.current = false;
+
+    const temporizadorAbrirModal = setTimeout(() => {
+      abrirBurbujaDesdeOnboarding();
+    }, 3000);
+
+    return () => {
+      clearTimeout(temporizadorAbrirModal);
+    };
+  }, [
+    activo,
+    cargandoOnboarding,
+    pasoActual,
+    faseOnboardingCamara,
+  ]);
+
+  useEffect(() => {
+    if (
+      !activo ||
+      cargandoOnboarding ||
+      pasoActual !== 10 ||
+      !modalVisible
+    ) {
+      setMedidasBotonEstadisticas(null);
+      setMedidasModalPartido(null);
+      return;
+    }
+
+    const temporizadorMedicionBoton = setTimeout(() => {
+      modalPartidoRef.current?.measureInWindow(
+        (x, y, width, height) => {
+          if (width <= 0 || height <= 0) return;
+
+          setMedidasModalPartido({
+            x,
+            y,
+            width,
+            height,
+          });
+        },
+      );
+
+      botonEstadisticasRef.current?.measureInWindow(
+        (x, y, width, height) => {
+          if (width <= 0 || height <= 0) return;
+
+          setMedidasBotonEstadisticas({
+            x,
+            y,
+            width,
+            height,
+          });
+        },
+      );
+    }, 300);
+
+    return () => {
+      clearTimeout(temporizadorMedicionBoton);
+    };
+  }, [
+    activo,
+    cargandoOnboarding,
+    pasoActual,
+    modalVisible,
+  ]);
+
+  useEffect(() => {
+    if (
+      !activo ||
+      cargandoOnboarding ||
+      pasoActual !== 10 ||
+      !modalVisible
+    ) {
+      setMostrarAyudaModal(false);
+      navegandoEstadisticasRef.current = false;
+      return;
+    }
+
+    setMostrarAyudaModal(false);
+    navegandoEstadisticasRef.current = false;
+
+    const temporizadorAyuda = setTimeout(() => {
+      setMostrarAyudaModal(true);
+    }, 2000);
+
+    const temporizadorNavegacion = setTimeout(() => {
+      abrirEstadisticasDesdeOnboarding();
+    }, 5000);
+
+    return () => {
+      clearTimeout(temporizadorAyuda);
+      clearTimeout(temporizadorNavegacion);
+    };
+  }, [
+    activo,
+    cargandoOnboarding,
+    pasoActual,
+    modalVisible,
+    infoModal.partidoId,
+  ]);
+
   return (
-    <View style={styles.container}>
+    <View
+      ref={pantallaCamaraRef}
+      collapsable={false}
+      style={styles.container}
+    >
       {search.length > 0 ? (
         <SearchResults
           data={leyesChilenas}
@@ -1998,6 +2477,8 @@ export const CamaraDipu = () => {
             </View>
           )}
           <View
+            ref={hemicicloRef}
+            collapsable={false}
             style={[
               styles.camaraViewport,
               {
@@ -2040,7 +2521,11 @@ export const CamaraDipu = () => {
                   onPress={() => setModalVisible(false)}
                 />
 
-                <View style={styles.modalContainer}>
+                <View
+                  ref={modalPartidoRef}
+                  collapsable={false}
+                  style={styles.modalContainer}
+                >
                   <View style={styles.tituloContainer}>
                     <View style={styles.tituloContainerText}>
                       <MsIcon
@@ -2054,11 +2539,20 @@ export const CamaraDipu = () => {
                   </View>
                   <View style={styles.conteiner2}>
                     <TouchableOpacity
+                      ref={botonEstadisticasRef}
+                      collapsable={false}
                       style={[
                         styles.botonPartido,
                         esTelefonoBajo && styles.botonPartidoTelefonoBajo,
                       ]}
-                      onPress={() => handlePressNavigate(infoModal.partidoId)}
+                      onPress={() => {
+                        if (activo && pasoActual === 10) {
+                          abrirEstadisticasDesdeOnboarding();
+                          return;
+                        }
+
+                        handlePressNavigate(infoModal.partidoId);
+                      }}
                     >
                       <View
                         style={[
@@ -2121,6 +2615,103 @@ export const CamaraDipu = () => {
                     )}
                   </View>
                 </View>
+                {activo &&
+                  pasoActual === 10 &&
+                  mostrarAyudaModal &&
+                  medidasModalPartido &&
+                  medidasBotonEstadisticas && (
+                    <>
+                      <View
+                        pointerEvents="none"
+                        style={styles.peliculaModalOnboarding}
+                      />
+
+                      <View
+                        pointerEvents="none"
+                        style={[
+                          styles.mensajeEstadisticasPartido,
+                          {
+                            top: Math.max(
+                              medidasModalPartido.y -
+                              responsiveHeightScale(68),
+                              responsiveHeightScale(55),
+                            ),
+                          },
+                        ]}
+                      >
+                        <Text style={styles.textoOnboardingModal}>
+                          Aquí puedes ver las estadísticas específicas{"\n"}
+                          de este partido en la cámara seleccionada
+                        </Text>
+                      </View>
+
+                      <Animated.View
+                        pointerEvents="none"
+                        style={[
+                          styles.manoEstadisticasPartido,
+                          {
+                            left:
+                              medidasBotonEstadisticas.x +
+                              medidasBotonEstadisticas.width * 0.62,
+                            top:
+                              medidasBotonEstadisticas.y +
+                              medidasBotonEstadisticas.height / 2 -
+                              responsiveHeightScale(7),
+                            opacity: animacionPulsoOnboarding.interpolate({
+                              inputRange: [0, 1],
+                              outputRange: [0.7, 1],
+                            }),
+                            transform: [
+                              {
+                                scale: animacionPulsoOnboarding.interpolate({
+                                  inputRange: [0, 1],
+                                  outputRange: [1, 1.18],
+                                }),
+                              },
+                            ],
+                          },
+                        ]}
+                      >
+                        <MaterialIcons
+                          name="touch-app"
+                          size={responsiveWidthScale(32)}
+                          color={COLORS.greenM}
+                        />
+                      </Animated.View>
+                      <View style={styles.controlesOnboardingModal}>
+                        <View style={styles.indicadoresOnboardingModal}>
+                          {Array.from({ length: 10 }).map((_, index) => {
+                            const numeroPaso = index + 1;
+
+                            return (
+                              <View
+                                key={numeroPaso}
+                                style={[
+                                  styles.indicadorOnboardingModal,
+                                  numeroPaso === pasoActual
+                                    ? styles.indicadorOnboardingModalActivo
+                                    : styles.indicadorOnboardingModalInactivo,
+                                ]}
+                              />
+                            );
+                          })}
+                        </View>
+
+                        <Pressable
+                          style={({ pressed }) => [
+                            styles.botonOmitirOnboardingModal,
+                            pressed &&
+                            styles.botonOmitirOnboardingModalPresionado,
+                          ]}
+                          onPress={omitirDesdeModalPartido}
+                        >
+                          <Text style={styles.textoOmitirOnboardingModal}>
+                            OMITIR
+                          </Text>
+                        </Pressable>
+                      </View>
+                    </>
+                  )}
               </View>
             </TooltipProvider>
           </Modal>
@@ -2351,7 +2942,11 @@ export const CamaraDipu = () => {
             </Pressable>
           </Modal>
 
-          <View style={styles.botonCalendar}>
+          <View
+            ref={controlesAnimacionRef}
+            collapsable={false}
+            style={styles.botonCalendar}
+          >
             {habilitarTransicion && !pausado && (
               <Animated.View
                 pointerEvents="none"
@@ -2450,6 +3045,23 @@ export const CamaraDipu = () => {
           </View>
         </>
       )}
+
+      <OnboardingCamaraDipu
+        visible={
+          activo &&
+          !cargandoOnboarding &&
+          datosListos &&
+          (pasoActual === 8 || pasoActual === 9)
+        }
+        fase={faseOnboardingCamara}
+        pasoActual={pasoActual}
+        hemiciclo={medidasHemiciclo}
+        controles={medidasControles}
+        burbuja={medidasBurbuja}
+        animacionPulso={animacionPulsoOnboarding}
+        onPressBurbuja={abrirBurbujaDesdeOnboarding}
+        onOmitir={omitirRecorrido}
+      />
     </View>
   );
 };
@@ -2472,6 +3084,8 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.back,
     borderRadius: responsiveCamaraSize(10),
     overflow: "hidden",
+    zIndex: 10,
+    elevation: 10,
   },
   iconoAnimacionActiva: {
     position: "absolute",
@@ -3073,6 +3687,99 @@ const styles = StyleSheet.create({
     width: responsiveCamaraSize(310),
   },
   reaccionesContainerSinArticulo: {
-  marginTop: -responsiveHeightScale(35),
-},
+    marginTop: -responsiveHeightScale(35),
+  },
+  peliculaModalOnboarding: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(255,255,255,0.95)",
+    zIndex: 8,
+  },
+
+  mensajeEstadisticasPartido: {
+    position: "absolute",
+    left: responsiveWidthScale(25),
+    right: responsiveWidthScale(25),
+    paddingVertical: responsiveHeightScale(10),
+    alignItems: "center",
+    zIndex: 12,
+  },
+
+  textoOnboardingModal: {
+    color: COLORS.black,
+    fontFamily: FONTS.bold,
+    fontSize: Math.max(11, responsiveWidthScale(16)),
+    lineHeight: responsiveHeightScale(22),
+    letterSpacing: responsiveWidthScale(0.8),
+    textAlign: "center",
+  },
+
+  manoEstadisticasPartido: {
+    position: "absolute",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 13,
+  },
+
+  controlesOnboardingModal: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: responsiveHeightScale(35),
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 14,
+  },
+
+  indicadoresOnboardingModal: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+
+  indicadorOnboardingModal: {
+    width: responsiveWidthScale(11),
+    height: responsiveWidthScale(11),
+    borderRadius: responsiveWidthScale(6),
+    marginRight: responsiveWidthScale(5),
+  },
+
+  indicadorOnboardingModalActivo: {
+    backgroundColor: COLORS.greenM,
+  },
+
+  indicadorOnboardingModalInactivo: {
+    backgroundColor: COLORS.verdeclaro,
+  },
+
+  botonOmitirOnboardingModal: {
+    minWidth: responsiveWidthScale(98),
+    height: responsiveHeightScale(40),
+    marginLeft: responsiveWidthScale(18),
+    paddingHorizontal: responsiveWidthScale(18),
+    borderRadius: responsiveWidthScale(22),
+    backgroundColor: COLORS.greenM,
+    justifyContent: "center",
+    alignItems: "center",
+
+    elevation: 6,
+    shadowColor: COLORS.black,
+    shadowOffset: {
+      width: 0,
+      height: responsiveHeightScale(4),
+    },
+    shadowOpacity: 0.24,
+    shadowRadius: responsiveWidthScale(4),
+  },
+
+  botonOmitirOnboardingModalPresionado: {
+    opacity: 0.8,
+    transform: [{ scale: 0.97 }],
+  },
+
+  textoOmitirOnboardingModal: {
+    color: COLORS.back,
+    fontFamily: FONTS.bold,
+    fontSize: Math.max(11, responsiveWidthScale(13)),
+    letterSpacing: responsiveWidthScale(1),
+  },
 });
