@@ -91,6 +91,8 @@ const OnboardingCamaraDipu = ({
     onPressBurbuja,
     onOmitir,
 }) => {
+    const { height } = useWindowDimensions();
+
     if (!visible) return null;
 
     const esIntroduccion = fase === "introduccion";
@@ -165,8 +167,8 @@ const OnboardingCamaraDipu = ({
                             style={[
                                 styles.peliculaTexto,
                                 {
-                                    top: responsiveHeightScale(62),
-                                    height: responsiveHeightScale(133),
+                                    top: 0,
+                                    height: responsiveHeightScale(195),
                                 },
                             ]}
                         />
@@ -329,7 +331,22 @@ const OnboardingCamaraDipu = ({
                         </Animated.View>
                     </>
                 )}
-
+                {(esControles || esCalendario) && (
+                    <View
+                        style={[
+                            styles.peliculaInferior,
+                            {
+                                height: controles
+                                    ? Math.max(
+                                        height -
+                                        (controles.y + controles.height),
+                                        0,
+                                    )
+                                    : responsiveHeightScale(10),
+                            },
+                        ]}
+                    />
+                )}
                 <View
                     style={[
                         styles.controlesOnboarding,
@@ -523,6 +540,15 @@ const styles = StyleSheet.create({
         fontFamily: FONTS.bold,
         fontSize: Math.max(11, responsiveWidthScale(13)),
         letterSpacing: responsiveWidthScale(1),
+    },
+
+    peliculaInferior: {
+        position: "absolute",
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: COLOR_PELICULA,
+        zIndex: 1,
     },
 });
 

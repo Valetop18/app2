@@ -23,6 +23,7 @@ import {
   responsiveWidthScale,
   responsiveHeightScale,
 } from "../utils/responsive";
+import { normalizarMedidaOnboarding } from "../utils/onboardingCoordinates";
 
 export const Diputados = ({ navigation }) => {
   const { user } = useAuth();
@@ -119,12 +120,12 @@ export const Diputados = ({ navigation }) => {
           (x, y, width, height) => {
             if (width <= 0 || height <= 0) return;
 
-            const medidas = {
+            const medidas = normalizarMedidaOnboarding({
               x,
               y,
               width,
               height,
-            };
+            });
 
             setTarjeta(medidas);
             alTerminar?.(medidas);
@@ -272,20 +273,20 @@ export const Diputados = ({ navigation }) => {
     animacionPulso.setValue(0);
 
     animacionPulsoRef.current = Animated.loop(
-  Animated.sequence([
-    Animated.timing(animacionPulso, {
-      toValue: 1,
-      duration: 600,
-      useNativeDriver: true,
-    }),
-    Animated.timing(animacionPulso, {
-      toValue: 0,
-      duration: 600,
-      useNativeDriver: true,
-    }),
-    Animated.delay(350),
-  ]),
-);
+      Animated.sequence([
+        Animated.timing(animacionPulso, {
+          toValue: 1,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+        Animated.timing(animacionPulso, {
+          toValue: 0,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+        Animated.delay(350),
+      ]),
+    );
 
     animacionPulsoRef.current.start();
 
@@ -426,6 +427,8 @@ export const Diputados = ({ navigation }) => {
           numColumns={1}
           keyExtractor={(item) => String(item.id)}
           extraData={`${activo}-${pasoActual}`}
+          pointerEvents={onboardingVisible ? "none" : "auto"}
+          scrollEnabled={!onboardingVisible}
           onContentSizeChange={() => {
             if (onboardingVisible) {
               medirPrimeraTarjeta();

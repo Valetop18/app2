@@ -50,6 +50,7 @@ import { useData } from "../context/DataContext";
 import { FONTS } from "../constants/fonts";
 import OnboardingDetalleDiputado from "../components/OnboardingDetalleDiputado";
 import { useOnboarding } from "../context/OnboardingContext";
+import { normalizarMedidaOnboarding } from "../utils/onboardingCoordinates";
 
 const SEMANAS_VISIBLES_GRAFICO = 8;
 
@@ -808,12 +809,14 @@ export const DescripcionDiputado = ({ route, navigation }) => {
         (x, y, width, height) => {
           if (width <= 0 || height <= 0) return;
 
-          setMedidasInformacionPrincipal({
-            x,
-            y,
-            width,
-            height,
-          });
+          setMedidasInformacionPrincipal(
+            normalizarMedidaOnboarding({
+              x,
+              y,
+              width,
+              height,
+            }),
+          );
         },
       );
     }, 150);
@@ -857,12 +860,14 @@ export const DescripcionDiputado = ({ route, navigation }) => {
           (x, y, width, height) => {
             if (width <= 0 || height <= 0) return;
 
-            setMedidasUltimasVotaciones({
-              x,
-              y,
-              width,
-              height,
-            });
+            setMedidasUltimasVotaciones(
+              normalizarMedidaOnboarding({
+                x,
+                y,
+                width,
+                height,
+              }),
+            );
 
             irAlPaso(4);
           },
@@ -1076,6 +1081,22 @@ export const DescripcionDiputado = ({ route, navigation }) => {
         <ScrollView
           ref={scrollDetalleRef}
           contentContainerStyle={styles.back}
+          pointerEvents={
+            activo &&
+              !cargandoOnboarding &&
+              pasoActual >= 3 &&
+              pasoActual <= 5
+              ? "none"
+              : "auto"
+          }
+          scrollEnabled={
+            !(
+              activo &&
+              !cargandoOnboarding &&
+              pasoActual >= 3 &&
+              pasoActual <= 5
+            )
+          }
         >
           <View
             ref={informacionPrincipalRef}

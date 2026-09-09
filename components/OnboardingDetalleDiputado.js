@@ -186,7 +186,16 @@ const OnboardingDetalleDiputado = ({
                 )}
 
                 {pasoVotaciones && (
-                    <View style={styles.mensajeVotaciones}>
+                    <View
+                        style={[
+                            styles.mensajeVotaciones,
+                            ultimasVotaciones && {
+                                top:
+                                    ultimasVotaciones.y -
+                                    responsiveHeightScale(100),
+                            },
+                        ]}
+                    >
                         <Text style={styles.textoPrincipal}>
                             Revisa sus últimas votaciones
                         </Text>
@@ -302,7 +311,6 @@ const styles = StyleSheet.create({
         position: "absolute",
         left: 0,
         right: 0,
-        top: responsiveHeightScale(405),
         alignItems: "center",
         zIndex: 4,
     },

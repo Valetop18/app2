@@ -54,6 +54,7 @@ import { TooltipProvider } from "../context/TooltipProvider";
 import { FONTS } from "../constants/fonts";
 import OnboardingCamaraDipu from "../components/OnboardingCamaraDipu";
 import { useOnboarding } from "../context/OnboardingContext";
+import { normalizarMedidaOnboarding } from "../utils/onboardingCoordinates";
 
 const responsiveCamaraText = (baseValue, minValue = 11) => {
   return Math.max(
@@ -526,6 +527,8 @@ export const CamaraDipu = () => {
   const pelotas = [];
   const infoPartidos = [];
   const partidosCoordenadas = [];
+
+  let coordenadasBurbujaOnboarding = null;
 
   {
     diputados.map((fila, index) => {
@@ -1490,6 +1493,13 @@ export const CamaraDipu = () => {
     const esBurbujaOnboarding = partido === "FRVS";
 
     if (esBurbujaOnboarding) {
+      coordenadasBurbujaOnboarding = {
+        x: Number(posicionX) - 18,
+        y: Number(posicionY) - 18,
+        width: 55,
+        height: 55,
+      };
+
       abrirBurbujaOnboardingRef.current = () =>
         abrirModalPartido(partidoViewModel, partidoId);
     }
@@ -1713,13 +1723,13 @@ export const CamaraDipu = () => {
   };
 
   const abrirEstadisticasDesdeOnboarding = () => {
-  if (navegandoEstadisticasRef.current) return;
+    if (navegandoEstadisticasRef.current) return;
 
-  navegandoEstadisticasRef.current = true;
+    navegandoEstadisticasRef.current = true;
 
-  irAlPaso(11);
-  handlePressNavigate(infoModal.partidoId);
-};
+    irAlPaso(11);
+    handlePressNavigate(infoModal.partidoId);
+  };
 
   const omitirDesdeModalPartido = () => {
     setModalVisible(false);
@@ -1997,12 +2007,14 @@ export const CamaraDipu = () => {
         (x, y, width, height) => {
           if (width <= 0 || height <= 0) return;
 
-          setMedidasHemiciclo({
-            x,
-            y,
-            width,
-            height,
-          });
+          setMedidasHemiciclo(
+            normalizarMedidaOnboarding({
+              x,
+              y,
+              width,
+              height,
+            }),
+          );
         },
       );
 
@@ -2010,12 +2022,14 @@ export const CamaraDipu = () => {
         (x, y, width, height) => {
           if (width <= 0 || height <= 0) return;
 
-          setMedidasControles({
-            x,
-            y,
-            width,
-            height,
-          });
+          setMedidasControles(
+            normalizarMedidaOnboarding({
+              x,
+              y,
+              width,
+              height,
+            }),
+          );
         },
       );
 
@@ -2084,12 +2098,14 @@ export const CamaraDipu = () => {
       (x, y, width, height) => {
         if (width <= 0 || height <= 0) return;
 
-        setMedidasControles({
-          x,
-          y,
-          width,
-          height,
-        });
+        setMedidasControles(
+          normalizarMedidaOnboarding({
+            x,
+            y,
+            width,
+            height,
+          }),
+        );
 
         setFaseOnboardingCamara("calendario");
       },
@@ -2107,27 +2123,34 @@ export const CamaraDipu = () => {
       !activo ||
       cargandoOnboarding ||
       pasoActual !== 8 ||
-      faseOnboardingCamara !== "calendario"
+      faseOnboardingCamara !== "calendario" ||
+      !medidasHemiciclo ||
+      !coordenadasBurbujaOnboarding
     ) {
       return;
     }
 
     const temporizadorBurbuja = setTimeout(() => {
-      burbujaOnboardingRef.current?.measureInWindow(
-        (x, y, width, height) => {
-          if (width <= 0 || height <= 0) return;
+      setMedidasBurbuja({
+        x:
+          medidasHemiciclo.x +
+          coordenadasBurbujaOnboarding.x * escalaHemiciclo,
 
-          setMedidasBurbuja({
-            x,
-            y,
-            width,
-            height,
-          });
+        y:
+          medidasHemiciclo.y +
+          coordenadasBurbujaOnboarding.y * escalaHemiciclo,
 
-          setFaseOnboardingCamara("burbuja");
-          irAlPaso(9);
-        },
-      );
+        width:
+          coordenadasBurbujaOnboarding.width *
+          escalaHemiciclo,
+
+        height:
+          coordenadasBurbujaOnboarding.height *
+          escalaHemiciclo,
+      });
+
+      setFaseOnboardingCamara("burbuja");
+      irAlPaso(9);
     }, 5000);
 
     return () => {
@@ -2138,6 +2161,8 @@ export const CamaraDipu = () => {
     cargandoOnboarding,
     pasoActual,
     faseOnboardingCamara,
+    medidasHemiciclo,
+    escalaHemiciclo,
     irAlPaso,
   ]);
 
@@ -2513,12 +2538,25 @@ export const CamaraDipu = () => {
             </View>
           )}
 
-          <Modal visible={modalVisible} transparent animationType="slide">
+          <Modal
+            visible={modalVisible}
+            transparent
+            animationType="slide"
+            onRequestClose={() => {
+              if (activo && pasoActual === 10) return;
+
+              setModalVisible(false);
+            }}
+          >
             <TooltipProvider>
               <View style={styles.overlay}>
                 <Pressable
                   style={StyleSheet.absoluteFill}
-                  onPress={() => setModalVisible(false)}
+                  onPress={() => {
+                    if (activo && pasoActual === 10) return;
+
+                    setModalVisible(false);
+                  }}
                 />
 
                 <View
