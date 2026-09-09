@@ -12,9 +12,15 @@ import {
   FlatList,
   TouchableOpacity,
   Dimensions,
+  Animated,
 } from "react-native";
 import { COLORS } from "../constants/colors";
-import { useState, useEffect } from "react";
+import {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+} from "react";
 import { MaterialIcons } from "@react-native-vector-icons/material-icons";
 import { PieChart, LineChart } from "react-native-gifted-charts";
 import Buscador from "../components/Buscador";
@@ -35,10 +41,16 @@ import { Skeleton } from "../components/Skeleton";
 import { votacionesRepository } from "../infrastructure/votacionesRepository";
 import Tooltip, { TOOLTIPS } from "../components/tooltip";
 import { ActivityIndicator } from "react-native";
-import { responsiveWidthScale } from "../utils/responsive";
+import {
+  responsiveHeightScale,
+  responsiveWidthScale,
+} from "../utils/responsive";
 import { useReacciones } from "../context/ReaccionesContext";
 import { useData } from "../context/DataContext";
 import { FONTS } from "../constants/fonts";
+import OnboardingDetalleDiputado from "../components/OnboardingDetalleDiputado";
+import { useOnboarding } from "../context/OnboardingContext";
+import { normalizarMedidaOnboarding } from "../utils/onboardingCoordinates";
 
 const SEMANAS_VISIBLES_GRAFICO = 8;
 
@@ -110,8 +122,17 @@ const ModalHeader = ({
   );
 };
 
-export const DescripcionDiputado = ({ route }) => {
+export const DescripcionDiputado = ({ route, navigation }) => {
   const { user, distrito, puedeInteractuar } = useAuth();
+
+  const {
+    activo,
+    pasoActual,
+    cargandoOnboarding,
+    irAlPaso,
+    avanzarPaso,
+    omitirRecorrido,
+  } = useOnboarding();
 
   const { reaccionesRepresentante, setReaccionRepresentante } = useReacciones();
   const {
@@ -124,6 +145,23 @@ export const DescripcionDiputado = ({ route }) => {
   } = useData();
 
   const idDiputado = route.params?.idDiputado;
+
+  const scrollDetalleRef = useRef(null);
+  const informacionPrincipalRef = useRef(null);
+  const ultimasVotacionesRef = useRef(null);
+  const animacionPulsoRef = useRef(null);
+  const navegandoSenadoresRef = useRef(false);
+
+  const animacionPulso = useRef(new Animated.Value(0)).current;
+
+  const [medidasInformacionPrincipal, setMedidasInformacionPrincipal] =
+    useState(null);
+
+  const [medidasUltimasVotaciones, setMedidasUltimasVotaciones] =
+    useState(null);
+
+  const [posicionVotacionesY, setPosicionVotacionesY] =
+    useState(null);
 
   const diputadoCache = obtenerDiputado(idDiputado);
 
@@ -646,6 +684,213 @@ export const DescripcionDiputado = ({ route }) => {
     fetchAll();
   }, []);
 
+  const navegarASenadores = useCallback(() => {
+    if (
+      navegandoSenadoresRef.current ||
+      pasoActual !== 5
+    ) {
+      return;
+    }
+
+    navegandoSenadoresRef.current = true;
+
+    if (animacionPulsoRef.current) {
+      animacionPulsoRef.current.stop();
+      animacionPulsoRef.current = null;
+    }
+
+    animacionPulso.stopAnimation();
+    animacionPulso.setValue(0);
+
+    avanzarPaso();
+
+    navigation.getParent()?.navigate("Senadores", {
+      screen: "ListaSenadores",
+    });
+  }, [
+    pasoActual,
+    animacionPulso,
+    avanzarPaso,
+    navigation,
+  ]);
+
+  useEffect(() => {
+    if (
+      loading ||
+      !activo ||
+      cargandoOnboarding ||
+      pasoActual !== 4
+    ) {
+      return;
+    }
+
+    const temporizadorSenadores = setTimeout(() => {
+      irAlPaso(5);
+    }, 4000);
+
+    return () => {
+      clearTimeout(temporizadorSenadores);
+    };
+  }, [
+    loading,
+    activo,
+    cargandoOnboarding,
+    pasoActual,
+    irAlPaso,
+  ]);
+
+  useEffect(() => {
+    if (
+      loading ||
+      !activo ||
+      cargandoOnboarding ||
+      pasoActual !== 5
+    ) {
+      return;
+    }
+
+    navegandoSenadoresRef.current = false;
+    animacionPulso.setValue(0);
+
+    animacionPulsoRef.current = Animated.loop(
+      Animated.sequence([
+        Animated.timing(animacionPulso, {
+          toValue: 1,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+        Animated.timing(animacionPulso, {
+          toValue: 0,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+        Animated.delay(350),
+      ]),
+    );
+
+    animacionPulsoRef.current.start();
+
+    const temporizadorNavegacion = setTimeout(() => {
+      navegarASenadores();
+    }, 2500);
+
+    return () => {
+      clearTimeout(temporizadorNavegacion);
+
+      if (animacionPulsoRef.current) {
+        animacionPulsoRef.current.stop();
+        animacionPulsoRef.current = null;
+      }
+
+      animacionPulso.stopAnimation();
+      animacionPulso.setValue(0);
+    };
+  }, [
+    loading,
+    activo,
+    cargandoOnboarding,
+    pasoActual,
+    animacionPulso,
+    navegarASenadores,
+  ]);
+
+  useEffect(() => {
+    if (
+      loading ||
+      !activo ||
+      cargandoOnboarding ||
+      pasoActual !== 3
+    ) {
+      return;
+    }
+
+    const temporizadorMedicion = setTimeout(() => {
+      informacionPrincipalRef.current?.measureInWindow(
+        (x, y, width, height) => {
+          if (width <= 0 || height <= 0) return;
+
+          setMedidasInformacionPrincipal(
+            normalizarMedidaOnboarding({
+              x,
+              y,
+              width,
+              height,
+            }),
+          );
+        },
+      );
+    }, 150);
+
+    return () => {
+      clearTimeout(temporizadorMedicion);
+    };
+  }, [
+    loading,
+    activo,
+    cargandoOnboarding,
+    pasoActual,
+  ]);
+
+  useEffect(() => {
+    if (
+      loading ||
+      !activo ||
+      cargandoOnboarding ||
+      pasoActual !== 3 ||
+      posicionVotacionesY === null
+    ) {
+      return;
+    }
+
+    let temporizadorMedicion;
+
+    const temporizadorTransicion = setTimeout(() => {
+      const posicionScroll = Math.max(
+        posicionVotacionesY - responsiveHeightScale(430),
+        0,
+      );
+
+      scrollDetalleRef.current?.scrollTo({
+        y: posicionScroll,
+        animated: true,
+      });
+
+      temporizadorMedicion = setTimeout(() => {
+        ultimasVotacionesRef.current?.measureInWindow(
+          (x, y, width, height) => {
+            if (width <= 0 || height <= 0) return;
+
+            setMedidasUltimasVotaciones(
+              normalizarMedidaOnboarding({
+                x,
+                y,
+                width,
+                height,
+              }),
+            );
+
+            irAlPaso(4);
+          },
+        );
+      }, 500);
+    }, 4000);
+
+    return () => {
+      clearTimeout(temporizadorTransicion);
+
+      if (temporizadorMedicion) {
+        clearTimeout(temporizadorMedicion);
+      }
+    };
+  }, [
+    loading,
+    activo,
+    cargandoOnboarding,
+    pasoActual,
+    posicionVotacionesY,
+    irAlPaso,
+  ]);
+
   console.log("Diputado:", diputado);
   const borderColor = coloresPorPartido[diputado.partido] || "#000";
 
@@ -833,8 +1078,31 @@ export const DescripcionDiputado = ({ route }) => {
           </View>
         </View>
       ) : (
-        <ScrollView contentContainerStyle={styles.back}>
-          <View style={styles.principal}>
+        <ScrollView
+          ref={scrollDetalleRef}
+          contentContainerStyle={styles.back}
+          pointerEvents={
+            activo &&
+              !cargandoOnboarding &&
+              pasoActual >= 3 &&
+              pasoActual <= 5
+              ? "none"
+              : "auto"
+          }
+          scrollEnabled={
+            !(
+              activo &&
+              !cargandoOnboarding &&
+              pasoActual >= 3 &&
+              pasoActual <= 5
+            )
+          }
+        >
+          <View
+            ref={informacionPrincipalRef}
+            collapsable={false}
+            style={styles.principal}
+          >
             <View style={styles.container1}>
               <Text
                 style={styles.title}
@@ -1274,18 +1542,43 @@ export const DescripcionDiputado = ({ route }) => {
               </View>
             </View>
           </View>
-          <View style={styles.buscador}>
-            <Buscador />
-          </View>
-          <View>
-            <SearchResults
-              data={votacionesFiltradas}
-              onSelect={() => console.log("click")}
-              representante={diputado.id}
-            />
+          <View
+            ref={ultimasVotacionesRef}
+            collapsable={false}
+            onLayout={(event) => {
+              setPosicionVotacionesY(event.nativeEvent.layout.y);
+            }}
+          >
+            <View style={styles.buscador}>
+              <Buscador />
+            </View>
+
+            <View>
+              <SearchResults
+                data={votacionesFiltradas}
+                onSelect={() => console.log("click")}
+                representante={diputado.id}
+              />
+            </View>
           </View>
         </ScrollView>
       )}
+
+      <OnboardingDetalleDiputado
+        visible={
+          activo &&
+          !cargandoOnboarding &&
+          !loading &&
+          pasoActual >= 3 &&
+          pasoActual <= 5
+        }
+        pasoActual={pasoActual}
+        informacionPrincipal={medidasInformacionPrincipal}
+        ultimasVotaciones={medidasUltimasVotaciones}
+        animacionPulso={animacionPulso}
+        onPressSenadores={navegarASenadores}
+        onOmitir={omitirRecorrido}
+      />
 
       <Modal
         visible={modalVisible}
