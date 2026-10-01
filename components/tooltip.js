@@ -1,5 +1,10 @@
-import React, { useRef } from "react";
-import { View, Pressable, StyleSheet, useWindowDimensions } from "react-native";
+import React, { useRef, useState } from "react";
+import {
+  View,
+  Text,
+  Pressable,
+  StyleSheet,
+} from "react-native";
 
 import { useTooltip } from "../context/TooltipProvider";
 
@@ -7,10 +12,14 @@ export const TOOLTIPS = {
   asistencia: {
     especifica:
       "Porcentaje de asistencia a esta sesión. Las ausencias no consideran justificaciones, ya que su motivo se encuentra disponible en el detalle.",
+    especificaSenado:
+      "Porcentaje de asistencia a esta sesión, sin considerar justificaciones ni licencias.",
     acumulada:
       "Porcentaje de asistencia del período considerando las ausencias justificadas, como licencias médicas o permisos oficiales.",
     partido:
-      "Porcentaje de asistencia de las(os) legisladoras(es) del partido a las sesiones, considerando las justificaciones registradas.",
+      "Porcentaje de asistencia de las(os) diputados(as) del partido a las sesiones, considerando las justificaciones registradas.",
+    partidoSenado:
+      "Porcentaje de asistencia de las(os) senadoras(es) del partido a las sesiones, considerando las justificaciones registradas.",
   },
 
   votaciones: {
@@ -19,11 +28,15 @@ export const TOOLTIPS = {
     acumulada:
       "Porcentaje de votaciones del período en las que emitió un voto (A favor, En contra o Abstención), excluyendo pareos (acuerdos para no votar) y no votos.",
     partido:
-      "Porcentaje de votaciones del período en las que las(os) legisladoras(es) del partido emitieron un voto (A favor, En contra o Abstención), excluyendo pareos (acuerdos para no votar) y no votos.",
+      "Porcentaje de votaciones del período en las que las(os) diputadas(es) del partido emitieron un voto (A favor, En contra o Abstención), excluyendo pareos (acuerdos para no votar) y no votos.",
+    partidoSenado:
+      "Porcentaje de votaciones del período en las que las(os) senadoras(es) del partido emitieron un voto (A favor, En contra o Abstención), excluyendo pareos (acuerdos para no votar) y no votos.",
   },
 
   atrasos:
     "Porcentaje de sesiones en las que el parlamentario llegó con más de 3 minutos de retraso.",
+  acuerdos:
+    "Cantidad de proyectos de acuerdo presentados por el senador para expresar una opinión o solicitar medidas a una autoridad pública sobre materias de interés general.",
   oficios:
     "Cantidad de oficios enviados por el parlamentario para solicitar información o realizar requerimientos.",
   mociones: {
@@ -31,13 +44,17 @@ export const TOOLTIPS = {
       "Cantidad de proyectos de ley presentados por el parlamentario.",
     acumulada: "Cantidad de proyectos de ley presentados por los partidos.",
     partido:
-      "Cantidad de proyectos de ley presentados por los parlamentarios del partido.",
+      "Cantidad de proyectos de ley presentados por los diputados del partido.",
+    partidoSenado:
+      "Cantidad de proyectos de ley presentados por los senadores del partido.",
   },
   representaciondistrital: {
     legislador:
       "Porcentaje de votaciones en las que el parlamentario coincidió con los usuarios de su distrito.",
     partido:
-      "Promedio del porcentaje de representación distrital de los parlamentarios del partido.",
+      "Promedio del porcentaje de representación distrital de los diputados del partido.",
+    partidoSenado:
+      "Promedio del porcentaje de representación distrital de los senadores del partido.",
   },
   proyectosAprobadosPresentados:
     "Cantidad de proyectos del parlamentario aprobados en la Cámara, respecto del total de proyectos presentados.",
@@ -48,13 +65,21 @@ export const TOOLTIPS = {
   lugarEstadisticoLegislador:
     "Lugar que ocupa el parlamentario entre todos los representantes según un puntaje estadístico que considera asistencia, participación en votaciones, proyectos aprobados y presentados, oficios enviados y atrasos.",
   cohesionPartido:
-    "En cada votación se identifica cuál fue la postura más adoptada por los legisladores del partido y se calcula qué porcentaje la siguió. El resultado corresponde al promedio de todas las votaciones del período.",
+    "En cada votación se identifica cuál fue la postura más adoptada por los diputados del partido y se calcula qué porcentaje la siguió. El resultado corresponde al promedio de todas las votaciones del período.",
+  cohesionPartidoSenado:
+    "En cada votación se identifica cuál fue la postura más adoptada por los senadores del partido y se calcula qué porcentaje la siguió. El resultado corresponde al promedio de todas las votaciones del período.",
   oficiosPartido:
-    "Cantidad de oficios enviados por los parlamentarios del partido para solicitar información o realizar requerimientos.",
+    "Cantidad de oficios enviados por los diputados del partido para solicitar información o realizar requerimientos.",
+  oficiosPartidoSenado:
+    "Cantidad de oficios enviados por los senadores del partido para solicitar información o realizar requerimientos.",
   CompatibilidadPartidoUsuario:
-    "Compara tus preferencias con la forma en que votó mayoritariamente el partido. Mientras más coincidan, mayor será tu porcentaje de compatibilidad.",
+    "Compara tus preferencias con la forma en que votó mayoritariamente el partido en la cámara de diputados. Mientras más coincidan, mayor será tu porcentaje de compatibilidad.",
+  CompatibilidadPartidoUsuarioSenado:
+    "Compara tus preferencias con la forma en que votó mayoritariamente el partido en el senado. Mientras más coincidan, mayor será tu porcentaje de compatibilidad.",
   rankingPartidos:
-    "Ubica al partido entre los 18 partidos con representación en la Cámara. La posición se calcula considerando su asistencia, participación en votaciones, cohesión, representación distrital, mociones aprobadas y presentadas, oficios y cantidad de diputados(as).",
+    "Ubica al partido entre los 18 partidos con representación en la Cámara de diputados. La posición se calcula considerando su asistencia, participación en votaciones, cohesión, representación distrital, mociones aprobadas y presentadas, oficios y cantidad de diputados(as).",
+  rankingPartidosSenado:
+    "Ubica al partido entre los 15 partidos con representación en la Cámara del Senado. La posición se calcula considerando su asistencia, participación en votaciones, cohesión, representación distrital, mociones aprobadas y presentadas, oficios y cantidad de senadores(as).",
   reaccionFueraDistrito:
     "Solo puedes dar «Me gusta» en representantes que pertenezcan a tu distrito.",
 };
@@ -64,6 +89,7 @@ const Tooltip = ({
   text,
   width = 220,
   disabled = false,
+  ajustarAlTexto = false,
   tooltipStyle,
   textStyle,
   arrowStyle,
@@ -72,9 +98,8 @@ const Tooltip = ({
   const id = useRef(Symbol()).current;
   const containerRef = useRef(null);
 
-  const { width: screenWidth } = useWindowDimensions();
-
   const { openTooltip, providerRef } = useTooltip();
+  const [anchoTexto, setAnchoTexto] = useState(0);
 
   const handlePress = () => {
     if (!containerRef.current || !providerRef.current) {
@@ -91,22 +116,28 @@ const Tooltip = ({
             const x = triggerX - providerX;
             const y = triggerY - providerY;
 
-            // Centrar el tooltip respecto al texto presionado
-            let left = x + triggerWidth / 2 - width / 2;
+            const anchoTooltip =
+              ajustarAlTexto && anchoTexto > 0
+                ? Math.ceil(anchoTexto) + 22
+                : width;
 
-            // Evitar que se salga del TooltipProvider
+            let left = x + triggerWidth / 2 - anchoTooltip / 2;
+
             if (left < margenPantalla) {
               left = margenPantalla;
-            } else if (left + width > providerWidth - margenPantalla) {
-              left = providerWidth - margenPantalla - width;
+            } else if (
+              left + anchoTooltip >
+              providerWidth - margenPantalla
+            ) {
+              left = providerWidth - margenPantalla - anchoTooltip;
             }
 
-            // Mantener la flecha apuntando al centro del texto
-            const arrowOffsetX = x + triggerWidth / 2 - left - width * 0.1;
+            const arrowOffsetX =
+              x + triggerWidth / 2 - left - anchoTooltip * 0.1;
 
             openTooltip(id, {
               text,
-              width,
+              width: anchoTooltip,
               left,
               top: y + triggerHeight + 4,
               arrowOffsetX,
@@ -126,6 +157,22 @@ const Tooltip = ({
 
   return (
     <View ref={containerRef} collapsable={false} style={styles.container}>
+      {ajustarAlTexto && typeof text === "string" && (
+        <Text
+          numberOfLines={1}
+          style={[styles.measureText, textStyle]}
+          onTextLayout={({ nativeEvent }) => {
+            const ancho = nativeEvent.lines?.[0]?.width;
+
+            if (ancho) {
+              setAnchoTexto(ancho);
+            }
+          }}
+        >
+          {text}
+        </Text>
+      )}
+
       <Pressable onPress={handlePress} hitSlop={hitSlop}>
         {children}
       </Pressable>
@@ -140,5 +187,13 @@ const styles = StyleSheet.create({
     position: "relative",
     justifyContent: "center",
     overflow: "visible",
+  },
+  measureText: {
+    position: "absolute",
+    left: -10000,
+    top: -10000,
+    width: 1000,
+    opacity: 0,
+    fontSize: 13,
   },
 });

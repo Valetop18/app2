@@ -112,7 +112,12 @@ const ModalHeader = ({
 export const DescripcionSenador = ({ route }) => {
   const { user, circunscripcion, puedeInteractuar } = useAuth();
 
-  const { reaccionesRepresentante, setReaccionRepresentante } = useReacciones();
+  const {
+    reaccionesRepresentante,
+    setReaccionRepresentante,
+    reaccionesMocionSenado,
+    setReaccionMocionSenado,
+  } = useReacciones();
   const {
     obtenerSenador,
     actualizarSenador,
@@ -459,8 +464,10 @@ export const DescripcionSenador = ({ route }) => {
 
           if (!acc[boletin]) {
             acc[boletin] = {
+              idMocion: row.id_mocion,
               numeroBoletin: boletin,
               titulo: row.titulo_mocion,
+              reaccionUsuario: row.reaccion_usuario,
               votaciones: [],
             };
           }
@@ -989,7 +996,7 @@ export const DescripcionSenador = ({ route }) => {
                     </Text>
                   </View>
                 </Tooltip>
-                <Tooltip text={TOOLTIPS.atrasos}>
+                <Tooltip text={TOOLTIPS.acuerdos}>
                   <View flexDirection={"row"} alignItems={"center"}>
                     <FontAwesome
                       name="handshake-o"
@@ -1397,9 +1404,57 @@ export const DescripcionSenador = ({ route }) => {
                 }
                 renderItem={({ item }) => (
                   <View style={styles.mocionCard}>
-                    <Text style={styles.mocionBoletin}>
-                      Boletín N° {item.numeroBoletin}
-                    </Text>
+                    <View style={styles.mocionEncabezado}>
+                      <Text style={styles.mocionBoletin}>
+                        Boletín N° {item.numeroBoletin}
+                      </Text>
+
+                      <View style={styles.reaccionesMocion}>
+                        <TouchableOpacity
+                          style={styles.botonReaccionMocion}
+                          disabled={item.votaciones.length > 0}
+                          activeOpacity={0.7}
+                          onPress={() =>
+                            setReaccionMocionSenado(item.idMocion, "like")
+                          }
+                        >
+                          <MaterialIcons
+                            name="thumb-up"
+                            size={responsiveWidthScale(20)}
+                            color={
+                              (
+                                reaccionesMocionSenado[item.idMocion] ??
+                                item.reaccionUsuario
+                              ) === "like"
+                                ? COLORS.greenM
+                                : COLORS.grey
+                            }
+                          />
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                          style={styles.botonReaccionMocion}
+                          disabled={item.votaciones.length > 0}
+                          activeOpacity={0.7}
+                          onPress={() =>
+                            setReaccionMocionSenado(item.idMocion, "dislike")
+                          }
+                        >
+                          <MaterialIcons
+                            name="thumb-down"
+                            size={responsiveWidthScale(20)}
+                            color={
+                              (
+                                reaccionesMocionSenado[item.idMocion] ??
+                                item.reaccionUsuario
+                              ) === "dislike"
+                                ? COLORS.greenM
+                                : COLORS.grey
+                            }
+                          />
+                        </TouchableOpacity>
+                      </View>
+                    </View>
 
                     <Text style={styles.mocionTitulo}>{item.titulo}</Text>
 
@@ -2203,5 +2258,23 @@ const styles = StyleSheet.create({
     marginHorizontal: "3%",
     marginTop: responsiveWidthScale(8),
     marginBottom: responsiveWidthScale(0.5),
+  },
+
+  mocionEncabezado: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+
+  reaccionesMocion: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: responsiveWidthScale(10),
+  },
+
+  botonReaccionMocion: {
+    alignItems: "center",
+    justifyContent: "center",
+    padding: responsiveWidthScale(2),
   },
 });

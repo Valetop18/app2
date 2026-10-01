@@ -134,7 +134,12 @@ export const DescripcionDiputado = ({ route, navigation }) => {
     omitirRecorrido,
   } = useOnboarding();
 
-  const { reaccionesRepresentante, setReaccionRepresentante } = useReacciones();
+  const {
+    reaccionesRepresentante,
+    setReaccionRepresentante,
+    reaccionesMocion,
+    setReaccionMocion,
+  } = useReacciones();
   const {
     obtenerDiputado,
     actualizarDiputado,
@@ -482,8 +487,10 @@ export const DescripcionDiputado = ({ route, navigation }) => {
 
           if (!acc[boletin]) {
             acc[boletin] = {
+              idMocion: row.id_mocion,
               numeroBoletin: boletin,
               titulo: row.titulo_mocion,
+              reaccionUsuario: row.reaccion_usuario ?? null,
               votaciones: [],
             };
           }
@@ -1660,9 +1667,57 @@ export const DescripcionDiputado = ({ route, navigation }) => {
                 }
                 renderItem={({ item }) => (
                   <View style={styles.mocionCard}>
-                    <Text style={styles.mocionBoletin}>
-                      Boletín N° {item.numeroBoletin}
-                    </Text>
+                    <View style={styles.mocionEncabezado}>
+                      <Text style={styles.mocionBoletin}>
+                        Boletín N° {item.numeroBoletin}
+                      </Text>
+
+                      <View style={styles.reaccionesMocion}>
+                        <TouchableOpacity
+                          style={styles.botonReaccionMocion}
+                          disabled={item.votaciones.length > 0}
+                          activeOpacity={0.7}
+                          onPress={() =>
+                            setReaccionMocion(item.idMocion, "like")
+                          }
+                        >
+                          <MaterialIcons
+                            name="thumb-up"
+                            size={responsiveWidthScale(20)}
+                            color={
+                              (
+                                reaccionesMocion[item.idMocion] ??
+                                item.reaccionUsuario
+                              ) === "like"
+                                ? COLORS.greenM
+                                : COLORS.grey
+                            }
+                          />
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                          style={styles.botonReaccionMocion}
+                          disabled={item.votaciones.length > 0}
+                          activeOpacity={0.7}
+                          onPress={() =>
+                            setReaccionMocion(item.idMocion, "dislike")
+                          }
+                        >
+                          <MaterialIcons
+                            name="thumb-down"
+                            size={responsiveWidthScale(20)}
+                            color={
+                              (
+                                reaccionesMocion[item.idMocion] ??
+                                item.reaccionUsuario
+                              ) === "dislike"
+                                ? COLORS.greenM
+                                : COLORS.grey
+                            }
+                          />
+                        </TouchableOpacity>
+                      </View>
+                    </View>
 
                     <Text style={styles.mocionTitulo}>{item.titulo}</Text>
 
@@ -2458,5 +2513,24 @@ const styles = StyleSheet.create({
     fontSize: Math.max(11, responsiveWidthScale(13)),
     color: COLORS.greyM,
     textAlign: "center",
+  },
+
+  mocionEncabezado: {
+    width: "100%",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+
+  reaccionesMocion: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginLeft: "auto",
+  },
+
+  botonReaccionMocion: {
+    alignItems: "center",
+    justifyContent: "center",
+    marginLeft: responsiveWidthScale(14),
   },
 });

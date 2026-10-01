@@ -11,7 +11,7 @@ import { useAuth } from "./AuthContext";
 const OnboardingContext = createContext(null);
 
 const ONBOARDING_VERSION = "v1";
-const FORZAR_ONBOARDING_EN_PRUEBAS = true;
+const FORZAR_ONBOARDING_EN_PRUEBAS = false;
 
 export const OnboardingProvider = ({ children }) => {
     const { user } = useAuth();

@@ -27,6 +27,13 @@ const responsiveRepresentanteText = (baseValue) => {
   return Math.max(11, responsiveWidthScale(baseValue));
 };
 
+const normalizarTexto = (texto = "") =>
+  texto
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase();
+
 const RepresentantePartido = ({ item }) => {
   const { width, height } = useWindowDimensions();
 
@@ -36,7 +43,7 @@ const RepresentantePartido = ({ item }) => {
     height <= 680 &&
     height > width;
   const TextoDinamico = () => {
-    const o = item.text?.toLowerCase();
+    const o = normalizarTexto(item.text);
 
     if (!o) {
       return null;
@@ -81,6 +88,23 @@ const RepresentantePartido = ({ item }) => {
     } else if (o.includes("permiso parental")) {
       abreviatura = "P.Par.";
       textoTooltip = "Permiso parental";
+    } else if (o === "enfermedad") {
+      abreviatura = "Enf.";
+      textoTooltip = "Enfermedad";
+    } else if (o === "mision oficial") {
+      abreviatura = "Mis.Ofi.";
+      textoTooltip = "Misión oficial";
+    } else if (o === "invitacion oficial") {
+      abreviatura = "Inv.Ofi.";
+      textoTooltip = "Invitación oficial";
+    } else if (
+      o === "otras actividades: permiso por nacimiento de un hijo"
+    ) {
+      abreviatura = "N.Hijo";
+      textoTooltip = "Permiso por nacimiento de un hijo";
+    } else if (o === "otras actividades") {
+      abreviatura = "O.Act.";
+      textoTooltip = "Otras actividades";
     }
 
     if (!abreviatura) {
@@ -88,23 +112,26 @@ const RepresentantePartido = ({ item }) => {
     }
 
     return (
-      <Tooltip text={textoTooltip} width={responsiveWidthScale(160)}>
+      <Tooltip
+        text={textoTooltip}
+        ajustarAlTexto
+      >
         <Text style={styles.asistencia}>{abreviatura}</Text>
       </Tooltip>
     );
   };
 
   const esVotoAFavor = item.voto
-  ?.toLowerCase()
-  .includes("favor");
+    ?.toLowerCase()
+    .includes("favor");
 
   return (
     <View
-  style={[
-    styles.container,
-    esTelefonoBajo && styles.containerTelefonoBajo,
-  ]}
->
+      style={[
+        styles.container,
+        esTelefonoBajo && styles.containerTelefonoBajo,
+      ]}
+    >
       <View style={styles.containImage}>
         <Image style={styles.foto} source={{ uri: item.foto }} />
       </View>
@@ -113,42 +140,42 @@ const RepresentantePartido = ({ item }) => {
       </Text>
 
       {item.icon ? (
-  <View style={styles.estado}>
-    {item.mostrarTooltipVoto ? (
-      <Tooltip
-        width={responsiveWidthScale(115)}
-        hitSlop={responsiveWidthScale(6)}
-        text={
-          <TooltipVotaciones voto={item.voto} />
-        }
-        tooltipStyle={
-          esVotoAFavor
-            ? { backgroundColor: COLORS.back }
-            : undefined
-        }
-        arrowStyle={
-          esVotoAFavor
-            ? { backgroundColor: COLORS.back }
-            : undefined
-        }
-      >
-        <MaterialIcons
-          name={item.icon}
-          size={responsiveRepresentanteSize(18)}
-          color={item.iconColor}
-        />
-      </Tooltip>
-    ) : (
-      <MaterialIcons
-        name={item.icon}
-        size={responsiveRepresentanteSize(18)}
-        color={item.iconColor}
-      />
-    )}
+        <View style={styles.estado}>
+          {item.mostrarTooltipVoto ? (
+            <Tooltip
+              width={responsiveWidthScale(115)}
+              hitSlop={responsiveWidthScale(6)}
+              text={
+                <TooltipVotaciones voto={item.voto} />
+              }
+              tooltipStyle={
+                esVotoAFavor
+                  ? { backgroundColor: COLORS.back }
+                  : undefined
+              }
+              arrowStyle={
+                esVotoAFavor
+                  ? { backgroundColor: COLORS.back }
+                  : undefined
+              }
+            >
+              <MaterialIcons
+                name={item.icon}
+                size={responsiveRepresentanteSize(18)}
+                color={item.iconColor}
+              />
+            </Tooltip>
+          ) : (
+            <MaterialIcons
+              name={item.icon}
+              size={responsiveRepresentanteSize(18)}
+              color={item.iconColor}
+            />
+          )}
 
-    {item.text ? TextoDinamico() : null}
-  </View>
-) : (
+          {item.text ? TextoDinamico() : null}
+        </View>
+      ) : (
         <Text style={styles.asistencia}>
           {item.value}
           {item.suffix}
@@ -207,8 +234,8 @@ const styles = StyleSheet.create({
   },
 
   containerTelefonoBajo: {
-  minHeight: responsiveHeightScale(40),
-},
+    minHeight: responsiveHeightScale(40),
+  },
 });
 
 export default RepresentantePartido;

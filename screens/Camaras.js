@@ -1334,20 +1334,69 @@ export const CamaraDipu = () => {
     }
   };
 
+  const obtenerUltimaSesionConVotaciones = async () => {
+    const sesiones =
+      await votacionesRepository.getFechaSesionCalendario();
+
+    const sesionesValidas = (sesiones ?? []).filter(
+      (item) =>
+        item.fecha_date &&
+        Number.isInteger(Number(item.numero_sesion)),
+    );
+
+    if (sesionesValidas.length === 0) {
+      return null;
+    }
+
+    return sesionesValidas.reduce((ultima, actual) => {
+      const fechaUltima = String(ultima.fecha_date);
+      const fechaActual = String(actual.fecha_date);
+
+      if (fechaActual > fechaUltima) {
+        return actual;
+      }
+
+      if (
+        fechaActual === fechaUltima &&
+        Number(actual.numero_sesion) >
+        Number(ultima.numero_sesion)
+      ) {
+        return actual;
+      }
+
+      return ultima;
+    });
+  };
+
   const cargarTodo = async () => {
     try {
       setLoading(true);
       setDatosListos(false);
 
-      const numeroSesion = await cargarAsistenciaSesionGlobal();
+      const ultimaSesion =
+        await obtenerUltimaSesionConVotaciones();
+
+      const numeroSesion = Number(
+        ultimaSesion?.numero_sesion,
+      );
+
+      if (!Number.isInteger(numeroSesion)) {
+        throw new Error(
+          "No se encontró una sesión válida con votaciones",
+        );
+      }
 
       await Promise.all([
         cargarPorcentajes(),
         cargarVotacionesPartidos(),
-        cargarAsistenciaSesion(),
+
+        cargarAsistenciaSesionGlobal(numeroSesion),
+        cargarAsistenciaSesion(numeroSesion),
+
         cargarVotacionesPorSesion(numeroSesion),
         cargarVotacionPartidoPorSesion(numeroSesion),
         cargarVotacionSesionGlobal(numeroSesion),
+
         cargarAsistenciaGlobal(),
         cargarVotacionHistoricaGlobal(),
         cargarMocionesHistoricasGlobal(),
@@ -1356,7 +1405,10 @@ export const CamaraDipu = () => {
 
       setDatosListos(true);
     } catch (error) {
-      console.error("Error al cargar los datos de la Cámara:", error);
+      console.error(
+        "Error al cargar los datos de la Cámara:",
+        error,
+      );
     } finally {
       setLoading(false);
     }
@@ -1892,15 +1944,30 @@ export const CamaraDipu = () => {
         }
 
         if (habilitarTransicion) {
+          const asistenciaSinDatos =
+            Number(asistenciaSesionGlobal?.porcentaje ?? 0) === 0;
+
           return (
-            <Tooltip
-              text={TOOLTIPS.asistencia.especifica}
-              width={responsiveWidthScale(320)}
-            >
-              <Text style={styles.subtitulo}>
-                Total camara: {asistenciaSesionGlobal?.porcentaje}%
-              </Text>
-            </Tooltip>
+            <View style={{ alignItems: "center" }}>
+              <Tooltip
+                text={TOOLTIPS.asistencia.especifica}
+                width={responsiveWidthScale(320)}
+              >
+                <Text style={styles.subtitulo}>
+                  Total camara: {asistenciaSesionGlobal?.porcentaje ?? 0}%
+                </Text>
+              </Tooltip>
+
+              {asistenciaSinDatos && (
+                <Text style={styles.articulo}>
+                  <Text style={{ fontFamily: FONTS.bold }}>
+                    Asistencia sin datos:{" "}
+                  </Text>
+                  La Cámara aún no ha publicado la asistencia oficial
+                  de esta sesión.
+                </Text>
+              )}
+            </View>
           );
         }
 
@@ -1943,7 +2010,7 @@ export const CamaraDipu = () => {
       case 3:
         if (esProyectoEspecifico) {
           return (
-            <View>
+            <View style={styles.textosProyecto}>
               {materiaActual ? (
                 <View
                   style={[
@@ -2339,6 +2406,13 @@ export const CamaraDipu = () => {
       ref={pantallaCamaraRef}
       collapsable={false}
       style={styles.container}
+      pointerEvents={
+        activo &&
+          pasoActual === 8 &&
+          !datosListos
+          ? "none"
+          : "auto"
+      }
     >
       {search.length > 0 ? (
         <SearchResults
@@ -2565,6 +2639,28 @@ export const CamaraDipu = () => {
                   style={styles.modalContainer}
                 >
                   <View style={styles.tituloContainer}>
+                    <TouchableOpacity
+                      style={styles.botonCerrarModal}
+                      onPress={() => {
+                        if (activo && pasoActual === 10) return;
+
+                        setModalVisible(false);
+                      }}
+                      hitSlop={{
+                        top: 10,
+                        bottom: 10,
+                        left: 10,
+                        right: 10,
+                      }}
+                      accessibilityRole="button"
+                      accessibilityLabel="Cerrar"
+                    >
+                      <MaterialIcons
+                        name="close"
+                        size={responsiveCamaraSize(19)}
+                        color={COLORS.back}
+                      />
+                    </TouchableOpacity>
                     <View style={styles.tituloContainerText}>
                       <MsIcon
                         icon={infoModal.icon}
@@ -3819,5 +3915,19 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.bold,
     fontSize: Math.max(11, responsiveWidthScale(13)),
     letterSpacing: responsiveWidthScale(1),
+  },
+
+  textosProyecto: {
+    width: "100%",
+    alignItems: "center",
+  },
+
+  botonCerrarModal: {
+    position: "absolute",
+    top: responsiveCamaraSize(8),
+    right: responsiveCamaraSize(8),
+    zIndex: 2,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });
