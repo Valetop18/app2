@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SupabaseAuthRepository } from "../infrastructure/SupabaseAuthRepository";
+import { unregisterCurrentDeviceForPushNotifications } from "../infrastructure/pushNotifications";
 
 const USER_PROFILE_KEY = "@userProfile";
 
@@ -207,6 +208,17 @@ export const AuthProvider = ({ children }) => {
 
   async function logout() {
     try {
+
+      if (user?.id) {
+        try {
+          const pushResult = await unregisterCurrentDeviceForPushNotifications(user.id);
+          console.log("Resultado desregistro notificaciones: ", pushResult)
+        } catch (error) {
+          console.error("No se pudo desregistrar el dispositivo de notifiaciones: ", error)
+        }
+      }
+
+
       await authRepo.logout();
     } catch (error) {
       console.error("Error al cerrar la sesión de Supabase:", error);

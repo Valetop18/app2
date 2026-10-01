@@ -72,20 +72,20 @@ Deno.serve( async (req: Request): Promise<Response> => {
         const materiaOriginal: string | null = record.materia;
         const articuloOriginal: string | null = record.articulo;
 
-        if (!materiaOriginal && !articuloOriginal ) {
+       if (!materiaOriginal && !articuloOriginal ) {
             return new Response(
-                JSON.stringify( { message: "No hay materia ni articulo para resumir"} ),
+                JSON.stringify( { message: "No hay materia ni articulo para resumir", skipped: true, reason: "campos_vacios"} ),
                 { status: 200, headers: { "Content-Type": "application/json" } }
             );
         }
 
-        const materiaValida = materiaOriginal && materiaOriginal.length > 300;
-        const articuloValido = articuloOriginal && articuloOriginal.length > 300;
+        const materiaValida = materiaOriginal && materiaOriginal.length > 0;
+        const articuloValido = articuloOriginal && articuloOriginal.length > 0;
 
 
         if (!materiaValida && !articuloValido ) {
             return new Response(
-                JSON.stringify( { message: "Materia o articulo tienen menos de 300 caracteres"} ),
+                JSON.stringify( { message: "Materia o articulo no existen", skipped: true, reason: "sin_texto"} ),
                 { status: 200, headers: { "Content-Type": "application/json" } }
             );
         }
@@ -96,14 +96,41 @@ Deno.serve( async (req: Request): Promise<Response> => {
 
         const updatePayload: Record<string, string> = {};
 
-        if (materiaOriginal) {
-            const promptMateria = `Resume el siguiente texto de una materia de votacion en un rango de 200 a 300 caracteres: ${materiaOriginal}`;
-            updatePayload.materia_resumen = await llamarGemini(apiKey, promptMateria);
-        }
+        //
 
-        if (articuloOriginal) {
-            const promptArticulo = `Resume el siguiente texto de un articulo de votacion en un rango de 200 a 300 caracteres: ${articuloOriginal}`;
+        if (materiaValida && articuloValido ) {
+
+            if (materiaOriginal.length > 130) {
+                const promptMateria = `
+                    Resume el siguiente texto debe tener un máximo de 125 caracteres, contando espacios y signos de puntuación.
+                    Debe escribirse en una sola línea, sin saltos de línea:
+                    ${materiaOriginal}`;
+                    
+                updatePayload.materia_resumen = await llamarGemini(apiKey, promptMateria);
+            }
+
+
+            if (articuloOriginal.length >= 200) {
+                
+            const promptArticulo = `
+                Resume el siguiente texto debe tener un máximo de 190 caracteres, contando espacios y signos de puntuación.
+                Debe escribirse en una sola línea, sin saltos de línea:
+                ${articuloOriginal}`;
+
             updatePayload.articulo_resumen= await llamarGemini(apiKey, promptArticulo);
+
+            }
+
+
+        } else if (!articuloOriginal && materiaOriginal && materiaOriginal.length > 280) {
+
+            const promptMateria = `
+                El resumen debe tener un máximo de 270 caracteres, contando letras, números, espacios y signos de puntuación.
+                Debe escribirse en una sola línea, sin saltos de línea:
+                ${materiaOriginal}`;
+
+
+            updatePayload.materia_resumen = await llamarGemini(apiKey, promptMateria);
         }
 
         //UPDATE de columnas con resumen generado por IA
@@ -135,4 +162,3 @@ Deno.serve( async (req: Request): Promise<Response> => {
     }
 
 })
-

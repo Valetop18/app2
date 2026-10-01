@@ -1,0 +1,224 @@
+import * as Device from "expo-device";
+import * as Notifications from "expo-notifications";
+import Constants from "expo-constants";
+import { Platform } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { pushNotificationsRepository } from "./pushNotificationsRepository";
+
+const ANDROID_CHANNEL_ID = "updates";
+const PUSH_REGISTRATION_KEY = "@pushRegistration";
+
+Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+        shouldPlaySound: true,
+        shouldShowBanner: true,
+        shouldSetBadge: false,
+        shouldShowList: true
+    })
+})
+
+function normalizadorNotificacion(notificacion){
+    const request = notificacion?.request;
+    const content = notificacion?.content;
+
+    return {
+        identifier: request?.identifier ?? null,
+        title: content?.title ?? null,
+        body: content?.body ?? null,
+        data: content?.data ?? null,
+        receivedAt: notificacion?.date ?? null
+    };
+}
+
+function normalizarRespuestaNotificacion(response){
+    return {
+        ...normalizadorNotificacion(response?.notification),
+        actionIdentifier: response?.actionIdentifier ?? null
+    }
+}
+
+export function suscribirEventosNotificaciones( { alRecibir, alAbrir }  ) {
+
+    const receivedSubscription = 
+        Notifications.addNotificationReceivedListener( (notificacion) => {
+            alRecibir?.( normalizadorNotificacion(notificacion) );
+        } )
+
+    const responseSubscription = 
+        Notifications.addNotificationResponseReceivedListener((response) => {
+            alAbrir?.(normalizarRespuestaNotificacion(response));
+        });
+
+    return () => {
+        receivedSubscription.remove();
+        responseSubscription.remove();
+    }
+
+}
+
+export async function obtenerUltimaNotificacionAbierta() {
+    const response = await Notifications.getLastNotificationResponseAsync();
+    return response ? normalizarRespuestaNotificacion(response) : null;
+}
+
+
+async function ensureAndroidChannel() {
+    if (Platform.OS !== "android" ) return;
+
+    await Notifications.setNotificationChannelAsync(ANDROID_CHANNEL_ID, {
+        name: "Actualizaciones",
+        description: "Cuando hay nueva informacion disponible",
+        importance: Notifications.AndroidImportance.HIGH,
+        sound: "default",
+        vibrationPattern: [0, 250, 250, 250]
+    })
+
+}
+
+function notificationsAreAllowed(permission) {
+    return (
+        permission.granted ||
+        permission.ios?.status === Notifications.IosAuthorizationStatus.PROVISIONAL
+    )
+}
+
+async function getNotificationPermission(){
+    const existingPermission = await Notifications.getPermissionsAsync();
+
+    if( notificationsAreAllowed(existingPermission) ){
+        return {
+            granted: true,
+            requestedNow: false,
+            canAskAgain: true
+        }
+    }
+
+    if( !existingPermission.canAskAgain ){
+        return {
+            granted: false,
+            requestedNow: false,
+            canAskAgain: false
+        }
+    }
+
+    const requestedPermission = await Notifications.requestPermissionsAsync();
+
+    return {
+        granted: notificationsAreAllowed(requestedPermission),
+        requestedNow: true,
+        canAskAgain: requestedPermission.canAskAgain
+    };
+
+}
+
+export async function registerCurrentDeviceForPushNotifications(userId){
+    if(!userId){
+        throw new Error("PUSH_USER_REQUERIDO")
+    }
+
+    if (!Device.isDevice) {
+        return { status: "dispositivo-no-soportado" }
+    }
+
+    //crear canal
+    await ensureAndroidChannel();
+
+    const permission = await getNotificationPermission();
+
+    if(!permission.granted){
+        return {
+            status: "permission-denied",
+            canAskAgain: permission.canAskAgain,
+            requestedNow: permission.requestedNow
+        }
+    }
+
+    const projectId = 
+        Constants.expoConfig?.extra?.eas?.projectId ??
+        Constants.easConfig?.projectId;
+
+    if (!projectId) {
+        throw new Error("PUSH_PROJECT_ID_MISSING")
+    }
+
+    let expoPushToken;
+
+    try {
+        expoPushToken = ( await Notifications.getExpoPushTokenAsync({projectId}) ).data
+    } catch (error) {
+        throw new Error("PUSH_TOKEN_REQUEST_FAILED", { cause: error} );
+    }
+
+    const registration = {
+        userId,
+        expoPushToken,
+        platform: Platform.OS,
+        updatedAt: new Date().toISOString()
+    }
+
+    try {
+        await pushNotificationsRepository.registrarToken(registration);
+    } catch (error) {
+
+        console.error("Error supabase", {
+            message: error.message,
+            code: error.code,
+            details: error.details,
+            hint: error.hint
+        });
+
+        throw new Error("PUSH_REMOTE_REGISTRATION_FAILED", error);
+        
+    }
+
+
+    await AsyncStorage.setItem(
+        PUSH_REGISTRATION_KEY,
+        JSON.stringify(registration)
+    );
+
+    return {
+        status: "registrado",
+        ...registration
+    }
+
+
+
+    //to-do: guardar en tabla de push tokens supabase
+
+
+
+
+}
+
+export async function unregisterCurrentDeviceForPushNotifications(userId) {
+
+    if (!userId) {
+        throw new Error("PUSH_USER_REQUERIDO");
+    }
+
+    const storedRegistration = await AsyncStorage.getItem(PUSH_REGISTRATION_KEY);
+
+    if (!storedRegistration) {
+        return { status: "sin-registro-local" };
+    }
+
+    let registration;
+
+    try {
+        registration = JSON.parse(storedRegistration);
+    } catch (error) {
+        await AsyncStorage.removeItem(PUSH_REGISTRATION_KEY);
+        return { status: "registro-local-invalido" };
+    }
+
+    if (registration.userId !== userId || !registration.expoPushToken) {
+        throw new Error("PUSH_STORED_REGISTRATION_NO_COINCIDE");
+    }
+
+    await pushNotificationsRepository.eliminarToken({ userId, expoPushToken: registration.expoPushToken });
+
+    await AsyncStorage.removeItem(PUSH_REGISTRATION_KEY);
+
+    return { status: "unregistered"};
+}
