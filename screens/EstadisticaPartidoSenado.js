@@ -703,7 +703,7 @@ export const EstadisticaPartidoSenado = ({ route }) => {
                 <Text style={styles.partido}>{partido.sigla}</Text>
               </View>
               <View style={styles.estadistica}>
-                <Tooltip text={TOOLTIPS.asistencia.partido}>
+                <Tooltip text={TOOLTIPS.asistencia.partidoSenado}>
                   <View style={styles.estadisticaFila}>
                     <MaterialIcons
                       name="event-available"
@@ -715,7 +715,7 @@ export const EstadisticaPartidoSenado = ({ route }) => {
                     </Text>
                   </View>
                 </Tooltip>
-                <Tooltip text={TOOLTIPS.votaciones.partido}>
+                <Tooltip text={TOOLTIPS.votaciones.partidoSenado}>
                   <View style={styles.estadisticaFila}>
                     <MsIcon
                       icon={msPersonRaisedHand}
@@ -728,7 +728,7 @@ export const EstadisticaPartidoSenado = ({ route }) => {
                     </Text>
                   </View>
                 </Tooltip>
-                <Tooltip text={TOOLTIPS.mociones.partido}>
+                <Tooltip text={TOOLTIPS.mociones.partidoSenado}>
                   <View style={styles.estadisticaFila}>
                     <MaterialIcons
                       name="addchart"
@@ -740,7 +740,7 @@ export const EstadisticaPartidoSenado = ({ route }) => {
                     </Text>
                   </View>
                 </Tooltip>
-                <Tooltip text={TOOLTIPS.oficiosPartido}>
+                <Tooltip text={TOOLTIPS.oficiosPartidoSenado}>
                   <View style={styles.estadisticaFila}>
                     <MaterialIcons
                       name="assignment-late"
@@ -921,7 +921,7 @@ export const EstadisticaPartidoSenado = ({ route }) => {
             </View>
             <View style={styles.container6}>
               <View style={styles.columnaEstadistica}>
-                <Tooltip text={TOOLTIPS.representaciondistrital.partido}>
+                <Tooltip text={TOOLTIPS.representaciondistrital.partidoSenado}>
                   <View style={styles.container5}>
                     <View style={styles.datausage}>
                       <MaterialIcons
@@ -942,7 +942,7 @@ export const EstadisticaPartidoSenado = ({ route }) => {
                   </View>
                 </Tooltip>
                 <Tooltip
-                  text={TOOLTIPS.cohesionPartido}
+                  text={TOOLTIPS.cohesionPartidoSenado}
                   width={responsiveWidthScale(340)}
                 >
                   <View style={styles.container5}>
@@ -959,7 +959,7 @@ export const EstadisticaPartidoSenado = ({ route }) => {
               </View>
               <View style={styles.columnaEstadistica}>
                 <Tooltip
-                  text={TOOLTIPS.CompatibilidadPartidoUsuario}
+                  text={TOOLTIPS.CompatibilidadPartidoUsuarioSenado}
                   width={responsiveWidthScale(340)}
                 >
                   <View style={styles.container5}>
@@ -976,7 +976,7 @@ export const EstadisticaPartidoSenado = ({ route }) => {
                   </View>
                 </Tooltip>
                 <Tooltip
-                  text={TOOLTIPS.rankingPartidos}
+                  text={TOOLTIPS.rankingPartidosSenado}
                   width={responsiveWidthScale(340)}
                 >
                   <View style={styles.container5}>

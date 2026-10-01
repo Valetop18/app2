@@ -301,20 +301,23 @@ const styles = StyleSheet.create({
   },
 
   containerInfo: {
-    marginVertical: "2.5%",
-    marginHorizontal: "3%",
-    flexDirection: "row",
-    marginLeft: "3%",
-  },
+  width: "100%",
+  marginVertical: "2.5%",
+  flexDirection: "row",
+  alignItems: "flex-start",
+  paddingLeft: "3%",
+},
 
   dataUsage: {
-    alignItems: "center",
-    width: responsiveWidthScale(42),
-    height: responsiveWidthScale(42),
-    justifyContent: "center",
-    right: responsiveWidthScale(-12),
-    marginTop: responsiveWidthScale(5),
-  },
+  alignItems: "center",
+  justifyContent: "center",
+  width: responsiveWidthScale(42),
+  height: responsiveWidthScale(42),
+  marginLeft: "auto",
+  marginRight: responsiveWidthScale(-8),
+  marginTop: responsiveWidthScale(5),
+  flexShrink: 0,
+},
 
   data2: {
     fontSize: responsiveWidthScale(12),

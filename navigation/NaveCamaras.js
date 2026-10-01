@@ -13,6 +13,7 @@ import {
 import { CamaraDipu } from "../screens/Camaras";
 import { CamaraSena } from "../screens/Senado";
 import { FONTS } from "../constants/fonts";
+import { useOnboarding } from "../context/OnboardingContext";
 
 const Stack = createMaterialTopTabNavigator();
 
@@ -30,6 +31,12 @@ const responsiveTabText = (baseValue) => {
 const NaveCamaras = () => {
   const { width, height } = useWindowDimensions();
 
+  const { activo, cargandoOnboarding } =
+    useOnboarding();
+
+  const bloquearPestanasCamara =
+    activo && !cargandoOnboarding;
+
   const esTelefonoBajo =
     Platform.OS === "android" &&
     width <= 375 &&
@@ -39,6 +46,13 @@ const NaveCamaras = () => {
   return (
     <Stack.Navigator
       initialRoute="Camaras"
+      screenListeners={{
+        tabPress: (event) => {
+          if (bloquearPestanasCamara) {
+            event.preventDefault();
+          }
+        },
+      }}
       screenOptions={{
         headerShown: false,
 

@@ -1649,15 +1649,27 @@ export const CamaraSena = () => {
         }
 
         if (habilitarTransicion) {
+          const asistenciaRegistradaEnCero =
+            Number(asistenciaSesionGlobal?.porcentaje ?? 0) === 0;
+
           return (
-            <Tooltip
-              text={TOOLTIPS.asistencia.especifica}
-              width={responsiveWidthScale(320)}
-            >
-              <Text style={styles.subtitulo}>
-                Total camara: {asistenciaSesionGlobal?.porcentaje}%
-              </Text>
-            </Tooltip>
+            <View style={{ alignItems: "center" }}>
+              <Tooltip
+                text={TOOLTIPS.asistencia.especificaSenado}
+                width={responsiveWidthScale(320)}
+              >
+                <Text style={styles.subtitulo}>
+                  Total cámara: {asistenciaSesionGlobal?.porcentaje ?? 0}%
+                </Text>
+              </Tooltip>
+
+              {asistenciaRegistradaEnCero && (
+                <Text style={styles.articulo}>
+                  El Senado registra un 0% de asistencia para esta sesión.
+                  Los datos publicados son actualizados desde la web oficial.
+                </Text>
+              )}
+            </View>
           );
         }
 
@@ -1667,7 +1679,7 @@ export const CamaraSena = () => {
             width={responsiveWidthScale(320)}
           >
             <Text style={styles.subtitulo}>
-              Total camara: {asistenciaGlobal}%
+              Total cámara: {asistenciaGlobal ?? 0}%
             </Text>
           </Tooltip>
         );
@@ -1700,7 +1712,7 @@ export const CamaraSena = () => {
       case 3:
         if (esProyectoEspecifico) {
           return (
-            <View>
+            <View style={styles.textosProyecto}>
               {temaActual ? (
                 <View
                   style={[
@@ -1939,7 +1951,12 @@ export const CamaraSena = () => {
             </View>
           )}
 
-          <Modal visible={modalVisible} transparent animationType="slide">
+          <Modal
+            visible={modalVisible}
+            transparent
+            animationType="slide"
+            onRequestClose={() => setModalVisible(false)}
+          >
             <TooltipProvider>
               <View style={styles.overlay}>
                 <Pressable
@@ -1949,6 +1966,24 @@ export const CamaraSena = () => {
 
                 <View style={styles.modalContainer}>
                   <View style={styles.tituloContainer}>
+                    <TouchableOpacity
+                      style={styles.botonCerrarModal}
+                      onPress={() => setModalVisible(false)}
+                      hitSlop={{
+                        top: 10,
+                        bottom: 10,
+                        left: 10,
+                        right: 10,
+                      }}
+                      accessibilityRole="button"
+                      accessibilityLabel="Cerrar"
+                    >
+                      <MaterialIcons
+                        name="close"
+                        size={responsiveCamaraSize(19)}
+                        color={COLORS.back}
+                      />
+                    </TouchableOpacity>
                     <View style={styles.tituloContainerText}>
                       <MsIcon
                         icon={infoModal.icon}
@@ -3009,5 +3044,19 @@ const styles = StyleSheet.create({
     color: COLORS.black,
     textAlign: "center",
     lineHeight: responsiveCamaraLineHeight(22),
+  },
+
+  textosProyecto: {
+    width: "100%",
+    alignItems: "center",
+  },
+
+  botonCerrarModal: {
+    position: "absolute",
+    top: responsiveCamaraSize(8),
+    right: responsiveCamaraSize(8),
+    zIndex: 2,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });

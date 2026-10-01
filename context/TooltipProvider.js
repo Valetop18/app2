@@ -127,13 +127,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 8,
     zIndex: 2,
-    elevation: 12,
-  },
 
-  text: {
-    color: COLORS.back,
-    fontSize: 13,
-    textAlign: "left",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.16,
+    shadowRadius: 4,
+    elevation: 4,
   },
 
   arrow: {
@@ -143,5 +145,11 @@ const styles = StyleSheet.create({
     width: 12,
     height: 12,
     backgroundColor: COLORS.greenM,
+  },
+
+  text: {
+    color: COLORS.back,
+    fontSize: 13,
+    textAlign: "left",
   },
 });

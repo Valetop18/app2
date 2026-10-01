@@ -45,8 +45,8 @@ function secretsMatch(received: string, expected: string): boolean{
 function splitIntoBatches<T>(items: T[], size: number): T[][]{
     const batches: T[][] = [];
 
-    for (let index = 0; index < items.length; index++size) {
-        batches.push(items.slice(indexedDB, index+size));
+    for (let index = 0; index < items.length; index+=size) {
+        batches.push(items.slice(index, index+size));
     }
 
     return batches;
@@ -79,23 +79,68 @@ async function getAllPushTokens(supabase: SupabaseClient): Promise<PushTokenRow[
 
 }
 
+async function sendBatch(
+    tokens: string[],
+    title: string,
+    body: string
+): Promise<ExpoPushTicket[]> {
 
-Deno.serve( async (request: Request): Promise<Response> = {
+    const messages = tokens.map( (token) => ({
+        to: token,
+        title,
+        body,
+        sound: "default",
+        channelId: "updates",
+        priority: "high"
+    }))
 
-    if (request.method !== "POST") {
-        return jsonResponse({ error: "METHOD_NOT_ALLOWED", 405});
+    const headers: Record<string, string> = {...JSON_HEADERS};
+    const expoAccessToken = Deno.env.get("EXPO_ACCESS_TOKEN");
+
+    if (expoAccessToken) {
+        headers.Authorization = `Bearer ${expoAccessToken}`;
     }
 
-    const configuredSecret = DelayNode.env.get("CRON_NOTIFICATION_SECRET");
+    const response = await fetch(EXPO_PUSH_URL, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(messages)
+    })
+
+    const responseText = await response.text();
+    let responseBody: { data?: ExpoPushTicket[]; errors?: unknown  } = {};
+
+    try {
+        responseBody = JSON.parse(responseText);
+    } catch (error) {
+        throw new Error(`EXPO_INVALID_RESPONSE: ${responseText}`);
+    }
+
+    if (!response.ok || responseBody.errors) {
+        throw new Error(`EXPO_REQUEST_FAILED: ${responseText}`);
+    }
+
+    return responseBody.data ?? [];
+    
+}
+
+
+Deno.serve( async (request: Request): Promise<Response> => {
+
+    if (request.method !== "POST") {
+        return jsonResponse({ error: "METHOD_NOT_ALLOWED" }, 405);
+    }
+
+    const configuredSecret = Deno.env.get("CRON_NOTIFICATION_SECRET");
 
     if (!configuredSecret) {
-        return jsonResponse({ error: "CRON_NOTIFICATION_SECRET_MISSING", 500});
+        return jsonResponse({ error: "CRON_NOTIFICATION_SECRET_MISSING" }, 500);
     }
 
     const receivedSecret = request.headers.get("x-cron-secret") ?? "";
 
     if (  !secretsMatch(receivedSecret, configuredSecret) ) {
-        return jsonResponse({ error: "UNAUTHORIZED", 401});
+        return jsonResponse({ error: "UNAUTHORIZED" }, 401);
     }
 
     let payload: NotificationRequest;
@@ -103,25 +148,25 @@ Deno.serve( async (request: Request): Promise<Response> = {
     try {
         payload = await request.json();
     } catch (error) {
-        return jsonResponse({ error: "INVALID_JSON", 400});
+        return jsonResponse({ error: "INVALID_JSON" }, 400);
     }
 
     const title = typeof payload.title === "string" ? payload.title.trim() : "";
     const body = typeof payload.body === "string" ? payload.body.trim() : "";
 
     if (!title || !body) {
-        return jsonResponse({ error: "TITLE_AND_BODY_REQUIRED", 400});
+        return jsonResponse({ error: "TITLE_AND_BODY_REQUIRED"}, 400);
     }
 
     if (title.length > 100 || body.length > 1000) {
-        return jsonResponse({ error: "CONTENT_TOO_LONG", 400});
+        return jsonResponse({ error: "CONTENT_TOO_LONG"}, 400);
     }
 
     const supabaseUrl: string = Deno.env.get("SUPABASE_URL") ?? "";
     const supabaseServiceKey: string = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
     
     if (!supabaseUrl || !supabaseServiceKey) {
-        return jsonResponse({ error: "SUPABASE_CONFIGURATION_MISSING", 500});
+        return jsonResponse({ error: "SUPABASE_CONFIGURATION_MISSING"}, 500);
     }
 
     try {
@@ -137,7 +182,7 @@ Deno.serve( async (request: Request): Promise<Response> = {
         const validTokens = [
             ...new Set(
                 storedTokens
-                    .map( {expo_push_token} => expo_push_token )
+                    .map( ({expo_push_token}) => expo_push_token )
                     //se puede filtrar por isExpo
             )
         ]
@@ -145,29 +190,30 @@ Deno.serve( async (request: Request): Promise<Response> = {
         const tickets: ExpoPushTicket[] = [];
 
         for (const batch of splitIntoBatches(validTokens, EXPO_BATCH_SIZE)) {
-            //tickets.push( )
-            //funcion para enviar bloques de token a expo
+            tickets.push( ...await sendBatch(batch, title, body) );
         }
 
+        const successfulTickets = tickets.filter(({status}) => status === "ok");
+        const failedTickets = tickets.filter(({status}) => status === "error");
 
-
-
+        return jsonResponse({
+            success: failedTickets.length === 0,
+            storedTokens: storedTokens.length,
+            validTokens: validTokens.length,
+            sentToExpo: successfulTickets.length,
+            ticketErrors: failedTickets.length,
+            invalidTokens: storedTokens.length - validTokens.length,
+            receiptIds: successfulTickets
+                .map( ({id}) => id)
+                .filter( (id): id is string => Boolean(id) ),
+            errors: failedTickets.map(({message, details}) => ({message, details}))
+        });
 
     } catch (error) {
-        
+        const message = error instanceof Error ? error.message : "UNKNOWN_ERROR";
+        console.error("Error enviando notificacion general: ", error)
+        return jsonResponse({ error: "UNKNOWN_ERROR", message}, 500);
     }
 
-    const supabase: SupabaseClient = createClient(supabaseUrl, supabaseServiceKey);
 
-
-
-
-
-
-
-})
-
-
-
-
-
+});

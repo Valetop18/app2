@@ -102,8 +102,29 @@ export class SupabaseAuthRepository {
   }
 
   async logout() {
+    const esSesionAusente = (error) =>
+      error?.name === "AuthSessionMissingError" ||
+      error?.message === "Auth session missing!";
+
+    const {
+      data: { session },
+      error: sessionError,
+    } = await supabase.auth.getSession();
+
+    if (sessionError) {
+      if (esSesionAusente(sessionError)) return;
+
+      throw sessionError;
+    }
+
+    if (!session) {
+      return;
+    }
+
     const { error } = await supabase.auth.signOut();
 
-    if (error) throw error;
+    if (error && !esSesionAusente(error)) {
+      throw error;
+    }
   }
 }

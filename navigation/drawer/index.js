@@ -43,6 +43,7 @@ import NaveLeyes from "../NaveLeyes";
 import { useNavigationState } from "@react-navigation/native";
 import Buscador from "../../components/Buscador";
 import { useAuth } from "../../context/AuthContext";
+import { useOnboarding } from "../../context/OnboardingContext";
 import { useNavigation } from "@react-navigation/native";
 import { FONTS } from "../../constants/fonts";
 
@@ -264,6 +265,14 @@ function CustomDrawerContent(props) {
 const MyDrawer = () => {
   const { user } = useAuth();
 
+  const {
+    activo,
+    cargandoOnboarding,
+  } = useOnboarding();
+
+  const bloquearNavegacion =
+    activo && !cargandoOnboarding;
+
   const { width, height } = useWindowDimensions();
 
   const esTelefonoBajo =
@@ -301,6 +310,7 @@ const MyDrawer = () => {
     <Drawer.Navigator
       useLegacyImplementation
       screenOptions={({ navigation }) => ({
+        swipeEnabled: !bloquearNavegacion,
         headerTintColor: COLORS.greenM,
         headerTitleAlign: "left",
         headerTitleStyle: {
@@ -310,7 +320,15 @@ const MyDrawer = () => {
         },
         drawerPosition: "right",
         headerRight: () => (
-          <Pressable onPress={() => navigation.openDrawer()} hitSlop={8}>
+          <Pressable
+            onPress={() => {
+              if (bloquearNavegacion) return;
+
+              navigation.openDrawer();
+            }}
+            disabled={bloquearNavegacion}
+            hitSlop={8}
+          >
             <MaterialIcons
               name="workspaces-outline"
               size={responsiveNavSize(26)}
@@ -407,6 +425,13 @@ const MyDrawer = () => {
       >
         {() => (
           <BottomsTabs.Navigator
+            screenListeners={{
+              tabPress: (event) => {
+                if (bloquearNavegacion) {
+                  event.preventDefault();
+                }
+              },
+            }}
             screenOptions={{
               headerShown: false,
               headerStyle: {
@@ -481,7 +506,7 @@ const MyDrawer = () => {
         )}
       </Drawer.Screen>
       <Drawer.Screen
-        name="Presentación"
+        name="Sobre Nawi"
         component={Presentacion}
         options={{
           drawerIcon: ({ focused }) => (
@@ -493,19 +518,21 @@ const MyDrawer = () => {
           ),
         }}
       />
-      <Drawer.Screen
-        name="Legislatura"
-        component={NaveLeyes}
-        options={{
-          drawerIcon: ({ focused, size }) => (
-            <MaterialIcons
-              name="how-to-vote"
-              size={responsiveNavSize(16)}
-              color={focused ? COLORS.greenM : COLORS.back}
-            />
-          ),
-        }}
+      {/*
+<Drawer.Screen
+  name="Legislatura"
+  component={NaveLeyes}
+  options={{
+    drawerIcon: ({ focused, size }) => (
+      <MaterialIcons
+        name="how-to-vote"
+        size={responsiveNavSize(16)}
+        color={focused ? COLORS.greenM : COLORS.back}
       />
+    ),
+  }}
+/>
+*/}
     </Drawer.Navigator>
   );
 };

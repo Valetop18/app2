@@ -1340,18 +1340,39 @@ export const EstadisticaPartido = ({ route }) => {
           </Modal>
         </ScrollView>
       )}
-      {mostrarCierreOnboarding && (
-        <View style={styles.cierreOnboarding}>
-          <Text style={styles.tituloCierreOnboarding}>
-            Tu recorrido de bienvenida{"\n"}
-            ha terminado
-          </Text>
+      <Modal
+        visible={
+          activo &&
+          pasoActual === 11 &&
+          !loading
+        }
+        transparent
+        animationType="none"
+        presentationStyle="overFullScreen"
+        statusBarTranslucent
+        navigationBarTranslucent
+        onRequestClose={() => { }}
+      >
+        <View style={styles.bloqueoCierreOnboarding}>
+          <Pressable
+            style={StyleSheet.absoluteFillObject}
+            onPress={() => { }}
+          />
 
-          <Text style={styles.textoCierreOnboarding}>
-            ¡Disfruta Nawi!
-          </Text>
+          {mostrarCierreOnboarding && (
+            <View style={styles.cierreOnboarding}>
+              <Text style={styles.tituloCierreOnboarding}>
+                Tu recorrido de bienvenida{"\n"}
+                ha terminado
+              </Text>
+
+              <Text style={styles.textoCierreOnboarding}>
+                ¡Disfruta Nawi!
+              </Text>
+            </View>
+          )}
         </View>
-      )}
+      </Modal>
     </KeyboardAvoidingView>
   );
 };
@@ -1858,5 +1879,9 @@ const styles = StyleSheet.create({
     lineHeight: responsiveWidthScale(34),
     letterSpacing: responsiveWidthScale(1),
     textAlign: "center",
+  },
+
+  bloqueoCierreOnboarding: {
+    flex: 1,
   },
 });

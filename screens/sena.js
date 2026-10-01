@@ -282,6 +282,20 @@ export const Senadores = ({ navigation }) => {
           renderItem={renderGridItem}
           numColumns={1}
           keyExtractor={(item) => item.id}
+          pointerEvents={
+            activo &&
+              !cargandoOnboarding &&
+              (pasoActual === 6 || pasoActual === 7)
+              ? "none"
+              : "auto"
+          }
+          scrollEnabled={
+            !(
+              activo &&
+              !cargandoOnboarding &&
+              (pasoActual === 6 || pasoActual === 7)
+            )
+          }
         />
       )}
       <OnboardingSenadores
